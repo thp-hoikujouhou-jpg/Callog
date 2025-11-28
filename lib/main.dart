@@ -16,7 +16,7 @@ class CallogApp extends StatelessWidget {
     return Provider<LocalizationService>(
       create: (_) => LocalizationService(),
       child: MaterialApp(
-        title: 'Callog Connect',
+        title: 'Callog',
         debugShowCheckedModeBanner: false,
         theme: ThemeData(
           colorScheme: ColorScheme.fromSeed(
