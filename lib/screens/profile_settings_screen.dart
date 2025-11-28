@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
 import '../services/localization_service.dart';
 import 'login_screen.dart';
 
@@ -35,35 +34,17 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
 
     if (confirmed == true && mounted) {
-      try {
-        final authService = Provider.of<AuthService>(context, listen: false);
-        await authService.signOut();
-        
-        if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,
-          );
-        }
-      } catch (e) {
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text('Error signing out: $e'),
-              backgroundColor: Colors.red,
-            ),
-          );
-        }
-      }
+      Navigator.pushAndRemoveUntil(
+        context,
+        MaterialPageRoute(builder: (_) => const LoginScreen()),
+        (route) => false,
+      );
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final localService = Provider.of<LocalizationService>(context);
-    final authService = Provider.of<AuthService>(context);
-    final user = authService.currentUser;
 
     return Scaffold(
       appBar: AppBar(
@@ -79,27 +60,22 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               CircleAvatar(
                 radius: 60,
                 backgroundColor: Colors.blue.shade100,
-                backgroundImage: user?.photoURL != null
-                    ? NetworkImage(user!.photoURL!)
-                    : null,
-                child: user?.photoURL == null
-                    ? Icon(
-                        Icons.person,
-                        size: 60,
-                        color: Colors.blue.shade600,
-                      )
-                    : null,
+                child: Icon(
+                  Icons.person,
+                  size: 60,
+                  color: Colors.blue.shade600,
+                ),
               ),
               const SizedBox(height: 16),
               Text(
-                user?.displayName ?? 'User',
+                'Demo User',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                user?.email ?? '',
+                'demo@callog.com',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey.shade600,
                     ),
@@ -111,13 +87,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ListTile(
                       leading: const Icon(Icons.person),
                       title: Text(localService.translate('username')),
-                      subtitle: Text(user?.displayName ?? 'Not set'),
+                      subtitle: const Text('demo_user'),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.email),
                       title: Text(localService.translate('email')),
-                      subtitle: Text(user?.email ?? 'Not set'),
+                      subtitle: const Text('demo@callog.com'),
                     ),
                     const Divider(height: 1),
                     ListTile(

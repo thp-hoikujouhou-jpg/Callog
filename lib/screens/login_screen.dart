@@ -1,8 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/auth_service.dart';
 import '../services/localization_service.dart';
-import 'profile_setup_screen.dart';
 import 'main_feed_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -31,41 +29,24 @@ class _LoginScreenState extends State<LoginScreen> {
 
     setState(() => _isLoading = true);
 
+    // Demo mode - skip Firebase authentication
+    await Future.delayed(const Duration(seconds: 1));
+
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
       final localService = Provider.of<LocalizationService>(context, listen: false);
 
-      if (_isSignUp) {
-        await authService.signUpWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localService.translate('login_success')),
+            backgroundColor: Colors.green,
+          ),
         );
         
-        if (mounted) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-          );
-        }
-      } else {
-        await authService.signInWithEmailAndPassword(
-          _emailController.text.trim(),
-          _passwordController.text,
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainFeedScreen()),
         );
-        
-        if (mounted) {
-          ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localService.translate('login_success')),
-              backgroundColor: Colors.green,
-            ),
-          );
-          
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const MainFeedScreen()),
-          );
-        }
       }
     } catch (e) {
       if (mounted) {
@@ -85,24 +66,23 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _handleGoogleSignIn() async {
     setState(() => _isLoading = true);
 
+    // Demo mode - skip Google authentication
+    await Future.delayed(const Duration(seconds: 1));
+
     try {
-      final authService = Provider.of<AuthService>(context, listen: false);
-      final result = await authService.signInWithGoogle();
-      
-      if (result != null && mounted) {
-        final userExists = await authService.userProfileExists(result.user!.uid);
+      if (mounted) {
+        final localService = Provider.of<LocalizationService>(context, listen: false);
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localService.translate('login_success')),
+            backgroundColor: Colors.green,
+          ),
+        );
         
-        if (userExists) {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const MainFeedScreen()),
-          );
-        } else {
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-          );
-        }
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (_) => const MainFeedScreen()),
+        );
       }
     } catch (e) {
       if (mounted) {

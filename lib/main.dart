@@ -1,16 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import 'services/auth_service.dart';
 import 'services/localization_service.dart';
 import 'screens/login_screen.dart';
-import 'screens/main_feed_screen.dart';
 
-void main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase (placeholder - requires firebase_options.dart)
-  // await Firebase.initializeApp();
-  
   runApp(const CallogApp());
 }
 
@@ -19,11 +13,8 @@ class CallogApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    return MultiProvider(
-      providers: [
-        Provider<AuthService>(create: (_) => AuthService()),
-        Provider<LocalizationService>(create: (_) => LocalizationService()),
-      ],
+    return Provider<LocalizationService>(
+      create: (_) => LocalizationService(),
       child: MaterialApp(
         title: 'Callog Connect',
         debugShowCheckedModeBanner: false,
@@ -34,36 +25,8 @@ class CallogApp extends StatelessWidget {
           ),
           useMaterial3: true,
         ),
-        home: const AuthWrapper(),
+        home: const LoginScreen(),
       ),
-    );
-  }
-}
-
-class AuthWrapper extends StatelessWidget {
-  const AuthWrapper({super.key});
-
-  @override
-  Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context, listen: false);
-    
-    return StreamBuilder(
-      stream: authService.authStateChanges,
-      builder: (context, snapshot) {
-        if (snapshot.connectionState == ConnectionState.waiting) {
-          return const Scaffold(
-            body: Center(
-              child: CircularProgressIndicator(),
-            ),
-          );
-        }
-        
-        if (snapshot.hasData) {
-          return const MainFeedScreen();
-        }
-        
-        return const LoginScreen();
-      },
     );
   }
 }
