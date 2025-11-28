@@ -5,6 +5,7 @@ import '../services/auth_service.dart';
 import '../models/user_profile.dart';
 import 'login_screen.dart';
 import 'package:image_picker/image_picker.dart';
+import 'dart:io';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -47,12 +48,61 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
   Future<void> _pickImage() async {
     try {
-      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      final XFile? image = await _picker.pickImage(
+        source: ImageSource.gallery,
+        maxWidth: 1024,
+        maxHeight: 1024,
+        imageQuality: 85,
+      );
+      
       if (image != null && mounted) {
-        // TODO: Upload to Firebase Storage and update profile
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text('Image upload will be implemented with Firebase Storage')),
+        // Show loading indicator
+        showDialog(
+          context: context,
+          barrierDismissible: false,
+          builder: (context) => const Center(
+            child: CircularProgressIndicator(),
+          ),
         );
+
+        try {
+          final authService = Provider.of<AuthService>(context, listen: false);
+          final user = authService.currentUser;
+          
+          if (user != null) {
+            // Upload image to Firebase Storage
+            final imageFile = File(image.path);
+            final photoUrl = await authService.uploadProfileImage(user.uid, imageFile);
+            
+            if (photoUrl != null) {
+              // Update Firestore with new photo URL
+              await authService.updateProfilePhoto(user.uid, photoUrl);
+              
+              // Reload user profile
+              await _loadUserProfile();
+              
+              if (mounted) {
+                Navigator.pop(context); // Close loading dialog
+                ScaffoldMessenger.of(context).showSnackBar(
+                  const SnackBar(
+                    content: Text('Profile photo updated successfully!'),
+                    backgroundColor: Colors.green,
+                  ),
+                );
+              }
+            }
+          }
+        } catch (e) {
+          if (mounted) {
+            Navigator.pop(context); // Close loading dialog
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text('Error uploading image: $e'),
+                backgroundColor: Colors.red,
+              ),
+            );
+          }
+        }
       }
     } catch (e) {
       if (mounted) {

@@ -1,12 +1,15 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'dart:io';
 import '../models/user_profile.dart';
 
 class AuthService {
   final FirebaseAuth _auth = FirebaseAuth.instance;
   final GoogleSignIn _googleSignIn = GoogleSignIn();
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseStorage _storage = FirebaseStorage.instance;
 
   // Get current user
   User? get currentUser => _auth.currentUser;
@@ -174,6 +177,35 @@ class AuthService {
   Future<void> sendPasswordResetEmail(String email) async {
     try {
       await _auth.sendPasswordResetEmail(email: email);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Upload profile image to Firebase Storage
+  Future<String?> uploadProfileImage(String uid, File imageFile) async {
+    try {
+      // Create a unique file path in Firebase Storage
+      final storageRef = _storage.ref().child('profile_images/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg');
+      
+      // Upload the file
+      final uploadTask = await storageRef.putFile(imageFile);
+      
+      // Get the download URL
+      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      
+      return downloadUrl;
+    } catch (e) {
+      rethrow;
+    }
+  }
+
+  // Update profile photo URL
+  Future<void> updateProfilePhoto(String uid, String photoUrl) async {
+    try {
+      await _firestore.collection('users').doc(uid).update({
+        'photoUrl': photoUrl,
+      });
     } catch (e) {
       rethrow;
     }
