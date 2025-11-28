@@ -1,4 +1,4 @@
-package com.callogconnect.callog_connect
+package com.callog.mobile_app
 
 import io.flutter.embedding.android.FlutterActivity
 
