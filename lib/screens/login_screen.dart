@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/auth_service.dart';
-import 'profile_setup_screen.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -35,19 +34,12 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
 
       if (_isSignUp) {
-        // Sign up
-        final result = await authService.signUpWithEmailAndPassword(
+        // Sign up - user profile is automatically created in Firestore
+        await authService.signUpWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text,
         );
-        
-        if (result != null && mounted) {
-          // Navigate to profile setup
-          Navigator.pushReplacement(
-            context,
-            MaterialPageRoute(builder: (_) => const ProfileSetupScreen()),
-          );
-        }
+        // AuthWrapper will handle navigation to MainFeed
       } else {
         // Sign in
         await authService.signInWithEmailAndPassword(

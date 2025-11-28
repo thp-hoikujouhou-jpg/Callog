@@ -35,10 +35,29 @@ class AuthService {
     String password,
   ) async {
     try {
-      return await _auth.createUserWithEmailAndPassword(
+      final result = await _auth.createUserWithEmailAndPassword(
         email: email,
         password: password,
       );
+      
+      // Automatically create user profile in Firestore
+      if (result.user != null) {
+        final profile = UserProfile(
+          uid: result.user!.uid,
+          email: email,
+          displayName: result.user!.displayName ?? email.split('@')[0],
+          username: email.split('@')[0], // Use email prefix as default username
+          photoUrl: '',
+          location: null,
+          language: 'en',
+          isOnline: true,
+          lastSeen: DateTime.now(),
+          friendsList: [],
+        );
+        await createUserProfile(profile);
+      }
+      
+      return result;
     } catch (e) {
       rethrow;
     }
@@ -58,7 +77,29 @@ class AuthService {
         idToken: googleAuth.idToken,
       );
 
-      return await _auth.signInWithCredential(credential);
+      final result = await _auth.signInWithCredential(credential);
+      
+      // Check if user profile exists, if not create one
+      if (result.user != null) {
+        final profileExists = await userProfileExists(result.user!.uid);
+        if (!profileExists) {
+          final profile = UserProfile(
+            uid: result.user!.uid,
+            email: result.user!.email ?? '',
+            displayName: result.user!.displayName ?? 'User',
+            username: result.user!.email?.split('@')[0] ?? 'user',
+            photoUrl: result.user!.photoURL ?? '',
+            location: null,
+            language: 'en',
+            isOnline: true,
+            lastSeen: DateTime.now(),
+            friendsList: [],
+          );
+          await createUserProfile(profile);
+        }
+      }
+      
+      return result;
     } catch (e) {
       rethrow;
     }
