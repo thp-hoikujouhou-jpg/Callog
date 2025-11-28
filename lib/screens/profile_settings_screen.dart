@@ -1,7 +1,10 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
+import '../services/auth_service.dart';
+import '../models/user_profile.dart';
 import 'login_screen.dart';
+import 'package:image_picker/image_picker.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -11,7 +14,57 @@ class ProfileSettingsScreen extends StatefulWidget {
 }
 
 class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
+  UserProfile? _userProfile;
+  bool _isLoading = true;
+  final ImagePicker _picker = ImagePicker();
+
+  @override
+  void initState() {
+    super.initState();
+    _loadUserProfile();
+  }
+
+  Future<void> _loadUserProfile() async {
+    try {
+      final authService = Provider.of<AuthService>(context, listen: false);
+      final user = authService.currentUser;
+      
+      if (user != null) {
+        final profile = await authService.getUserProfile(user.uid);
+        if (mounted) {
+          setState(() {
+            _userProfile = profile;
+            _isLoading = false;
+          });
+        }
+      }
+    } catch (e) {
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
+    }
+  }
+
+  Future<void> _pickImage() async {
+    try {
+      final XFile? image = await _picker.pickImage(source: ImageSource.gallery);
+      if (image != null && mounted) {
+        // TODO: Upload to Firebase Storage and update profile
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text('Image upload will be implemented with Firebase Storage')),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text('Error picking image: $e')),
+        );
+      }
+    }
+  }
+
   Future<void> _handleSignOut() async {
+    final authService = Provider.of<AuthService>(context, listen: false);
     final localService = Provider.of<LocalizationService>(context, listen: false);
     
     final confirmed = await showDialog<bool>(
@@ -34,17 +87,39 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     );
 
     if (confirmed == true && mounted) {
-      Navigator.pushAndRemoveUntil(
-        context,
-        MaterialPageRoute(builder: (_) => const LoginScreen()),
-        (route) => false,
-      );
+      try {
+        await authService.signOut();
+        if (mounted) {
+          Navigator.pushAndRemoveUntil(
+            context,
+            MaterialPageRoute(builder: (_) => const LoginScreen()),
+            (route) => false,
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error signing out: $e')),
+          );
+        }
+      }
     }
   }
 
   @override
   Widget build(BuildContext context) {
     final localService = Provider.of<LocalizationService>(context);
+
+    if (_isLoading) {
+      return Scaffold(
+        appBar: AppBar(
+          title: Text(localService.translate('profile_settings')),
+          backgroundColor: Colors.blue.shade600,
+          foregroundColor: Colors.white,
+        ),
+        body: const Center(child: CircularProgressIndicator()),
+      );
+    }
 
     return Scaffold(
       appBar: AppBar(
@@ -57,25 +132,47 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           padding: const EdgeInsets.all(24),
           child: Column(
             children: [
-              CircleAvatar(
-                radius: 60,
-                backgroundColor: Colors.blue.shade100,
-                child: Icon(
-                  Icons.person,
-                  size: 60,
-                  color: Colors.blue.shade600,
-                ),
+              Stack(
+                children: [
+                  CircleAvatar(
+                    radius: 60,
+                    backgroundColor: Colors.blue.shade100,
+                    backgroundImage: _userProfile?.photoUrl != null && _userProfile!.photoUrl!.isNotEmpty
+                        ? NetworkImage(_userProfile!.photoUrl!)
+                        : null,
+                    child: _userProfile?.photoUrl == null || _userProfile!.photoUrl!.isEmpty
+                        ? Icon(
+                            Icons.person,
+                            size: 60,
+                            color: Colors.blue.shade600,
+                          )
+                        : null,
+                  ),
+                  Positioned(
+                    bottom: 0,
+                    right: 0,
+                    child: CircleAvatar(
+                      radius: 18,
+                      backgroundColor: Colors.blue.shade600,
+                      child: IconButton(
+                        padding: EdgeInsets.zero,
+                        icon: const Icon(Icons.camera_alt, size: 18, color: Colors.white),
+                        onPressed: _pickImage,
+                      ),
+                    ),
+                  ),
+                ],
               ),
               const SizedBox(height: 16),
               Text(
-                'Demo User',
+                _userProfile?.displayName ?? 'User',
                 style: Theme.of(context).textTheme.headlineSmall?.copyWith(
                       fontWeight: FontWeight.bold,
                     ),
               ),
               const SizedBox(height: 8),
               Text(
-                'demo@callog.com',
+                _userProfile?.email ?? 'No email',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey.shade600,
                     ),
@@ -87,19 +184,19 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ListTile(
                       leading: const Icon(Icons.person),
                       title: Text(localService.translate('username')),
-                      subtitle: const Text('demo_user'),
+                      subtitle: Text(_userProfile?.username ?? 'Not set'),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.email),
                       title: Text(localService.translate('email')),
-                      subtitle: const Text('demo@callog.com'),
+                      subtitle: Text(_userProfile?.email ?? 'Not set'),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.location_on),
                       title: Text(localService.translate('location')),
-                      subtitle: const Text('Not set'),
+                      subtitle: Text(_userProfile?.location ?? 'Not set'),
                     ),
                     const Divider(height: 1),
                     ListTile(
