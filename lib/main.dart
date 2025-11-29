@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
@@ -8,14 +9,46 @@ import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
 
 void main() async {
-  WidgetsFlutterBinding.ensureInitialized();
-  
-  // Initialize Firebase
-  await Firebase.initializeApp(
-    options: DefaultFirebaseOptions.currentPlatform,
-  );
-  
-  runApp(const CallogApp());
+  // Catch and log any errors during initialization
+  FlutterError.onError = (FlutterErrorDetails details) {
+    if (kDebugMode) {
+      debugPrint('Flutter Error: ${details.exception}');
+      debugPrint('Stack trace: ${details.stack}');
+    }
+  };
+
+  try {
+    WidgetsFlutterBinding.ensureInitialized();
+    
+    // Initialize Firebase with error handling
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+    
+    runApp(const CallogApp());
+  } catch (e, stackTrace) {
+    if (kDebugMode) {
+      debugPrint('Error during app initialization: $e');
+      debugPrint('Stack trace: $stackTrace');
+    }
+    // Run app with error screen if initialization fails
+    runApp(MaterialApp(
+      home: Scaffold(
+        body: Center(
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              const Icon(Icons.error, size: 64, color: Colors.red),
+              const SizedBox(height: 16),
+              const Text('アプリの初期化に失敗しました'),
+              const SizedBox(height: 8),
+              Text('エラー: $e', textAlign: TextAlign.center),
+            ],
+          ),
+        ),
+      ),
+    ));
+  }
 }
 
 class CallogApp extends StatelessWidget {
