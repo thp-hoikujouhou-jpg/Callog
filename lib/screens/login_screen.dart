@@ -91,7 +91,6 @@ class _LoginScreenState extends State<LoginScreen> {
     final localService = Provider.of<LocalizationService>(context);
 
     return Scaffold(
-      backgroundColor: Colors.grey.shade50,
       body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
