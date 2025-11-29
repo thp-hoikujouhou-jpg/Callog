@@ -16,17 +16,59 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
   String _getLocalizedDateFormat(String languageCode) {
     switch (languageCode) {
       case 'ja':
-        return 'ja_JP';
+        return 'ja';
       case 'ko':
-        return 'ko_KR';
+        return 'ko';
       case 'zh':
-        return 'zh_CN';
+        return 'zh';
       case 'es':
-        return 'es_ES';
+        return 'es';
       case 'fr':
-        return 'fr_FR';
+        return 'fr';
       default:
-        return 'en_US';
+        return 'en';
+    }
+  }
+
+  String _formatDate(DateTime date, String pattern, String locale) {
+    try {
+      // Use simple locale code instead of locale_COUNTRY format
+      return DateFormat(pattern, locale).format(date);
+    } catch (e) {
+      // If locale-specific formatting fails, use custom formatting
+      return _customFormatDate(date, pattern, locale);
+    }
+  }
+
+  String _customFormatDate(DateTime date, String pattern, String locale) {
+    final months = _getMonthNames(locale);
+    
+    if (pattern == 'yMMMM') {
+      return '${months[date.month - 1]} ${date.year}';
+    } else if (pattern == 'yMMMd') {
+      return '${months[date.month - 1]} ${date.day}, ${date.year}';
+    } else if (pattern == 'MMMd') {
+      return '${months[date.month - 1]} ${date.day}';
+    }
+    
+    // Fallback to basic format
+    return '${date.year}/${date.month}/${date.day}';
+  }
+
+  List<String> _getMonthNames(String locale) {
+    switch (locale) {
+      case 'ja':
+        return ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      case 'ko':
+        return ['1월', '2월', '3월', '4월', '5월', '6월', '7월', '8월', '9월', '10월', '11월', '12월'];
+      case 'zh':
+        return ['1月', '2月', '3月', '4月', '5月', '6月', '7月', '8月', '9月', '10月', '11月', '12月'];
+      case 'es':
+        return ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+      case 'fr':
+        return ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+      default:
+        return ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     }
   }
 
@@ -62,7 +104,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     icon: const Icon(Icons.chevron_left),
                   ),
                   Text(
-                    DateFormat.yMMMM(locale).format(_selectedDate),
+                    _formatDate(_selectedDate, 'yMMMM', locale),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -101,7 +143,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${localService.translate('no_notes_for')} ${DateFormat.yMMMd(locale).format(_selectedDate)}',
+                      '${localService.translate('no_notes_for')} ${_formatDate(_selectedDate, 'yMMMd', locale)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.blue.shade600,
                           ),
@@ -117,7 +159,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${localService.translate('add_note_for')} ${DateFormat.MMMd(locale).format(_selectedDate)}'),
+              content: Text('${localService.translate('add_note_for')} ${_formatDate(_selectedDate, 'MMMd', locale)}'),
             ),
           );
         },
