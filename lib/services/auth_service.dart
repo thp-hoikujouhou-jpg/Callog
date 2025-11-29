@@ -132,7 +132,7 @@ class AuthService {
   Future<UserProfile?> getUserProfile(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists) {
+      if (doc.exists && doc.data() != null) {
         return UserProfile.fromMap(doc.data()!);
       }
       return null;

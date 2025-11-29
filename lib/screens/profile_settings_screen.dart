@@ -184,19 +184,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             children: [
               Stack(
                 children: [
-                  CircleAvatar(
-                    radius: 60,
-                    backgroundColor: Colors.blue.shade100,
-                    backgroundImage: _userProfile?.photoUrl != null && _userProfile!.photoUrl!.isNotEmpty
-                        ? NetworkImage(_userProfile!.photoUrl!)
-                        : null,
-                    child: _userProfile?.photoUrl == null || _userProfile!.photoUrl!.isEmpty
-                        ? Icon(
-                            Icons.person,
-                            size: 60,
-                            color: Colors.blue.shade600,
-                          )
-                        : null,
+                  Builder(
+                    builder: (context) {
+                      final photoUrl = _userProfile?.photoUrl;
+                      final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+                      
+                      return CircleAvatar(
+                        radius: 60,
+                        backgroundColor: Colors.blue.shade100,
+                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        child: hasPhoto
+                            ? null
+                            : Icon(
+                                Icons.person,
+                                size: 60,
+                                color: Colors.blue.shade600,
+                              ),
+                      );
+                    },
                   ),
                   Positioned(
                     bottom: 0,
