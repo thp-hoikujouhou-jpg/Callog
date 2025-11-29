@@ -2,6 +2,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
+import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user_profile.dart';
@@ -192,8 +193,10 @@ class AuthService {
       // Upload the file (Web uses putData, Mobile uses putFile)
       final UploadTask uploadTask;
       if (kIsWeb) {
-        // For Web: Read file as bytes and use putData (XFile has readAsBytes method)
-        final bytes = await imageFile.readAsBytes();
+        // For Web: Read file as bytes and use putData
+        // imageFile should be XFile for Web
+        final XFile xFile = imageFile is XFile ? imageFile : XFile(imageFile.path);
+        final bytes = await xFile.readAsBytes();
         uploadTask = storageRef.putData(
           bytes,
           SettableMetadata(
