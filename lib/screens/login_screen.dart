@@ -25,6 +25,61 @@ class _LoginScreenState extends State<LoginScreen> {
     super.dispose();
   }
 
+  Future<void> _showPasswordResetDialog() async {
+    final emailController = TextEditingController();
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<bool>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('reset_password')),
+        content: TextField(
+          controller: emailController,
+          decoration: InputDecoration(
+            labelText: localService.translate('email'),
+            border: const OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.emailAddress,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context, false),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, true),
+            child: Text(localService.translate('send')),
+          ),
+        ],
+      ),
+    );
+
+    if (result == true && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        await authService.sendPasswordResetEmail(emailController.text.trim());
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localService.translate('password_reset_sent')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('Error: ${e.toString()}'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+    emailController.dispose();
+  }
+
   Future<void> _handleEmailAuth() async {
     if (!_formKey.currentState!.validate()) return;
 
@@ -178,7 +233,21 @@ class _LoginScreenState extends State<LoginScreen> {
                             return null;
                           },
                         ),
-                        const SizedBox(height: 24),
+                        const SizedBox(height: 8),
+                        Align(
+                          alignment: Alignment.centerRight,
+                          child: TextButton(
+                            onPressed: () {
+                              // Show password reset dialog
+                              _showPasswordResetDialog();
+                            },
+                            child: Text(
+                              localService.translate('forgot_password'),
+                              style: TextStyle(color: Colors.blue.shade600),
+                            ),
+                          ),
+                        ),
+                        const SizedBox(height: 16),
                         if (_isLoading)
                           const CircularProgressIndicator()
                         else
@@ -233,9 +302,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: _handleGoogleSignIn,
                                   icon: Image.network(
-                                    'https://www.google.com/favicon.ico',
+                                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
                                     height: 24,
                                     width: 24,
+                                    errorBuilder: (context, error, stackTrace) {
+                                      return const Icon(Icons.login, size: 24);
+                                    },
                                   ),
                                   label: Text(
                                     localService.translate('sign_in_with_google'),

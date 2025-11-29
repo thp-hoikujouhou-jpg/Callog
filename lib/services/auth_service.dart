@@ -187,6 +187,26 @@ class AuthService {
     }
   }
 
+  // Change password
+  Future<void> changePassword(String currentPassword, String newPassword) async {
+    try {
+      final user = _auth.currentUser;
+      if (user == null) throw Exception('No user logged in');
+      
+      // Re-authenticate user with current password
+      final credential = EmailAuthProvider.credential(
+        email: user.email!,
+        password: currentPassword,
+      );
+      await user.reauthenticateWithCredential(credential);
+      
+      // Update password
+      await user.updatePassword(newPassword);
+    } catch (e) {
+      rethrow;
+    }
+  }
+
   // Upload profile image to Firebase Storage (supports both Web and Mobile)
   Future<String?> uploadProfileImage(String uid, dynamic imageFile) async {
     try {

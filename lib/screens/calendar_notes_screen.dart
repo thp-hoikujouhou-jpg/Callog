@@ -13,9 +13,27 @@ class CalendarNotesScreen extends StatefulWidget {
 class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
   DateTime _selectedDate = DateTime.now();
 
+  String _getLocalizedDateFormat(String languageCode) {
+    switch (languageCode) {
+      case 'ja':
+        return 'ja_JP';
+      case 'ko':
+        return 'ko_KR';
+      case 'zh':
+        return 'zh_CN';
+      case 'es':
+        return 'es_ES';
+      case 'fr':
+        return 'fr_FR';
+      default:
+        return 'en_US';
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     final localService = Provider.of<LocalizationService>(context);
+    final locale = _getLocalizedDateFormat(localService.currentLanguage);
 
     return Scaffold(
       appBar: AppBar(
@@ -44,7 +62,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     icon: const Icon(Icons.chevron_left),
                   ),
                   Text(
-                    DateFormat('MMMM yyyy').format(_selectedDate),
+                    DateFormat.yMMMM(locale).format(_selectedDate),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
                         ),
@@ -82,7 +100,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      '${localService.translate('no_notes_for')} ${DateFormat('MMM d, y').format(_selectedDate)}',
+                      '${localService.translate('no_notes_for')} ${DateFormat.yMMMd(locale).format(_selectedDate)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey.shade600,
                           ),
@@ -98,7 +116,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('${localService.translate('add_note_for')} ${DateFormat('MMM d').format(_selectedDate)}'),
+              content: Text('${localService.translate('add_note_for')} ${DateFormat.MMMd(locale).format(_selectedDate)}'),
             ),
           );
         },

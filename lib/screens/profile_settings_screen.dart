@@ -164,6 +164,99 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     controller.dispose();
   }
 
+  Future<void> _changePassword() async {
+    final currentPasswordController = TextEditingController();
+    final newPasswordController = TextEditingController();
+    final confirmPasswordController = TextEditingController();
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<Map<String, String>>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('change_password')),
+        content: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            TextField(
+              controller: currentPasswordController,
+              decoration: InputDecoration(
+                labelText: localService.translate('current_password'),
+                border: const OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: newPasswordController,
+              decoration: InputDecoration(
+                labelText: localService.translate('new_password'),
+                border: const OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+            const SizedBox(height: 16),
+            TextField(
+              controller: confirmPasswordController,
+              decoration: InputDecoration(
+                labelText: localService.translate('confirm_password'),
+                border: const OutlineInputBorder(),
+              ),
+              obscureText: true,
+            ),
+          ],
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () {
+              if (newPasswordController.text == confirmPasswordController.text) {
+                Navigator.pop(context, {
+                  'current': currentPasswordController.text,
+                  'new': newPasswordController.text,
+                });
+              } else {
+                ScaffoldMessenger.of(context).showSnackBar(
+                  SnackBar(
+                    content: Text(localService.translate('passwords_not_match')),
+                    backgroundColor: Colors.red,
+                  ),
+                );
+              }
+            },
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        await authService.changePassword(result['current']!, result['new']!);
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localService.translate('password_changed')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+    currentPasswordController.dispose();
+    newPasswordController.dispose();
+    confirmPasswordController.dispose();
+  }
+
   Future<void> _editLocation() async {
     final controller = TextEditingController(text: _userProfile?.location ?? '');
     final localService = Provider.of<LocalizationService>(context, listen: false);
@@ -417,6 +510,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       subtitle: Text(_userProfile?.username ?? 'Not set'),
                       trailing: const Icon(Icons.edit),
                       onTap: () => _editUsername(),
+                    ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.lock),
+                      title: Text(localService.translate('password')),
+                      subtitle: const Text('••••••••'),
+                      trailing: const Icon(Icons.edit),
+                      onTap: () => _changePassword(),
                     ),
                     const Divider(height: 1),
                     ListTile(
