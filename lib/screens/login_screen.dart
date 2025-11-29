@@ -101,17 +101,25 @@ class _LoginScreenState extends State<LoginScreen> {
 
       if (_isSignUp) {
         // Sign up - user profile is automatically created in Firestore
-        await authService.signUpWithEmailAndPassword(
+        final result = await authService.signUpWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text,
         );
+        // Wait a moment for Firebase to update auth state
+        if (result != null && mounted) {
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
         // AuthWrapper will handle navigation to MainFeed
       } else {
         // Sign in
-        await authService.signInWithEmailAndPassword(
+        final result = await authService.signInWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text,
         );
+        // Wait a moment for Firebase to update auth state
+        if (result != null && mounted) {
+          await Future.delayed(const Duration(milliseconds: 300));
+        }
         // AuthWrapper will handle navigation
       }
     } catch (e) {
@@ -153,7 +161,11 @@ class _LoginScreenState extends State<LoginScreen> {
     try {
       final authService = Provider.of<AuthService>(context, listen: false);
       
-      await authService.signInWithGoogle();
+      final result = await authService.signInWithGoogle();
+      // Wait a moment for Firebase to update auth state
+      if (result != null && mounted) {
+        await Future.delayed(const Duration(milliseconds: 300));
+      }
       // AuthWrapper will handle navigation
     } catch (e) {
       if (mounted) {

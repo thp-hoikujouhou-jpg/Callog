@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
@@ -89,49 +90,50 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
-  bool _languageLoaded = false;
-
-  @override
-  void initState() {
-    super.initState();
-    // Reset language loaded flag
-    _languageLoaded = false;
-  }
-
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
     
-    return StreamBuilder(
+    return StreamBuilder<User?>(
       stream: authService.authStateChanges,
       builder: (context, snapshot) {
+        // Show loading indicator while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
             body: Center(child: CircularProgressIndicator()),
           );
         }
         
+        // User is authenticated - load language then show home screen
         if (snapshot.hasData && snapshot.data != null) {
-          // Load language when user logs in (only once)
-          if (!_languageLoaded) {
-            _languageLoaded = true;
-            WidgetsBinding.instance.addPostFrameCallback((_) {
-              if (mounted) {
-                final localService = Provider.of<LocalizationService>(context, listen: false);
-                localService.loadLanguageFromFirestore().catchError((e) {
-                  // Silently handle error if user signs out during loading
-                  if (kDebugMode) {
-                    debugPrint('Error loading language: $e');
-                  }
-                });
+          final localService = Provider.of<LocalizationService>(context, listen: false);
+          
+          return FutureBuilder<void>(
+            future: localService.loadLanguageFromFirestore(),
+            builder: (context, langSnapshot) {
+              // Show loading while language loads
+              if (langSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading...'),
+                      ],
+                    ),
+                  ),
+                );
               }
-            });
-          }
-          return const MainFeedScreen();
+              
+              // Language loaded - show home screen
+              return const MainFeedScreen();
+            },
+          );
         }
         
-        // User signed out - reset language loaded flag
-        _languageLoaded = false;
+        // User signed out - show login screen
         return const LoginScreen();
       },
     );
