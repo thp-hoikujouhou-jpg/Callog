@@ -113,7 +113,10 @@ class AuthService {
   // Sign out
   Future<void> signOut() async {
     try {
-      await _googleSignIn.signOut();
+      // Sign out from Google if user was signed in with Google
+      if (_googleSignIn.currentUser != null) {
+        await _googleSignIn.signOut();
+      }
       await _auth.signOut();
     } catch (e) {
       rethrow;

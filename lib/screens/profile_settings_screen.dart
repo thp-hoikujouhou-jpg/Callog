@@ -81,7 +81,11 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         final authService = Provider.of<AuthService>(context, listen: false);
         final user = authService.currentUser;
         if (user != null) {
-          await authService.updateUserProfile(user.uid, {'username': result});
+          // Update both username and displayName together
+          await authService.updateUserProfile(user.uid, {
+            'username': result,
+            'displayName': result,
+          });
           await _loadUserProfile();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
