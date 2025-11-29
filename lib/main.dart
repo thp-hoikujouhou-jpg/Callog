@@ -81,8 +81,25 @@ class CallogApp extends StatelessWidget {
   }
 }
 
-class AuthWrapper extends StatelessWidget {
+class AuthWrapper extends StatefulWidget {
   const AuthWrapper({super.key});
+
+  @override
+  State<AuthWrapper> createState() => _AuthWrapperState();
+}
+
+class _AuthWrapperState extends State<AuthWrapper> {
+  @override
+  void initState() {
+    super.initState();
+    // Load language after first frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      final localService = Provider.of<LocalizationService>(context, listen: false);
+      localService.loadLanguageFromFirestore().then((_) {
+        if (mounted) setState(() {});
+      });
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -98,6 +115,9 @@ class AuthWrapper extends StatelessWidget {
         }
         
         if (snapshot.hasData) {
+          // Load language when user logs in
+          final localService = Provider.of<LocalizationService>(context, listen: false);
+          localService.loadLanguageFromFirestore();
           return const MainFeedScreen();
         }
         

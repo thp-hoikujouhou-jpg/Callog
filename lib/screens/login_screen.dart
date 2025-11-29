@@ -339,11 +339,12 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ))
                               .toList(),
-                          onChanged: (value) {
+                          onChanged: (value) async {
                             if (value != null) {
-                              setState(() {
-                                localService.setLanguage(value);
-                              });
+                              await localService.setLanguage(value);
+                              if (mounted) {
+                                setState(() {});
+                              }
                             }
                           },
                         ),

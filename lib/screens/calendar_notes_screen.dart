@@ -89,20 +89,21 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     Icon(
                       Icons.event_note,
                       size: 80,
-                      color: Colors.grey.shade400,
+                      color: Colors.blue.shade300,
                     ),
                     const SizedBox(height: 16),
                     Text(
                       localService.translate('meeting_notes'),
                       style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                            color: Colors.grey.shade700,
+                            color: Colors.blue.shade700,
+                            fontWeight: FontWeight.bold,
                           ),
                     ),
                     const SizedBox(height: 8),
                     Text(
                       '${localService.translate('no_notes_for')} ${DateFormat.yMMMd(locale).format(_selectedDate)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.grey.shade600,
+                            color: Colors.blue.shade600,
                           ),
                     ),
                   ],

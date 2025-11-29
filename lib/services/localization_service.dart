@@ -1,11 +1,34 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+
 class LocalizationService {
   static final LocalizationService _instance = LocalizationService._internal();
   factory LocalizationService() => _instance;
   LocalizationService._internal();
 
   String _currentLanguage = 'en';
+  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseAuth _auth = FirebaseAuth.instance;
   
   String get currentLanguage => _currentLanguage;
+
+  // Load language from Firestore
+  Future<void> loadLanguageFromFirestore() async {
+    try {
+      final user = _auth.currentUser;
+      if (user != null) {
+        final doc = await _firestore.collection('users').doc(user.uid).get();
+        if (doc.exists) {
+          final language = doc.data()?['language'] as String?;
+          if (language != null && supportedLanguages.containsKey(language)) {
+            _currentLanguage = language;
+          }
+        }
+      }
+    } catch (e) {
+      // If error, keep default language
+    }
+  }
 
   // Supported languages
   static const Map<String, String> supportedLanguages = {
@@ -27,9 +50,21 @@ class LocalizationService {
     'fr': '🇫🇷',
   };
 
-  void setLanguage(String languageCode) {
+  Future<void> setLanguage(String languageCode) async {
     if (supportedLanguages.containsKey(languageCode)) {
       _currentLanguage = languageCode;
+      
+      // Save to Firestore
+      try {
+        final user = _auth.currentUser;
+        if (user != null) {
+          await _firestore.collection('users').doc(user.uid).update({
+            'language': languageCode,
+          });
+        }
+      } catch (e) {
+        // If error, language is still set locally
+      }
     }
   }
 

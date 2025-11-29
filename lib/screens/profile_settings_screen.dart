@@ -559,10 +559,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                           style: const TextStyle(fontSize: 24),
                                         ),
                                         title: Text(entry.value),
-                                        onTap: () {
-                                          localService.setLanguage(entry.key);
-                                          Navigator.pop(context);
-                                          setState(() {});
+                                        onTap: () async {
+                                          await localService.setLanguage(entry.key);
+                                          if (mounted) {
+                                            Navigator.pop(context);
+                                            setState(() {});
+                                          }
                                         },
                                       ))
                                   .toList(),
