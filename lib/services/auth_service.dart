@@ -3,6 +3,7 @@ import 'package:google_sign_in/google_sign_in.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 import '../models/user_profile.dart';
 
 class AuthService {
@@ -182,17 +183,34 @@ class AuthService {
     }
   }
 
-  // Upload profile image to Firebase Storage
-  Future<String?> uploadProfileImage(String uid, File imageFile) async {
+  // Upload profile image to Firebase Storage (supports both Web and Mobile)
+  Future<String?> uploadProfileImage(String uid, dynamic imageFile) async {
     try {
       // Create a unique file path in Firebase Storage
       final storageRef = _storage.ref().child('profile_images/$uid/${DateTime.now().millisecondsSinceEpoch}.jpg');
       
-      // Upload the file
-      final uploadTask = await storageRef.putFile(imageFile);
+      // Upload the file (Web uses putData, Mobile uses putFile)
+      final UploadTask uploadTask;
+      if (kIsWeb) {
+        // For Web: Read file as bytes and use putData (XFile has readAsBytes method)
+        final bytes = await imageFile.readAsBytes();
+        uploadTask = storageRef.putData(
+          bytes,
+          SettableMetadata(
+            contentType: 'image/jpeg',
+          ),
+        );
+      } else {
+        // For Mobile: Use putFile with File object
+        final file = imageFile is File ? imageFile : File(imageFile.path);
+        uploadTask = storageRef.putFile(file);
+      }
+      
+      // Wait for upload to complete
+      final snapshot = await uploadTask;
       
       // Get the download URL
-      final downloadUrl = await uploadTask.ref.getDownloadURL();
+      final downloadUrl = await snapshot.ref.getDownloadURL();
       
       return downloadUrl;
     } catch (e) {

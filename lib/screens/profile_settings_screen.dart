@@ -6,6 +6,7 @@ import '../models/user_profile.dart';
 import 'login_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
+import 'package:flutter/foundation.dart' show kIsWeb;
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -71,7 +72,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           
           if (user != null) {
             // Upload image to Firebase Storage
-            final imageFile = File(image.path);
+            // For Web: pass XFile directly, For Mobile: convert to File
+            final imageFile = kIsWeb ? image : File(image.path);
             final photoUrl = await authService.uploadProfileImage(user.uid, imageFile);
             
             if (photoUrl != null) {
