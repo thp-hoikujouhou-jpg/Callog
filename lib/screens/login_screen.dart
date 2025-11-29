@@ -19,6 +19,14 @@ class _LoginScreenState extends State<LoginScreen> {
   bool _obscurePassword = true;
 
   @override
+  void initState() {
+    super.initState();
+    // Reset state when login screen is initialized
+    _isLoading = false;
+    _isSignUp = false;
+  }
+
+  @override
   void dispose() {
     _emailController.dispose();
     _passwordController.dispose();
@@ -106,15 +114,33 @@ class _LoginScreenState extends State<LoginScreen> {
     } catch (e) {
       if (mounted) {
         final localService = Provider.of<LocalizationService>(context, listen: false);
+        String errorMessage = e.toString();
+        
+        // Provide user-friendly error messages
+        if (errorMessage.contains('user-not-found')) {
+          errorMessage = 'No user found with this email';
+        } else if (errorMessage.contains('wrong-password')) {
+          errorMessage = 'Incorrect password';
+        } else if (errorMessage.contains('invalid-email')) {
+          errorMessage = 'Invalid email address';
+        } else if (errorMessage.contains('user-disabled')) {
+          errorMessage = 'This account has been disabled';
+        } else if (errorMessage.contains('invalid-credential')) {
+          errorMessage = 'Invalid email or password';
+        }
+        
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${localService.translate('error')}: ${e.toString()}'),
+            content: Text('${localService.translate('error')}: $errorMessage'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
     } finally {
-      if (mounted) setState(() => _isLoading = false);
+      if (mounted) {
+        setState(() => _isLoading = false);
+      }
     }
   }
 
