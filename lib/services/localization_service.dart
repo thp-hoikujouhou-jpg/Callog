@@ -386,5 +386,29 @@ class LocalizationService {
       'es': 'Éxito',
       'fr': 'Succès',
     },
+    'profile_updated': {
+      'en': 'Profile updated successfully',
+      'ja': 'プロフィールが更新されました',
+      'ko': '프로필이 업데이트되었습니다',
+      'zh': '个人资料已更新',
+      'es': 'Perfil actualizado exitosamente',
+      'fr': 'Profil mis à jour avec succès',
+    },
+    'no_notes_for': {
+      'en': 'No notes for',
+      'ja': 'メモなし:',
+      'ko': '노트 없음:',
+      'zh': '无笔记:',
+      'es': 'No hay notas para',
+      'fr': 'Aucune note pour',
+    },
+    'add_note_for': {
+      'en': 'Add note for',
+      'ja': 'メモを追加:',
+      'ko': '노트 추가:',
+      'zh': '添加笔记:',
+      'es': 'Agregar nota para',
+      'fr': 'Ajouter une note pour',
+    },
   };
 }

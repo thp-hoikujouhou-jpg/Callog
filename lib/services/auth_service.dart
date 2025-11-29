@@ -153,9 +153,9 @@ class AuthService {
   }
 
   // Update user profile
-  Future<void> updateUserProfile(UserProfile profile) async {
+  Future<void> updateUserProfile(String uid, Map<String, dynamic> data) async {
     try {
-      await _firestore.collection('users').doc(profile.uid).update(profile.toMap());
+      await _firestore.collection('users').doc(uid).update(data);
     } catch (e) {
       rethrow;
     }

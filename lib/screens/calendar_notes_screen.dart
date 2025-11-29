@@ -82,7 +82,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     ),
                     const SizedBox(height: 8),
                     Text(
-                      'No notes for ${DateFormat('MMM d, y').format(_selectedDate)}',
+                      '${localService.translate('no_notes_for')} ${DateFormat('MMM d, y').format(_selectedDate)}',
                       style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                             color: Colors.grey.shade600,
                           ),
@@ -98,7 +98,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('Add note for ${DateFormat('MMM d').format(_selectedDate)}'),
+              content: Text('${localService.translate('add_note_for')} ${DateFormat('MMM d').format(_selectedDate)}'),
             ),
           );
         },

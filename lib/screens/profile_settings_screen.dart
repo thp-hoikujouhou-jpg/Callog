@@ -47,6 +47,175 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
+  Future<void> _editUsername() async {
+    final controller = TextEditingController(text: _userProfile?.username ?? '');
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('username')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: localService.translate('username'),
+            border: const OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+        if (user != null) {
+          await authService.updateUserProfile(user.uid, {'username': result});
+          await _loadUserProfile();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localService.translate('profile_updated')),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+    controller.dispose();
+  }
+
+  Future<void> _editEmail() async {
+    final controller = TextEditingController(text: _userProfile?.email ?? '');
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('email')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: localService.translate('email'),
+            border: const OutlineInputBorder(),
+          ),
+          keyboardType: TextInputType.emailAddress,
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+        if (user != null) {
+          await authService.updateUserProfile(user.uid, {'email': result});
+          await _loadUserProfile();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localService.translate('profile_updated')),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+    controller.dispose();
+  }
+
+  Future<void> _editLocation() async {
+    final controller = TextEditingController(text: _userProfile?.location ?? '');
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('location')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: localService.translate('location'),
+            border: const OutlineInputBorder(),
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+        if (user != null) {
+          await authService.updateUserProfile(user.uid, {'location': result});
+          await _loadUserProfile();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localService.translate('profile_updated')),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+    controller.dispose();
+  }
+
   Future<void> _pickImage() async {
     try {
       final XFile? image = await _picker.pickImage(
@@ -242,18 +411,24 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       leading: const Icon(Icons.person),
                       title: Text(localService.translate('username')),
                       subtitle: Text(_userProfile?.username ?? 'Not set'),
+                      trailing: const Icon(Icons.edit),
+                      onTap: () => _editUsername(),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.email),
                       title: Text(localService.translate('email')),
                       subtitle: Text(_userProfile?.email ?? 'Not set'),
+                      trailing: const Icon(Icons.edit),
+                      onTap: () => _editEmail(),
                     ),
                     const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.location_on),
                       title: Text(localService.translate('location')),
                       subtitle: Text(_userProfile?.location ?? 'Not set'),
+                      trailing: const Icon(Icons.edit),
+                      onTap: () => _editLocation(),
                     ),
                     const Divider(height: 1),
                     ListTile(
