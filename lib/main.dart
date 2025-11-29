@@ -89,16 +89,13 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
+  bool _languageLoaded = false;
+
   @override
   void initState() {
     super.initState();
-    // Load language after first frame
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      final localService = Provider.of<LocalizationService>(context, listen: false);
-      localService.loadLanguageFromFirestore().then((_) {
-        if (mounted) setState(() {});
-      });
-    });
+    // Reset language loaded flag
+    _languageLoaded = false;
   }
 
   @override
@@ -114,13 +111,27 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        if (snapshot.hasData) {
-          // Load language when user logs in
-          final localService = Provider.of<LocalizationService>(context, listen: false);
-          localService.loadLanguageFromFirestore();
+        if (snapshot.hasData && snapshot.data != null) {
+          // Load language when user logs in (only once)
+          if (!_languageLoaded) {
+            _languageLoaded = true;
+            WidgetsBinding.instance.addPostFrameCallback((_) {
+              if (mounted) {
+                final localService = Provider.of<LocalizationService>(context, listen: false);
+                localService.loadLanguageFromFirestore().catchError((e) {
+                  // Silently handle error if user signs out during loading
+                  if (kDebugMode) {
+                    debugPrint('Error loading language: $e');
+                  }
+                });
+              }
+            });
+          }
           return const MainFeedScreen();
         }
         
+        // User signed out - reset language loaded flag
+        _languageLoaded = false;
         return const LoginScreen();
       },
     );

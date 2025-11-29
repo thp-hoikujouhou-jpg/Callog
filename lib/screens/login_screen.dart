@@ -24,6 +24,9 @@ class _LoginScreenState extends State<LoginScreen> {
     // Reset state when login screen is initialized
     _isLoading = false;
     _isSignUp = false;
+    // Clear text fields when returning to login screen
+    _emailController.clear();
+    _passwordController.clear();
   }
 
   @override
