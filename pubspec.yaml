@@ -20,9 +20,6 @@ dependencies:
   # Google Sign In
   google_sign_in: 6.2.2
   
-  # WebRTC for Voice/Video Calls
-  flutter_webrtc: 0.11.7
-  
   # State Management
   provider: 6.1.5+1
   
@@ -42,9 +39,6 @@ dependencies:
   
   # Internationalization
   intl: 0.19.0
-  
-  # Audio Recording
-  record: 5.1.2
   
   # UI Components
   cupertino_icons: 1.0.8
