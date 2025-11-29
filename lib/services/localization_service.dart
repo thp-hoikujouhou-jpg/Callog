@@ -1,7 +1,8 @@
+import 'package:flutter/foundation.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 
-class LocalizationService {
+class LocalizationService extends ChangeNotifier {
   static final LocalizationService _instance = LocalizationService._internal();
   factory LocalizationService() => _instance;
   LocalizationService._internal();
@@ -22,6 +23,7 @@ class LocalizationService {
           final language = doc.data()?['language'] as String?;
           if (language != null && supportedLanguages.containsKey(language)) {
             _currentLanguage = language;
+            notifyListeners(); // Notify all listeners when language is loaded
           }
         }
       }
@@ -53,6 +55,7 @@ class LocalizationService {
   Future<void> setLanguage(String languageCode) async {
     if (supportedLanguages.containsKey(languageCode)) {
       _currentLanguage = languageCode;
+      notifyListeners(); // Notify all listeners immediately when language changes
       
       // Save to Firestore
       try {

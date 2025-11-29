@@ -58,7 +58,7 @@ class CallogApp extends StatelessWidget {
   Widget build(BuildContext context) {
     return MultiProvider(
       providers: [
-        Provider<LocalizationService>(
+        ChangeNotifierProvider<LocalizationService>(
           create: (_) => LocalizationService(),
         ),
         Provider<AuthService>(
