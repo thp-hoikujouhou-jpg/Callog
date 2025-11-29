@@ -104,36 +104,23 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        // User is authenticated - load language then show home screen
+        // User is authenticated - show home screen immediately and load language in background
         if (snapshot.hasData && snapshot.data != null) {
-          final localService = Provider.of<LocalizationService>(context, listen: false);
+          // Load language in background (non-blocking)
+          WidgetsBinding.instance.addPostFrameCallback((_) {
+            if (mounted) {
+              final localService = Provider.of<LocalizationService>(context, listen: false);
+              localService.loadLanguageFromFirestore();
+            }
+          });
           
-          return FutureBuilder<void>(
-            future: localService.loadLanguageFromFirestore(),
-            builder: (context, langSnapshot) {
-              // Show loading while language loads
-              if (langSnapshot.connectionState == ConnectionState.waiting) {
-                return const Scaffold(
-                  body: Center(
-                    child: Column(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        CircularProgressIndicator(),
-                        SizedBox(height: 16),
-                        Text('Loading...'),
-                      ],
-                    ),
-                  ),
-                );
-              }
-              
-              // Language loaded - show home screen
-              return const MainFeedScreen();
-            },
-          );
+          // Show home screen immediately without waiting
+          return const MainFeedScreen();
         }
         
-        // User signed out - show login screen
+        // User signed out - reset language cache and show login screen
+        final localService = Provider.of<LocalizationService>(context, listen: false);
+        localService.resetCache();
         return const LoginScreen();
       },
     );

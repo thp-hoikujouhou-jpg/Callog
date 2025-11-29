@@ -10,26 +10,48 @@ class LocalizationService extends ChangeNotifier {
   String _currentLanguage = 'en';
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
+  String? _cachedUserId;
+  bool _isLoading = false;
   
   String get currentLanguage => _currentLanguage;
 
-  // Load language from Firestore
+  // Load language from Firestore with caching
   Future<void> loadLanguageFromFirestore() async {
+    // Prevent duplicate loading
+    if (_isLoading) return;
+    
     try {
       final user = _auth.currentUser;
       if (user != null) {
+        // Skip if already loaded for this user
+        if (_cachedUserId == user.uid) return;
+        
+        _isLoading = true;
         final doc = await _firestore.collection('users').doc(user.uid).get();
         if (doc.exists) {
           final language = doc.data()?['language'] as String?;
           if (language != null && supportedLanguages.containsKey(language)) {
             _currentLanguage = language;
+            _cachedUserId = user.uid;
             notifyListeners(); // Notify all listeners when language is loaded
           }
         }
       }
     } catch (e) {
       // If error, keep default language
+      if (kDebugMode) {
+        debugPrint('Error loading language: $e');
+      }
+    } finally {
+      _isLoading = false;
     }
+  }
+  
+  // Reset cache when user signs out
+  void resetCache() {
+    _cachedUserId = null;
+    _currentLanguage = 'en';
+    notifyListeners();
   }
 
   // Supported languages
