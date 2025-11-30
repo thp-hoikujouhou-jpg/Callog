@@ -29,12 +29,74 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   void initState() {
     super.initState();
     _loadFriends();
+    _globalCleanupOldMessages(); // Clean up old messages on app start
   }
 
   @override
   void dispose() {
     _messageController.dispose();
     super.dispose();
+  }
+
+  Future<void> _cleanupOldMessages(String chatId) async {
+    try {
+      final sevenDaysAgo = DateTime.now().subtract(const Duration(days: 7));
+      
+      // Query old messages
+      final oldMessages = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('timestamp', isLessThan: Timestamp.fromDate(sevenDaysAgo))
+          .limit(100)
+          .get();
+      
+      // Delete old messages in batch
+      final batch = _firestore.batch();
+      for (var doc in oldMessages.docs) {
+        batch.delete(doc.reference);
+      }
+      
+      if (oldMessages.docs.isNotEmpty) {
+        await batch.commit();
+      }
+    } catch (e) {
+      // Silently fail - cleanup is not critical
+    }
+  }
+
+  Future<void> _globalCleanupOldMessages() async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return;
+
+      // Get all chats for current user
+      final chatsSnapshot = await _firestore
+          .collection('chats')
+          .where('user1Id', isEqualTo: currentUser.uid)
+          .get();
+      
+      final chatsSnapshot2 = await _firestore
+          .collection('chats')
+          .where('user2Id', isEqualTo: currentUser.uid)
+          .get();
+      
+      // Combine chat IDs
+      final allChatIds = <String>{};
+      for (var doc in chatsSnapshot.docs) {
+        allChatIds.add(doc.id);
+      }
+      for (var doc in chatsSnapshot2.docs) {
+        allChatIds.add(doc.id);
+      }
+      
+      // Clean up old messages from all chats
+      for (var chatId in allChatIds) {
+        await _cleanupOldMessages(chatId);
+      }
+    } catch (e) {
+      // Silently fail - cleanup is not critical
+    }
   }
 
   Future<void> _loadFriends() async {
@@ -135,6 +197,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
       final chatId = _getChatId(currentUser.uid, _selectedFriendId!);
       final messageText = _messageController.text.trim();
+      final now = DateTime.now();
       
       // Create chat document if it doesn't exist
       await _firestore.collection('chats').doc(chatId).set({
@@ -144,7 +207,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         'lastMessageTime': FieldValue.serverTimestamp(),
       }, SetOptions(merge: true));
 
-      // Add message
+      // Add message with current timestamp
       await _firestore
           .collection('chats')
           .doc(chatId)
@@ -153,9 +216,13 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         'senderId': currentUser.uid,
         'receiverId': _selectedFriendId,
         'text': messageText,
-        'timestamp': FieldValue.serverTimestamp(),
+        'timestamp': Timestamp.fromDate(now),
         'read': false,
+        'expiresAt': Timestamp.fromDate(now.add(const Duration(days: 7))),
       });
+      
+      // Clean up old messages (older than 7 days)
+      _cleanupOldMessages(chatId);
 
       _messageController.clear();
       
@@ -521,6 +588,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 .collection('chats')
                 .doc(chatId)
                 .collection('messages')
+                .where('timestamp', isGreaterThan: DateTime.now().subtract(const Duration(days: 7)))
                 .orderBy('timestamp', descending: true)
                 .limit(50)
                 .snapshots(),
