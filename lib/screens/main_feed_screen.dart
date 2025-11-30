@@ -295,7 +295,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             // Friends story-style row
             if (_friends.isNotEmpty)
               Container(
-                height: 120,
+                height: 90,
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
@@ -311,70 +311,55 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       child: Container(
                         width: 80,
                         margin: const EdgeInsets.symmetric(horizontal: 6),
-                        child: Column(
+                        child: Stack(
                           children: [
-                            Stack(
-                              children: [
-                                Container(
-                                  width: isSelected ? 70 : 64,
-                                  height: isSelected ? 70 : 64,
+                            Container(
+                              width: isSelected ? 70 : 64,
+                              height: isSelected ? 70 : 64,
+                              decoration: BoxDecoration(
+                                shape: BoxShape.circle,
+                                border: Border.all(
+                                  color: hasUnread 
+                                      ? Colors.green 
+                                      : (isSelected ? Colors.blue : Colors.grey.shade300),
+                                  width: hasUnread ? 3 : (isSelected ? 3 : 2),
+                                ),
+                              ),
+                              child: Padding(
+                                padding: const EdgeInsets.all(3),
+                                child: CircleAvatar(
+                                  radius: isSelected ? 32 : 28,
+                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundImage: friend['photoUrl'] != null
+                                      ? NetworkImage(friend['photoUrl'])
+                                      : null,
+                                  child: friend['photoUrl'] == null
+                                      ? Text(
+                                          (friend['username'] ?? '?')[0].toUpperCase(),
+                                          style: TextStyle(
+                                            color: Colors.white,
+                                            fontSize: isSelected ? 24 : 20,
+                                            fontWeight: FontWeight.bold,
+                                          ),
+                                        )
+                                      : null,
+                                ),
+                              ),
+                            ),
+                            if (hasUnread && !isSelected)
+                              Positioned(
+                                right: 0,
+                                top: 0,
+                                child: Container(
+                                  width: 16,
+                                  height: 16,
                                   decoration: BoxDecoration(
+                                    color: Colors.green,
                                     shape: BoxShape.circle,
-                                    border: Border.all(
-                                      color: hasUnread 
-                                          ? Colors.green 
-                                          : (isSelected ? Colors.blue : Colors.grey.shade300),
-                                      width: hasUnread ? 3 : (isSelected ? 3 : 2),
-                                    ),
-                                  ),
-                                  child: Padding(
-                                    padding: const EdgeInsets.all(3),
-                                    child: CircleAvatar(
-                                      radius: isSelected ? 32 : 28,
-                                      backgroundColor: Colors.blue.shade600,
-                                      backgroundImage: friend['photoUrl'] != null
-                                          ? NetworkImage(friend['photoUrl'])
-                                          : null,
-                                      child: friend['photoUrl'] == null
-                                          ? Text(
-                                              (friend['username'] ?? '?')[0].toUpperCase(),
-                                              style: TextStyle(
-                                                color: Colors.white,
-                                                fontSize: isSelected ? 24 : 20,
-                                                fontWeight: FontWeight.bold,
-                                              ),
-                                            )
-                                          : null,
-                                    ),
+                                    border: Border.all(color: Colors.white, width: 2),
                                   ),
                                 ),
-                                if (hasUnread && !isSelected)
-                                  Positioned(
-                                    right: 0,
-                                    top: 0,
-                                    child: Container(
-                                      width: 16,
-                                      height: 16,
-                                      decoration: BoxDecoration(
-                                        color: Colors.green,
-                                        shape: BoxShape.circle,
-                                        border: Border.all(color: Colors.white, width: 2),
-                                      ),
-                                    ),
-                                  ),
-                              ],
-                            ),
-                            const SizedBox(height: 6),
-                            Text(
-                              friend['username'] ?? 'Unknown',
-                              style: TextStyle(
-                                fontSize: 12,
-                                fontWeight: isSelected ? FontWeight.bold : FontWeight.normal,
                               ),
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              textAlign: TextAlign.center,
-                            ),
                           ],
                         ),
                       ),
