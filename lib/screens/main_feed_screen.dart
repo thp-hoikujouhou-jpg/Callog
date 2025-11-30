@@ -225,16 +225,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       _cleanupOldMessages(chatId);
 
       _messageController.clear();
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メッセージを送信しました'),
-            backgroundColor: Colors.green,
-            duration: Duration(seconds: 1),
-          ),
-        );
-      }
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
