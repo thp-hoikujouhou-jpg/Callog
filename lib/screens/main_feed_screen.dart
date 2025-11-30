@@ -161,8 +161,14 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final chatId = _getChatId(currentUserId, friendId);
       
       if (kDebugMode) {
-        debugPrint('🔍 Setting up listener for friend: $friendId, chatId: $chatId, currentUser: $currentUserId');
-        debugPrint('   Query: messages where senderId == $friendId AND read == false');
+        debugPrint('🔍 ================================');
+        debugPrint('🔍 Setting up listener:');
+        debugPrint('   Current User: $currentUserId');
+        debugPrint('   Friend ID: $friendId');
+        debugPrint('   Chat ID: $chatId');
+        debugPrint('   Collection: chats/$chatId/messages');
+        debugPrint('   Query: senderId == $friendId AND read == false');
+        debugPrint('🔍 ================================');
       }
       
       // Set up real-time listener for unread messages
@@ -179,15 +185,34 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           final unreadCount = snapshot.docs.length;
           
           if (kDebugMode) {
-            debugPrint('📩 Listener update for friend $friendId: $hasUnread ($unreadCount unread)');
+            debugPrint('📩 ================================');
+            debugPrint('📩 Listener update:');
+            debugPrint('   Friend ID: $friendId');
+            debugPrint('   Chat ID: $chatId');
+            debugPrint('   Has Unread: $hasUnread');
+            debugPrint('   Unread Count: $unreadCount');
+            debugPrint('   Total Docs: ${snapshot.docs.length}');
             if (snapshot.docs.isNotEmpty) {
+              debugPrint('   Messages:');
               for (var doc in snapshot.docs) {
                 final data = doc.data();
-                debugPrint('   - [${doc.id}] from ${data['senderId']} to ${data['receiverId']}: "${data['text']}" (read: ${data['read']})');
+                debugPrint('     • ID: ${doc.id}');
+                debugPrint('       From: ${data['senderId']}');
+                debugPrint('       To: ${data['receiverId']}');
+                debugPrint('       Text: "${data['text']}"');
+                debugPrint('       Read: ${data['read']}');
               }
             } else {
-              debugPrint('   - No unread messages found');
+              debugPrint('   No unread messages found');
             }
+            debugPrint('📩 ================================');
+          }
+          
+          // Update state for this specific friend
+          final oldUnreadCount = _unreadMessageCounts[friendId] ?? 0;
+          
+          if (kDebugMode) {
+            debugPrint('🔄 Updating state: friend=$friendId, oldCount=$oldUnreadCount, newCount=$unreadCount');
           }
           
           setState(() {
@@ -197,6 +222,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             // Sort friends by unread message count (descending)
             _sortFriendsByUnreadCount();
           });
+          
+          if (kDebugMode) {
+            debugPrint('✅ State updated and sorted for friend: $friendId');
+          }
         }
       }, onError: (error) {
         if (kDebugMode) {
@@ -364,11 +393,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final now = DateTime.now();
       
       if (kDebugMode) {
+        debugPrint('📤 ================================');
         debugPrint('📤 Sending message:');
-        debugPrint('   From: ${currentUser.uid}');
-        debugPrint('   To: $_selectedFriendId');
-        debugPrint('   ChatId: $chatId');
+        debugPrint('   From (senderId): ${currentUser.uid}');
+        debugPrint('   To (receiverId): $_selectedFriendId');
+        debugPrint('   Chat ID: $chatId');
+        debugPrint('   Collection: chats/$chatId/messages');
         debugPrint('   Text: "$messageText"');
+        debugPrint('   Read: false');
+        debugPrint('📤 ================================');
       }
       
       // Create chat document if it doesn't exist
@@ -394,7 +427,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       });
       
       if (kDebugMode) {
-        debugPrint('✅ Message sent successfully: ${messageDoc.id}');
+        debugPrint('✅ ================================');
+        debugPrint('✅ Message sent successfully!');
+        debugPrint('   Message ID: ${messageDoc.id}');
+        debugPrint('   Path: chats/$chatId/messages/${messageDoc.id}');
+        debugPrint('   Timestamp: ${Timestamp.fromDate(now)}');
+        debugPrint('✅ ================================');
       }
       
       _messageController.clear();
