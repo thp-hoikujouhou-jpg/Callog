@@ -424,10 +424,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
                                 border: Border.all(
-                                  color: hasUnread 
-                                      ? Colors.green 
-                                      : (isSelected ? Colors.blue : Colors.grey.shade300),
-                                  width: hasUnread ? 3 : (isSelected ? 3 : 2),
+                                  color: isSelected
+                                      ? Colors.blue  // Selected: always blue
+                                      : (hasUnread ? Colors.green : Colors.grey.shade300),
+                                  width: isSelected || hasUnread ? 3 : 2,
                                 ),
                               ),
                               child: Padding(
