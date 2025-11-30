@@ -457,7 +457,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localService = Provider.of<LocalizationService>(context);
+    // Use listen: false to avoid rebuild issues during login
+    final localService = Provider.of<LocalizationService>(context, listen: false);
 
     return Scaffold(
       appBar: AppBar(

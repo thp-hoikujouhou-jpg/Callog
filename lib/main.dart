@@ -111,11 +111,13 @@ class _AuthWrapperState extends State<AuthWrapper> {
         
         // User is authenticated - show home screen immediately and load language in background
         if (snapshot.hasData && snapshot.data != null) {
+          // Get LocalizationService before addPostFrameCallback
+          final localService = Provider.of<LocalizationService>(context, listen: false);
+          
           // Load language in background (non-blocking) with error handling
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (mounted) {
               try {
-                final localService = Provider.of<LocalizationService>(context, listen: false);
                 await localService.loadLanguageFromFirestore();
               } catch (e) {
                 // Ignore language loading errors - use default English
