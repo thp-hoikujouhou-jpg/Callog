@@ -159,6 +159,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       
       final chatId = _getChatId(currentUserId, friendId);
       
+      if (kDebugMode) {
+        debugPrint('🔍 Setting up listener for friend: $friendId, chatId: $chatId, currentUser: $currentUserId');
+      }
+      
       // Set up real-time listener for unread messages
       final listener = _firestore
           .collection('chats')
@@ -169,13 +173,21 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           .snapshots()
           .listen((snapshot) {
         if (mounted) {
-          setState(() {
-            _hasUnreadMessages[friendId] = snapshot.docs.isNotEmpty;
-          });
+          final hasUnread = snapshot.docs.isNotEmpty;
           
           if (kDebugMode) {
-            debugPrint('📩 Friend $friendId unread status: ${snapshot.docs.isNotEmpty} (${snapshot.docs.length} unread)');
+            debugPrint('📩 Friend $friendId unread status: $hasUnread (${snapshot.docs.length} unread messages)');
+            if (snapshot.docs.isNotEmpty) {
+              for (var doc in snapshot.docs) {
+                final data = doc.data();
+                debugPrint('   - Message from ${data['senderId']}: ${data['text']} (read: ${data['read']})');
+              }
+            }
           }
+          
+          setState(() {
+            _hasUnreadMessages[friendId] = hasUnread;
+          });
         }
       });
       
@@ -230,9 +242,18 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   Future<void> _markMessagesAsRead(String friendId) async {
     try {
       final currentUser = _auth.currentUser;
-      if (currentUser == null) return;
+      if (currentUser == null) {
+        if (kDebugMode) {
+          debugPrint('❌ Cannot mark as read: No current user');
+        }
+        return;
+      }
 
       final chatId = _getChatId(currentUser.uid, friendId);
+      
+      if (kDebugMode) {
+        debugPrint('🔄 Marking messages as read: friendId=$friendId, chatId=$chatId, currentUser=${currentUser.uid}');
+      }
       
       // Get all unread messages from this friend
       final unreadMessages = await _firestore
@@ -243,16 +264,24 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           .where('read', isEqualTo: false)
           .get();
       
+      if (kDebugMode) {
+        debugPrint('📬 Found ${unreadMessages.docs.length} unread messages to mark as read');
+      }
+      
       // Mark all as read using batch
       if (unreadMessages.docs.isNotEmpty) {
         final batch = _firestore.batch();
         for (var doc in unreadMessages.docs) {
+          if (kDebugMode) {
+            final data = doc.data();
+            debugPrint('   - Marking as read: ${doc.id} from ${data['senderId']}');
+          }
           batch.update(doc.reference, {'read': true});
         }
         await batch.commit();
         
         if (kDebugMode) {
-          debugPrint('✅ Marked ${unreadMessages.docs.length} messages as read for friend: $friendId');
+          debugPrint('✅ Successfully marked ${unreadMessages.docs.length} messages as read for friend: $friendId');
         }
         
         // Force update UI state after successful Firestore update
@@ -260,6 +289,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           setState(() {
             _hasUnreadMessages[friendId] = false;
           });
+        }
+      } else {
+        if (kDebugMode) {
+          debugPrint('ℹ️ No unread messages found for friend: $friendId');
         }
       }
     } catch (e) {
@@ -418,20 +451,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                 ),
                               ),
                             ),
-                            if (hasUnread && !isSelected)
-                              Positioned(
-                                right: 0,
-                                top: 0,
-                                child: Container(
-                                  width: 16,
-                                  height: 16,
-                                  decoration: BoxDecoration(
-                                    color: Colors.green,
-                                    shape: BoxShape.circle,
-                                    border: Border.all(color: Colors.white, width: 2),
-                                  ),
-                                ),
-                              ),
                           ],
                         ),
                       ),
