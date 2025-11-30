@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
-import '../services/localization_service.dart';
 import '../services/auth_service.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -38,28 +37,27 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> _showPasswordResetDialog() async {
     final emailController = TextEditingController();
-    final localService = Provider.of<LocalizationService>(context, listen: false);
     
     final result = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(localService.translate('reset_password')),
+        title: const Text('Reset Password'),
         content: TextField(
           controller: emailController,
-          decoration: InputDecoration(
-            labelText: localService.translate('email'),
-            border: const OutlineInputBorder(),
+          decoration: const InputDecoration(
+            labelText: 'Email',
+            border: OutlineInputBorder(),
           ),
           keyboardType: TextInputType.emailAddress,
         ),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: Text(localService.translate('cancel')),
+            child: const Text('Cancel'),
           ),
           TextButton(
             onPressed: () => Navigator.pop(context, true),
-            child: Text(localService.translate('send')),
+            child: const Text('Send'),
           ),
         ],
       ),
@@ -71,8 +69,8 @@ class _LoginScreenState extends State<LoginScreen> {
         await authService.sendPasswordResetEmail(emailController.text.trim());
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: Text(localService.translate('password_reset_sent')),
+            const SnackBar(
+              content: Text('Password reset email sent'),
               backgroundColor: Colors.green,
             ),
           );
@@ -124,7 +122,6 @@ class _LoginScreenState extends State<LoginScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final localService = Provider.of<LocalizationService>(context, listen: false);
         String errorMessage = e.toString();
         
         // Provide user-friendly error messages
@@ -142,7 +139,7 @@ class _LoginScreenState extends State<LoginScreen> {
         
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${localService.translate('error')}: $errorMessage'),
+            content: Text('Error: $errorMessage'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -169,10 +166,9 @@ class _LoginScreenState extends State<LoginScreen> {
       // AuthWrapper will handle navigation
     } catch (e) {
       if (mounted) {
-        final localService = Provider.of<LocalizationService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('${localService.translate('error')}: ${e.toString()}'),
+            content: Text('Error: ${e.toString()}'),
             backgroundColor: Colors.red,
           ),
         );
@@ -184,7 +180,8 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
-    final localService = Provider.of<LocalizationService>(context);
+    // Fixed English display on login screen
+    // Language can be changed later in Profile Settings
 
     return Scaffold(
       body: SafeArea(
@@ -210,7 +207,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         ),
                         const SizedBox(height: 16),
                         Text(
-                          localService.translate('app_name'),
+                          'Callog',
                           style: Theme.of(context).textTheme.headlineMedium?.copyWith(
                                 fontWeight: FontWeight.bold,
                                 color: Colors.blue.shade700,
@@ -226,10 +223,10 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 32),
                         TextFormField(
                           controller: _emailController,
-                          decoration: InputDecoration(
-                            labelText: localService.translate('email'),
-                            prefixIcon: const Icon(Icons.email),
-                            border: const OutlineInputBorder(),
+                          decoration: const InputDecoration(
+                            labelText: 'Email',
+                            prefixIcon: Icon(Icons.email),
+                            border: OutlineInputBorder(),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
@@ -246,7 +243,7 @@ class _LoginScreenState extends State<LoginScreen> {
                         TextFormField(
                           controller: _passwordController,
                           decoration: InputDecoration(
-                            labelText: localService.translate('password'),
+                            labelText: 'Password',
                             prefixIcon: const Icon(Icons.lock),
                             suffixIcon: IconButton(
                               icon: Icon(
@@ -283,7 +280,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               _showPasswordResetDialog();
                             },
                             child: Text(
-                              localService.translate('forgot_password'),
+                              'Forgot password?',
                               style: TextStyle(color: Colors.blue.shade600),
                             ),
                           ),
@@ -307,9 +304,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                     ),
                                   ),
                                   child: Text(
-                                    _isSignUp
-                                        ? localService.translate('sign_up')
-                                        : localService.translate('login'),
+                                    _isSignUp ? 'Sign Up' : 'Login',
                                     style: const TextStyle(fontSize: 16),
                                   ),
                                 ),
@@ -322,7 +317,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: Text(
                                   _isSignUp
                                       ? 'Already have an account? Login'
-                                      : localService.translate('sign_up'),
+                                      : 'Sign Up',
                                 ),
                               ),
                               const SizedBox(height: 16),
@@ -350,8 +345,8 @@ class _LoginScreenState extends State<LoginScreen> {
                                       return const Icon(Icons.login, size: 24);
                                     },
                                   ),
-                                  label: Text(
-                                    localService.translate('sign_in_with_google'),
+                                  label: const Text(
+                                    'Sign in with Google',
                                   ),
                                   style: OutlinedButton.styleFrom(
                                     shape: RoundedRectangleBorder(
@@ -362,33 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               ),
                             ],
                           ),
-                        const SizedBox(height: 24),
-                        DropdownButton<String>(
-                          value: localService.currentLanguage,
-                          items: LocalizationService.supportedLanguages.entries
-                              .map((entry) => DropdownMenuItem(
-                                    value: entry.key,
-                                    child: Row(
-                                      children: [
-                                        Text(
-                                          LocalizationService.languageFlags[entry.key] ?? '',
-                                          style: const TextStyle(fontSize: 20),
-                                        ),
-                                        const SizedBox(width: 8),
-                                        Text(entry.value),
-                                      ],
-                                    ),
-                                  ))
-                              .toList(),
-                          onChanged: (value) async {
-                            if (value != null) {
-                              await localService.setLanguage(value);
-                              if (mounted) {
-                                setState(() {});
-                              }
-                            }
-                          },
-                        ),
+
                       ],
                     ),
                   ),
