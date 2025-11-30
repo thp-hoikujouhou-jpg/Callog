@@ -214,11 +214,16 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     final friendId = friend['uid'] as String?;
     if (friendId == null) return;
     
+    final wasSelected = _selectedFriendId == friendId;
+    
     setState(() {
-      if (_selectedFriendId == friendId) {
+      if (wasSelected) {
+        // Deselecting friend
         _selectedFriendId = null;
         _selectedFriend = null;
+        // Keep hasUnreadMessages[friendId] = false (already marked as read)
       } else {
+        // Selecting new friend
         _selectedFriendId = friendId;
         _selectedFriend = friend;
         // Immediately mark as read in UI for instant feedback
@@ -226,10 +231,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       }
     });
     
-    // Mark as read in Firestore (async, after setState)
-    if (_selectedFriendId == friendId) {
+    // Mark as read in Firestore when selecting (not deselecting)
+    if (!wasSelected) {
       _markMessagesAsRead(friendId).then((_) {
-        // Ensure UI stays updated after Firestore sync
+        // Double-check UI stays updated after Firestore sync
         if (mounted) {
           setState(() {
             _hasUnreadMessages[friendId] = false;
@@ -274,9 +279,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         for (var doc in unreadMessages.docs) {
           if (kDebugMode) {
             final data = doc.data();
-            debugPrint('   - Marking as read: ${doc.id} from ${data['senderId']}');
+            debugPrint('   - Marking as read: ${doc.id} from ${data['senderId']} to ${data['receiverId']}');
           }
-          batch.update(doc.reference, {'read': true});
+          batch.update(doc.reference, {
+            'read': true,
+            'readAt': FieldValue.serverTimestamp(), // Add timestamp for tracking
+          });
         }
         await batch.commit();
         
