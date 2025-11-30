@@ -25,6 +25,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   Map<String, dynamic>? _selectedFriend;
   bool _isLoading = true;
   Map<String, bool> _hasUnreadMessages = {};
+  Map<String, int> _unreadMessageCounts = {}; // Track unread message count per friend
   Map<String, dynamic> _messageListeners = {}; // Store listeners for cleanup
 
   @override
@@ -174,9 +175,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           .listen((snapshot) {
         if (mounted) {
           final hasUnread = snapshot.docs.isNotEmpty;
+          final unreadCount = snapshot.docs.length;
           
           if (kDebugMode) {
-            debugPrint('📩 Friend $friendId unread status: $hasUnread (${snapshot.docs.length} unread messages)');
+            debugPrint('📩 Friend $friendId unread status: $hasUnread ($unreadCount unread messages)');
             if (snapshot.docs.isNotEmpty) {
               for (var doc in snapshot.docs) {
                 final data = doc.data();
@@ -187,6 +189,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           
           setState(() {
             _hasUnreadMessages[friendId] = hasUnread;
+            _unreadMessageCounts[friendId] = unreadCount;
+            
+            // Sort friends by unread message count (descending)
+            _sortFriendsByUnreadCount();
           });
         }
       });
@@ -202,6 +208,30 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   Future<void> _checkUnreadMessages(String currentUserId, String friendId) async {
     // Now just set up the listener instead of one-time check
     _setupUnreadMessageListener(currentUserId, friendId);
+  }
+  
+  void _sortFriendsByUnreadCount() {
+    // Sort friends: most unread messages first
+    _friends.sort((a, b) {
+      final aCount = _unreadMessageCounts[a['uid']] ?? 0;
+      final bCount = _unreadMessageCounts[b['uid']] ?? 0;
+      
+      // Sort by unread count (descending)
+      if (aCount != bCount) {
+        return bCount.compareTo(aCount);
+      }
+      
+      // If same unread count, maintain original order by username
+      return (a['username'] ?? '').compareTo(b['username'] ?? '');
+    });
+    
+    if (kDebugMode) {
+      debugPrint('🔄 Friends sorted by unread count:');
+      for (var friend in _friends) {
+        final count = _unreadMessageCounts[friend['uid']] ?? 0;
+        debugPrint('   - ${friend['username']}: $count unread messages');
+      }
+    }
   }
 
   String _getChatId(String userId1, String userId2) {
@@ -296,6 +326,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         if (mounted) {
           setState(() {
             _hasUnreadMessages[friendId] = false;
+            _unreadMessageCounts[friendId] = 0;
+            
+            // Re-sort friends after marking as read
+            _sortFriendsByUnreadCount();
           });
         }
       } else {
