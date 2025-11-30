@@ -308,6 +308,30 @@ class LocalizationService extends ChangeNotifier {
       'es': 'Eliminar',
       'fr': 'Supprimer',
     },
+    'send_message': {
+      'en': 'Send message',
+      'ja': 'メッセージを送信',
+      'ko': '메시지 보내기',
+      'zh': '发送消息',
+      'es': 'Enviar mensaje',
+      'fr': 'Envoyer un message',
+    },
+    'no_messages_yet': {
+      'en': 'No messages yet',
+      'ja': 'まだメッセージがありません',
+      'ko': '아직 메시지가 없습니다',
+      'zh': '还没有消息',
+      'es': 'Aún no hay mensajes',
+      'fr': 'Pas encore de messages',
+    },
+    'start_conversation': {
+      'en': 'Start a conversation',
+      'ja': '会話を始めましょう',
+      'ko': '대화를 시작하세요',
+      'zh': '开始对话',
+      'es': 'Iniciar una conversación',
+      'fr': 'Commencer une conversation',
+    },
 
     // Chat
     'chat': {
