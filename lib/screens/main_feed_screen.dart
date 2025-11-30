@@ -183,9 +183,39 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       } else {
         _selectedFriendId = friend['uid'];
         _selectedFriend = friend;
-        _hasUnreadMessages[friend['uid']] = false; // Mark as read when opened
+        _hasUnreadMessages[friend['uid']] = false; // Mark as read in UI
+        _markMessagesAsRead(friend['uid']); // Mark as read in Firestore
       }
     });
+  }
+
+  Future<void> _markMessagesAsRead(String friendId) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) return;
+
+      final chatId = _getChatId(currentUser.uid, friendId);
+      
+      // Get all unread messages from this friend
+      final unreadMessages = await _firestore
+          .collection('chats')
+          .doc(chatId)
+          .collection('messages')
+          .where('senderId', isEqualTo: friendId)
+          .where('read', isEqualTo: false)
+          .get();
+      
+      // Mark all as read using batch
+      if (unreadMessages.docs.isNotEmpty) {
+        final batch = _firestore.batch();
+        for (var doc in unreadMessages.docs) {
+          batch.update(doc.reference, {'read': true});
+        }
+        await batch.commit();
+      }
+    } catch (e) {
+      // Silently fail - not critical
+    }
   }
 
   Future<void> _sendMessage() async {
