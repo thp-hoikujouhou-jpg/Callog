@@ -416,11 +416,21 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           ),
           IconButton(
             icon: const Icon(Icons.group_add),
-            onPressed: () {
-              Navigator.push(
+            onPressed: () async {
+              // Navigate to search contacts screen
+              await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SearchContactsScreen()),
               );
+              
+              // Reload friends list when returning from search screen
+              if (mounted) {
+                _loadFriends();
+                
+                if (kDebugMode) {
+                  debugPrint('🔄 Reloading friends list after returning from search screen');
+                }
+              }
             },
             tooltip: localService.translate('add_friend'),
           ),
