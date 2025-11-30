@@ -162,6 +162,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       
       if (kDebugMode) {
         debugPrint('🔍 Setting up listener for friend: $friendId, chatId: $chatId, currentUser: $currentUserId');
+        debugPrint('   Query: messages where senderId == $friendId AND read == false');
       }
       
       // Set up real-time listener for unread messages
@@ -178,12 +179,14 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           final unreadCount = snapshot.docs.length;
           
           if (kDebugMode) {
-            debugPrint('📩 Friend $friendId unread status: $hasUnread ($unreadCount unread messages)');
+            debugPrint('📩 Listener update for friend $friendId: $hasUnread ($unreadCount unread)');
             if (snapshot.docs.isNotEmpty) {
               for (var doc in snapshot.docs) {
                 final data = doc.data();
-                debugPrint('   - Message from ${data['senderId']}: ${data['text']} (read: ${data['read']})');
+                debugPrint('   - [${doc.id}] from ${data['senderId']} to ${data['receiverId']}: "${data['text']}" (read: ${data['read']})');
               }
+            } else {
+              debugPrint('   - No unread messages found');
             }
           }
           
@@ -194,6 +197,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             // Sort friends by unread message count (descending)
             _sortFriendsByUnreadCount();
           });
+        }
+      }, onError: (error) {
+        if (kDebugMode) {
+          debugPrint('❌ Listener error for friend $friendId: $error');
         }
       });
       
@@ -356,6 +363,14 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final messageText = _messageController.text.trim();
       final now = DateTime.now();
       
+      if (kDebugMode) {
+        debugPrint('📤 Sending message:');
+        debugPrint('   From: ${currentUser.uid}');
+        debugPrint('   To: $_selectedFriendId');
+        debugPrint('   ChatId: $chatId');
+        debugPrint('   Text: "$messageText"');
+      }
+      
       // Create chat document if it doesn't exist
       await _firestore.collection('chats').doc(chatId).set({
         'user1Id': currentUser.uid,
@@ -365,7 +380,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       }, SetOptions(merge: true));
 
       // Add message with current timestamp
-      await _firestore
+      final messageDoc = await _firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
@@ -378,10 +393,18 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         'expiresAt': Timestamp.fromDate(now.add(const Duration(days: 7))),
       });
       
-      // Clean up old messages (older than 7 days)
-      _cleanupOldMessages(chatId);
-
+      if (kDebugMode) {
+        debugPrint('✅ Message sent successfully: ${messageDoc.id}');
+      }
+      
       _messageController.clear();
+      
+      // Clean up old messages asynchronously (don't block UI)
+      _cleanupOldMessages(chatId).catchError((e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Background cleanup error: $e');
+        }
+      });
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
