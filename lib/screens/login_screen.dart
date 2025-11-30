@@ -103,22 +103,22 @@ class _LoginScreenState extends State<LoginScreen> {
           _emailController.text.trim(),
           _passwordController.text,
         );
-        // Wait a moment for Firebase to update auth state
-        if (result != null && mounted) {
-          await Future.delayed(const Duration(milliseconds: 300));
+        // Keep loading state - AuthWrapper will handle navigation
+        if (result == null) {
+          throw Exception('Sign up failed');
         }
-        // AuthWrapper will handle navigation to MainFeed
+        // Don't set _isLoading = false - let AuthWrapper handle navigation
       } else {
         // Sign in
         final result = await authService.signInWithEmailAndPassword(
           _emailController.text.trim(),
           _passwordController.text,
         );
-        // Wait a moment for Firebase to update auth state
-        if (result != null && mounted) {
-          await Future.delayed(const Duration(milliseconds: 300));
+        // Keep loading state - AuthWrapper will handle navigation
+        if (result == null) {
+          throw Exception('Sign in failed');
         }
-        // AuthWrapper will handle navigation
+        // Don't set _isLoading = false - let AuthWrapper handle navigation
       }
     } catch (e) {
       if (mounted) {
@@ -144,9 +144,8 @@ class _LoginScreenState extends State<LoginScreen> {
             duration: const Duration(seconds: 5),
           ),
         );
-      }
-    } finally {
-      if (mounted) {
+        
+        // Only reset loading state on error
         setState(() => _isLoading = false);
       }
     }
@@ -159,11 +158,11 @@ class _LoginScreenState extends State<LoginScreen> {
       final authService = Provider.of<AuthService>(context, listen: false);
       
       final result = await authService.signInWithGoogle();
-      // Wait a moment for Firebase to update auth state
-      if (result != null && mounted) {
-        await Future.delayed(const Duration(milliseconds: 300));
+      // Keep loading state - AuthWrapper will handle navigation
+      if (result == null) {
+        throw Exception('Google sign in failed');
       }
-      // AuthWrapper will handle navigation
+      // Don't set _isLoading = false - let AuthWrapper handle navigation
     } catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
@@ -172,9 +171,10 @@ class _LoginScreenState extends State<LoginScreen> {
             backgroundColor: Colors.red,
           ),
         );
+        
+        // Only reset loading state on error
+        setState(() => _isLoading = false);
       }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
     }
   }
 

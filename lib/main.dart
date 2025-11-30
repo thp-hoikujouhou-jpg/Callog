@@ -97,6 +97,11 @@ class _AuthWrapperState extends State<AuthWrapper> {
     return StreamBuilder<User?>(
       stream: authService.authStateChanges,
       builder: (context, snapshot) {
+        // Debug logging
+        if (kDebugMode) {
+          debugPrint('🔐 AuthWrapper State: ${snapshot.connectionState}, HasData: ${snapshot.hasData}, User: ${snapshot.data?.uid}');
+        }
+        
         // Show loading indicator while waiting for auth state
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(
@@ -106,11 +111,18 @@ class _AuthWrapperState extends State<AuthWrapper> {
         
         // User is authenticated - show home screen immediately and load language in background
         if (snapshot.hasData && snapshot.data != null) {
-          // Load language in background (non-blocking)
-          WidgetsBinding.instance.addPostFrameCallback((_) {
+          // Load language in background (non-blocking) with error handling
+          WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (mounted) {
-              final localService = Provider.of<LocalizationService>(context, listen: false);
-              localService.loadLanguageFromFirestore();
+              try {
+                final localService = Provider.of<LocalizationService>(context, listen: false);
+                await localService.loadLanguageFromFirestore();
+              } catch (e) {
+                // Ignore language loading errors - use default English
+                if (kDebugMode) {
+                  debugPrint('⚠️ Language loading failed (using default): $e');
+                }
+              }
             }
           });
           
@@ -119,8 +131,15 @@ class _AuthWrapperState extends State<AuthWrapper> {
         }
         
         // User signed out - reset language cache and show login screen
-        final localService = Provider.of<LocalizationService>(context, listen: false);
-        localService.resetCache();
+        try {
+          final localService = Provider.of<LocalizationService>(context, listen: false);
+          localService.resetCache();
+        } catch (e) {
+          // Ignore reset errors
+          if (kDebugMode) {
+            debugPrint('⚠️ Language reset failed: $e');
+          }
+        }
         return const LoginScreen();
       },
     );
