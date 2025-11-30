@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -24,6 +25,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   Map<String, dynamic>? _selectedFriend;
   bool _isLoading = true;
   Map<String, bool> _hasUnreadMessages = {};
+  Map<String, dynamic> _messageListeners = {}; // Store listeners for cleanup
 
   @override
   void initState() {
@@ -35,6 +37,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   @override
   void dispose() {
     _messageController.dispose();
+    // Cancel all message listeners
+    _messageListeners.forEach((key, listener) {
+      listener?.cancel();
+    });
     super.dispose();
   }
 
@@ -146,27 +152,44 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
   }
 
-  Future<void> _checkUnreadMessages(String currentUserId, String friendId) async {
+  void _setupUnreadMessageListener(String currentUserId, String friendId) {
     try {
-      // Create a consistent chat ID
+      // Cancel existing listener if any
+      _messageListeners[friendId]?.cancel();
+      
       final chatId = _getChatId(currentUserId, friendId);
       
-      // Check for unread messages
-      final messagesSnapshot = await _firestore
+      // Set up real-time listener for unread messages
+      final listener = _firestore
           .collection('chats')
           .doc(chatId)
           .collection('messages')
           .where('senderId', isEqualTo: friendId)
           .where('read', isEqualTo: false)
-          .limit(1)
-          .get();
-
-      setState(() {
-        _hasUnreadMessages[friendId] = messagesSnapshot.docs.isNotEmpty;
+          .snapshots()
+          .listen((snapshot) {
+        if (mounted) {
+          setState(() {
+            _hasUnreadMessages[friendId] = snapshot.docs.isNotEmpty;
+          });
+          
+          if (kDebugMode) {
+            debugPrint('📩 Friend $friendId unread status: ${snapshot.docs.isNotEmpty} (${snapshot.docs.length} unread)');
+          }
+        }
       });
+      
+      _messageListeners[friendId] = listener;
     } catch (e) {
-      // Ignore errors
+      if (kDebugMode) {
+        debugPrint('❌ Error setting up unread listener: $e');
+      }
     }
+  }
+  
+  Future<void> _checkUnreadMessages(String currentUserId, String friendId) async {
+    // Now just set up the listener instead of one-time check
+    _setupUnreadMessageListener(currentUserId, friendId);
   }
 
   String _getChatId(String userId1, String userId2) {
@@ -176,17 +199,32 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   }
 
   void _selectFriend(Map<String, dynamic> friend) {
+    final friendId = friend['uid'] as String?;
+    if (friendId == null) return;
+    
     setState(() {
-      if (_selectedFriendId == friend['uid']) {
+      if (_selectedFriendId == friendId) {
         _selectedFriendId = null;
         _selectedFriend = null;
       } else {
-        _selectedFriendId = friend['uid'];
+        _selectedFriendId = friendId;
         _selectedFriend = friend;
-        _hasUnreadMessages[friend['uid']] = false; // Mark as read in UI
-        _markMessagesAsRead(friend['uid']); // Mark as read in Firestore
+        // Immediately mark as read in UI for instant feedback
+        _hasUnreadMessages[friendId] = false;
       }
     });
+    
+    // Mark as read in Firestore (async, after setState)
+    if (_selectedFriendId == friendId) {
+      _markMessagesAsRead(friendId).then((_) {
+        // Ensure UI stays updated after Firestore sync
+        if (mounted) {
+          setState(() {
+            _hasUnreadMessages[friendId] = false;
+          });
+        }
+      });
+    }
   }
 
   Future<void> _markMessagesAsRead(String friendId) async {
@@ -212,9 +250,23 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           batch.update(doc.reference, {'read': true});
         }
         await batch.commit();
+        
+        if (kDebugMode) {
+          debugPrint('✅ Marked ${unreadMessages.docs.length} messages as read for friend: $friendId');
+        }
+        
+        // Force update UI state after successful Firestore update
+        if (mounted) {
+          setState(() {
+            _hasUnreadMessages[friendId] = false;
+          });
+        }
       }
     } catch (e) {
       // Silently fail - not critical
+      if (kDebugMode) {
+        debugPrint('❌ Error marking messages as read: $e');
+      }
     }
   }
 
