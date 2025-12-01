@@ -740,5 +740,23 @@ class LocalizationService extends ChangeNotifier {
       'es': 'No',
       'fr': 'Non',
     },
+
+    // Message Read Status
+    'read': {
+      'en': 'Read',
+      'ja': '既読',
+      'ko': '읽음',
+      'zh': '已读',
+      'es': 'Leído',
+      'fr': 'Lu',
+    },
+    'unread': {
+      'en': 'Unread',
+      'ja': '未読',
+      'ko': '읽지 않음',
+      'zh': '未读',
+      'es': 'No leído',
+      'fr': 'Non lu',
+    },
   };
 }

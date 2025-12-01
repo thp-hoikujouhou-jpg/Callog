@@ -865,24 +865,54 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   final message = messages[index].data() as Map<String, dynamic>;
                   final isMe = message['senderId'] == currentUser.uid;
                   
+                  final isRead = message['read'] ?? false;
+                  
                   return Align(
                     alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
-                    child: Container(
-                      margin: const EdgeInsets.only(bottom: 8),
-                      padding: const EdgeInsets.symmetric(
-                        horizontal: 16,
-                        vertical: 10,
-                      ),
-                      decoration: BoxDecoration(
-                        color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
-                        borderRadius: BorderRadius.circular(18),
-                      ),
-                      child: Text(
-                        message['text'] ?? '',
-                        style: TextStyle(
-                          color: isMe ? Colors.white : Colors.black87,
+                    child: Column(
+                      crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
+                      children: [
+                        Container(
+                          margin: const EdgeInsets.only(bottom: 4),
+                          padding: const EdgeInsets.symmetric(
+                            horizontal: 16,
+                            vertical: 10,
+                          ),
+                          decoration: BoxDecoration(
+                            color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
+                            borderRadius: BorderRadius.circular(18),
+                          ),
+                          child: Text(
+                            message['text'] ?? '',
+                            style: TextStyle(
+                              color: isMe ? Colors.white : Colors.black87,
+                            ),
+                          ),
                         ),
-                      ),
+                        // 既読/未読表示（自分のメッセージのみ）
+                        if (isMe)
+                          Padding(
+                            padding: const EdgeInsets.only(right: 8, bottom: 4),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                Icon(
+                                  isRead ? Icons.done_all : Icons.done,
+                                  size: 16,
+                                  color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  isRead ? localService.translate('read') : localService.translate('unread'),
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
                     ),
                   );
                 },
