@@ -21,10 +21,12 @@ void main() async {
   try {
     WidgetsFlutterBinding.ensureInitialized();
     
-    // Initialize Firebase with error handling
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
+    // Initialize Firebase with duplicate app check
+    if (Firebase.apps.isEmpty) {
+      await Firebase.initializeApp(
+        options: DefaultFirebaseOptions.currentPlatform,
+      );
+    }
     
     runApp(const CallogApp());
   } catch (e, stackTrace) {
