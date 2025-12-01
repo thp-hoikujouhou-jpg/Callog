@@ -1,4 +1,4 @@
-package com.callog.mobile_app
+package com.callogconnect.chat
 
 import io.flutter.embedding.android.FlutterActivity
 

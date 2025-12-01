@@ -1,36 +1,26 @@
 {
   "project_info": {
-    "project_number": "840309410876",
-    "project_id": "callog-30758",
-    "storage_bucket": "callog-30758.firebasestorage.app"
+    "project_number": "1764357018",
+    "project_id": "unknown-project",
+    "storage_bucket": "unknown-project.appspot.com"
   },
   "client": [
     {
       "client_info": {
-        "mobilesdk_app_id": "1:840309410876:android:ba4d4ccb832f42b677c739",
+        "mobilesdk_app_id": "1:1764357018:android:g1lfdxvrdmyw",
         "android_client_info": {
-          "package_name": "com.callog.mobile_app"
+          "package_name": "com.callogconnect.chat"
         }
       },
-      "oauth_client": [
-        {
-          "client_id": "840309410876-v21lqhpis01cijct6r05e1a3ss4f132u.apps.googleusercontent.com",
-          "client_type": 3
-        }
-      ],
+      "oauth_client": [],
       "api_key": [
         {
-          "current_key": "AIzaSyADm_scTXk7oTh39uFtKEuDlnqvP4OqoqA"
+          "current_key": "placeholder-api-key-g1lfdxvrdmyw"
         }
       ],
       "services": {
         "appinvite_service": {
-          "other_platform_oauth_client": [
-            {
-              "client_id": "840309410876-v21lqhpis01cijct6r05e1a3ss4f132u.apps.googleusercontent.com",
-              "client_type": 3
-            }
-          ]
+          "other_platform_oauth_client": []
         }
       }
     }
