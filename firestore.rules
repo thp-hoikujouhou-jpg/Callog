@@ -47,9 +47,11 @@ service cloud.firestore {
         (request.auth.uid == resource.data.senderId ||
          request.auth.uid == resource.data.receiverId);
       
-      // Only sender can delete their own messages
+      // Sender can delete their own messages OR chat participants can delete messages when removing friend
       allow delete: if request.auth != null && 
-        request.auth.uid == resource.data.senderId;
+        (request.auth.uid == resource.data.senderId ||
+         request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.user1Id ||
+         request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.user2Id);
     }
     
     // ✅ CALLS Collection

@@ -291,24 +291,55 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
         }
 
         // すべてのメッセージを削除
-        final batch = _firestore.batch();
-        for (var doc in messagesSnapshot.docs) {
-          batch.delete(doc.reference);
+        if (messagesSnapshot.docs.isNotEmpty) {
+          final batch = _firestore.batch();
+          for (var doc in messagesSnapshot.docs) {
+            if (kDebugMode) {
+              debugPrint('   🗑️ Deleting message: ${doc.id}');
+            }
+            batch.delete(doc.reference);
+          }
+          
+          // バッチコミット
+          await batch.commit();
+          
+          if (kDebugMode) {
+            debugPrint('✅ All messages deleted successfully');
+          }
+        } else {
+          if (kDebugMode) {
+            debugPrint('ℹ️ No messages to delete');
+          }
         }
         
         // チャットドキュメント自体も削除
-        batch.delete(_firestore.collection('chats').doc(chatId));
-        
-        await batch.commit();
+        if (kDebugMode) {
+          debugPrint('🗑️ Deleting chat document: $chatId');
+        }
+        await _firestore.collection('chats').doc(chatId).delete();
         
         if (kDebugMode) {
-          debugPrint('✅ Chat history deleted successfully');
+          debugPrint('✅ Chat document deleted successfully');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         if (kDebugMode) {
-          debugPrint('⚠️ Error deleting chat history: $e');
+          debugPrint('❌ ERROR deleting chat history: $e');
+          debugPrint('📍 Stack trace: $stackTrace');
         }
-        // チャット履歴の削除に失敗しても続行
+        
+        // エラーメッセージをユーザーに表示
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('チャット履歴の削除に失敗しました: $e'),
+              backgroundColor: Colors.red,
+              duration: const Duration(seconds: 5),
+            ),
+          );
+        }
+        
+        // チャット履歴の削除に失敗した場合は処理を中断
+        return;
       }
 
       // 2. 友達リストとfriendOrderから削除
