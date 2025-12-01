@@ -43,9 +43,11 @@ service cloud.firestore {
          request.auth.uid == get(/databases/$(database)/documents/chats/$(chatId)).data.user2Id);
       
       // ✅ CRITICAL: Allow sender OR receiver to update (for read receipts)
+      // Receiver can only update 'read' and 'readAt' fields
       allow update: if request.auth != null && 
         (request.auth.uid == resource.data.senderId ||
-         request.auth.uid == resource.data.receiverId);
+         (request.auth.uid == resource.data.receiverId && 
+          request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read', 'readAt'])));
       
       // Sender can delete their own messages OR chat participants can delete messages when removing friend
       allow delete: if request.auth != null && 
