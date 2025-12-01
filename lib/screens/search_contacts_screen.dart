@@ -263,6 +263,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
           ],
         ),
       ),
+      ),
     );
   }
 
@@ -449,7 +450,6 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                 ),
         ),
       ],
-    ),
     );
   }
 }
