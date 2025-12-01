@@ -271,6 +271,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   }
   
   void _sortFriendsByUnreadCount() {
+    // Create a map to store original order indices
+    final Map<String, int> originalOrder = {};
+    for (int i = 0; i < _friends.length; i++) {
+      originalOrder[_friends[i]['uid']] = i;
+    }
+    
     // Sort friends: most unread messages first
     _friends.sort((a, b) {
       final aCount = _unreadMessageCounts[a['uid']] ?? 0;
@@ -281,8 +287,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return bCount.compareTo(aCount);
       }
       
-      // If same unread count, maintain original order by username
-      return (a['username'] ?? '').compareTo(b['username'] ?? '');
+      // If same unread count (including 0), maintain friendOrder (original order)
+      final aIndex = originalOrder[a['uid']] ?? 0;
+      final bIndex = originalOrder[b['uid']] ?? 0;
+      return aIndex.compareTo(bIndex);
     });
     
     if (kDebugMode) {
