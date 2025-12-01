@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
@@ -32,6 +33,12 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
   void dispose() {
     _searchController.dispose();
     super.dispose();
+  }
+
+  String _getChatId(String userId1, String userId2) {
+    return userId1.compareTo(userId2) < 0 
+        ? '${userId1}_$userId2' 
+        : '${userId2}_$userId1';
   }
 
   Future<void> _loadFriends() async {
@@ -157,14 +164,162 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
   }
 
   Future<void> _removeFriend(String friendId) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    if (kDebugMode) {
+      debugPrint('🗑️ _removeFriend called for friendId: $friendId');
+    }
+    
+    // 確認ダイアログを表示
+    if (kDebugMode) {
+      debugPrint('📋 Showing confirmation dialog...');
+    }
+    
+    final shouldDelete = await showDialog<bool>(
+      context: context,
+      builder: (BuildContext dialogContext) {
+        if (kDebugMode) {
+          debugPrint('🎨 Building AlertDialog...');
+        }
+        
+        // レスポンシブ対応: 画面サイズを取得
+        final screenWidth = MediaQuery.of(dialogContext).size.width;
+        final isSmallScreen = screenWidth < 600; // スマホ・タブレット判定
+        
+        if (kDebugMode) {
+          debugPrint('📱 Screen width: $screenWidth, isSmallScreen: $isSmallScreen');
+        }
+        
+        return AlertDialog(
+          title: const Text('友達を削除'),
+          content: ConstrainedBox(
+            constraints: BoxConstraints(
+              maxWidth: isSmallScreen ? screenWidth * 0.8 : 400,
+            ),
+            child: const Text(
+              '友達を削除することにより、データ（チャット履歴）が失われますが、それでも良いですか？',
+            ),
+          ),
+          contentPadding: EdgeInsets.fromLTRB(
+            isSmallScreen ? 16 : 24,
+            isSmallScreen ? 16 : 20,
+            isSmallScreen ? 16 : 24,
+            isSmallScreen ? 12 : 24,
+          ),
+          actionsPadding: EdgeInsets.fromLTRB(
+            isSmallScreen ? 8 : 24,
+            0,
+            isSmallScreen ? 8 : 24,
+            isSmallScreen ? 8 : 24,
+          ),
+          actions: [
+            TextButton(
+              onPressed: () {
+                if (kDebugMode) {
+                  debugPrint('❌ User selected: No');
+                }
+                Navigator.of(dialogContext).pop(false);
+              },
+              child: Text(
+                'No',
+                style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
+              ),
+            ),
+            TextButton(
+              onPressed: () {
+                if (kDebugMode) {
+                  debugPrint('✅ User selected: Yes');
+                }
+                Navigator.of(dialogContext).pop(true);
+              },
+              style: TextButton.styleFrom(
+                foregroundColor: Colors.red,
+              ),
+              child: Text(
+                'Yes',
+                style: TextStyle(
+                  fontSize: isSmallScreen ? 14 : 16,
+                  fontWeight: FontWeight.bold,
+                ),
+              ),
+            ),
+          ],
+        );
+      },
+    );
+    
+    if (kDebugMode) {
+      debugPrint('💭 Dialog result: $shouldDelete');
+    }
+    
+    // ユーザーが「No」を選択した場合は処理を中断
+    if (shouldDelete != true) {
+      if (kDebugMode) {
+        debugPrint('🚫 Deletion cancelled by user');
+      }
+      return;
+    }
+    
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) return;
 
-      // 友達リストから削除
+      if (kDebugMode) {
+        debugPrint('🔄 Starting deletion process...');
+        debugPrint('   Current User: ${currentUser.uid}');
+        debugPrint('   Friend to remove: $friendId');
+      }
+
+      // チャットIDを計算
+      final chatId = _getChatId(currentUser.uid, friendId);
+      
+      if (kDebugMode) {
+        debugPrint('💬 Chat ID to delete: $chatId');
+      }
+
+      // 1. チャット履歴を削除
+      try {
+        // チャットドキュメント内のすべてのメッセージを取得
+        final messagesSnapshot = await _firestore
+            .collection('chats')
+            .doc(chatId)
+            .collection('messages')
+            .get();
+        
+        if (kDebugMode) {
+          debugPrint('📨 Found ${messagesSnapshot.docs.length} messages to delete');
+        }
+
+        // すべてのメッセージを削除
+        final batch = _firestore.batch();
+        for (var doc in messagesSnapshot.docs) {
+          batch.delete(doc.reference);
+        }
+        
+        // チャットドキュメント自体も削除
+        batch.delete(_firestore.collection('chats').doc(chatId));
+        
+        await batch.commit();
+        
+        if (kDebugMode) {
+          debugPrint('✅ Chat history deleted successfully');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ Error deleting chat history: $e');
+        }
+        // チャット履歴の削除に失敗しても続行
+      }
+
+      // 2. 友達リストとfriendOrderから削除
       await _firestore.collection('users').doc(currentUser.uid).update({
-        'friends': FieldValue.arrayRemove([friendId])
+        'friends': FieldValue.arrayRemove([friendId]),
+        'friendOrder': FieldValue.arrayRemove([friendId]),
       });
+      
+      if (kDebugMode) {
+        debugPrint('✅ Friend removed from list and friendOrder');
+      }
 
       setState(() {
         _friendIds.remove(friendId);
@@ -172,7 +327,6 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
       });
 
       if (mounted) {
-        final localService = Provider.of<LocalizationService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localService.translate('friend_removed')),
@@ -182,7 +336,6 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
       }
     } catch (e) {
       if (mounted) {
-        final localService = Provider.of<LocalizationService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('${localService.translate('error_occurred')}: $e'),
