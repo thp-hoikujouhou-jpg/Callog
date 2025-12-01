@@ -582,20 +582,27 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     const Divider(height: 1),
                     Consumer<ThemeService>(
                       builder: (context, themeService, child) {
+                        IconData icon;
+                        switch (themeService.themeOption) {
+                          case ThemeOption.dark:
+                            icon = Icons.dark_mode;
+                            break;
+                          case ThemeOption.auto:
+                            icon = Icons.brightness_auto;
+                            break;
+                          default:
+                            icon = Icons.light_mode;
+                        }
+                        
+                        final localService = Provider.of<LocalizationService>(context, listen: false);
                         return ListTile(
-                          leading: Icon(
-                            themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
-                          ),
-                          title: Text(
-                            themeService.isDarkMode ? 'ダークモード' : 'ライトモード',
-                          ),
-                          subtitle: const Text('テーマの切り替え'),
-                          trailing: Switch(
-                            value: themeService.isDarkMode,
-                            onChanged: (value) async {
-                              await themeService.toggleTheme();
-                            },
-                          ),
+                          leading: Icon(icon),
+                          title: Text(localService.translate('theme')),
+                          subtitle: Text(localService.translate(themeService.getThemeDisplayNameKey())),
+                          trailing: const Icon(Icons.chevron_right),
+                          onTap: () async {
+                            await themeService.toggleTheme();
+                          },
                         );
                       },
                     ),

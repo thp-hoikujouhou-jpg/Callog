@@ -1,21 +1,56 @@
 import 'package:flutter/material.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 
+enum ThemeOption {
+  light,
+  dark,
+  auto, // 朝・昼はライト、夜はダーク
+}
+
 class ThemeService extends ChangeNotifier {
-  ThemeMode _themeMode = ThemeMode.light;
+  ThemeOption _themeOption = ThemeOption.light;
   
-  ThemeMode get themeMode => _themeMode;
-  bool get isDarkMode => _themeMode == ThemeMode.dark;
+  ThemeOption get themeOption => _themeOption;
+  
+  ThemeMode get themeMode {
+    if (_themeOption == ThemeOption.auto) {
+      return _getAutoThemeMode();
+    }
+    return _themeOption == ThemeOption.dark ? ThemeMode.dark : ThemeMode.light;
+  }
+  
+  bool get isDarkMode => themeMode == ThemeMode.dark;
 
   ThemeService() {
     _loadThemeMode();
   }
 
+  ThemeMode _getAutoThemeMode() {
+    final hour = DateTime.now().hour;
+    // 6時〜18時: ライトモード、18時〜6時: ダークモード
+    if (hour >= 6 && hour < 18) {
+      return ThemeMode.light;
+    } else {
+      return ThemeMode.dark;
+    }
+  }
+
   Future<void> _loadThemeMode() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      final isDark = prefs.getBool('isDarkMode') ?? false;
-      _themeMode = isDark ? ThemeMode.dark : ThemeMode.light;
+      final themeValue = prefs.getString('themeOption') ?? 'light';
+      
+      switch (themeValue) {
+        case 'dark':
+          _themeOption = ThemeOption.dark;
+          break;
+        case 'auto':
+          _themeOption = ThemeOption.auto;
+          break;
+        default:
+          _themeOption = ThemeOption.light;
+      }
+      
       notifyListeners();
     } catch (e) {
       // デフォルトのライトモードを使用
@@ -23,26 +58,59 @@ class ThemeService extends ChangeNotifier {
   }
 
   Future<void> toggleTheme() async {
-    _themeMode = _themeMode == ThemeMode.light ? ThemeMode.dark : ThemeMode.light;
-    notifyListeners();
+    // ライト → ダーク → 自動 → ライト
+    switch (_themeOption) {
+      case ThemeOption.light:
+        _themeOption = ThemeOption.dark;
+        break;
+      case ThemeOption.dark:
+        _themeOption = ThemeOption.auto;
+        break;
+      case ThemeOption.auto:
+        _themeOption = ThemeOption.light;
+        break;
+    }
     
+    notifyListeners();
+    await _saveThemeOption();
+  }
+
+  Future<void> setThemeOption(ThemeOption option) async {
+    _themeOption = option;
+    notifyListeners();
+    await _saveThemeOption();
+  }
+
+  Future<void> _saveThemeOption() async {
     try {
       final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', _themeMode == ThemeMode.dark);
+      String themeValue;
+      
+      switch (_themeOption) {
+        case ThemeOption.dark:
+          themeValue = 'dark';
+          break;
+        case ThemeOption.auto:
+          themeValue = 'auto';
+          break;
+        default:
+          themeValue = 'light';
+      }
+      
+      await prefs.setString('themeOption', themeValue);
     } catch (e) {
       // エラーハンドリング
     }
   }
-
-  Future<void> setThemeMode(ThemeMode mode) async {
-    _themeMode = mode;
-    notifyListeners();
-    
-    try {
-      final prefs = await SharedPreferences.getInstance();
-      await prefs.setBool('isDarkMode', mode == ThemeMode.dark);
-    } catch (e) {
-      // エラーハンドリング
+  
+  String getThemeDisplayNameKey() {
+    switch (_themeOption) {
+      case ThemeOption.light:
+        return 'light_mode';
+      case ThemeOption.dark:
+        return 'dark_mode';
+      case ThemeOption.auto:
+        return 'auto_mode';
     }
   }
 }

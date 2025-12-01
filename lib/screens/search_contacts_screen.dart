@@ -197,7 +197,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                 await _loadFriends();
               }
             },
-            tooltip: '友達の並び替え',
+            tooltip: localService.translate('reorder_friends'),
           ),
         ],
       ),

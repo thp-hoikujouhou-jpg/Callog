@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/localization_service.dart';
 
 class ReorderFriendsScreen extends StatefulWidget {
@@ -92,10 +93,14 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
         final localService = Provider.of<LocalizationService>(context, listen: false);
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: const Text('友達の順序を保存しました'),
+            content: Text(localService.translate('friend_order_saved')),
             backgroundColor: Colors.green,
           ),
         );
+
+        if (kDebugMode) {
+          debugPrint('✅ Friend order saved: $friendOrder');
+        }
 
         // Return true to indicate changes were saved
         Navigator.pop(context, true);
@@ -122,17 +127,17 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
           final shouldPop = await showDialog<bool>(
             context: context,
             builder: (context) => AlertDialog(
-              title: const Text('変更を破棄しますか？'),
-              content: const Text('保存していない変更があります。本当に戻りますか？'),
+              title: Text(localService.translate('discard_changes')),
+              content: Text(localService.translate('unsaved_changes_message')),
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context, false),
-                  child: const Text('キャンセル'),
+                  child: Text(localService.translate('cancel')),
                 ),
                 TextButton(
                   onPressed: () => Navigator.pop(context, true),
                   style: TextButton.styleFrom(foregroundColor: Colors.red),
-                  child: const Text('破棄'),
+                  child: Text(localService.translate('discard')),
                 ),
               ],
             ),
@@ -143,7 +148,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: const Text('友達の並び替え'),
+          title: Text(localService.translate('reorder_friends')),
           backgroundColor: Colors.blue.shade600,
           foregroundColor: Colors.white,
           actions: [
@@ -151,7 +156,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
               IconButton(
                 icon: const Icon(Icons.save),
                 onPressed: _saveFriendOrder,
-                tooltip: '保存',
+                tooltip: localService.translate('save'),
               ),
           ],
         ),
@@ -168,9 +173,9 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                           color: Colors.grey.shade400,
                         ),
                         const SizedBox(height: 16),
-                        const Text(
-                          '友達がいません',
-                          style: TextStyle(
+                        Text(
+                          localService.translate('no_friends'),
+                          style: const TextStyle(
                             fontSize: 16,
                             color: Colors.grey,
                           ),
@@ -189,7 +194,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                             const SizedBox(width: 12),
                             Expanded(
                               child: Text(
-                                '長押ししてドラッグで順序を変更できます',
+                                localService.translate('reorder_instruction'),
                                 style: TextStyle(
                                   color: Colors.blue.shade700,
                                   fontSize: 14,
@@ -238,22 +243,12 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(friend['location'] ?? ''),
-                                trailing: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Text(
-                                      '#${index + 1}',
-                                      style: TextStyle(
-                                        color: Colors.grey.shade600,
-                                        fontWeight: FontWeight.bold,
-                                      ),
-                                    ),
-                                    const SizedBox(width: 8),
-                                    Icon(
-                                      Icons.drag_handle,
-                                      color: Colors.grey.shade600,
-                                    ),
-                                  ],
+                                trailing: Text(
+                                  '#${index + 1}',
+                                  style: TextStyle(
+                                    color: Colors.grey.shade600,
+                                    fontWeight: FontWeight.bold,
+                                  ),
                                 ),
                               ),
                             );
@@ -269,7 +264,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                             child: ElevatedButton.icon(
                               onPressed: _saveFriendOrder,
                               icon: const Icon(Icons.save),
-                              label: const Text('変更を保存'),
+                              label: Text(localService.translate('save_changes')),
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: Colors.green.shade600,
                                 foregroundColor: Colors.white,
