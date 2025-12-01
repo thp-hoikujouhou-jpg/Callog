@@ -107,6 +107,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                     _formatDate(_selectedDate, 'yMMMM', locale),
                     style: Theme.of(context).textTheme.titleLarge?.copyWith(
                           fontWeight: FontWeight.bold,
+                          color: Colors.black,
                         ),
                   ),
                   IconButton(
