@@ -632,13 +632,18 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                               ),
                               const SizedBox(height: 24),
                               ElevatedButton.icon(
-                                onPressed: () {
-                                  Navigator.push(
+                                onPressed: () async {
+                                  await Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => const SearchContactsScreen(),
                                     ),
                                   );
+                                  
+                                  // Reload friends list when returning
+                                  if (mounted) {
+                                    _loadFriends();
+                                  }
                                 },
                                 icon: const Icon(Icons.person_add),
                                 label: Text(localService.translate('add_friend')),

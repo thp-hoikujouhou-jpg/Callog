@@ -243,13 +243,6 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                                   style: const TextStyle(fontWeight: FontWeight.bold),
                                 ),
                                 subtitle: Text(friend['location'] ?? ''),
-                                trailing: Text(
-                                  '#${index + 1}',
-                                  style: TextStyle(
-                                    color: Colors.grey.shade600,
-                                    fontWeight: FontWeight.bold,
-                                  ),
-                                ),
                               ),
                             );
                           },

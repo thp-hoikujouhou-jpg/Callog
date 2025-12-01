@@ -40,8 +40,24 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
         final userDoc = await _firestore.collection('users').doc(currentUser.uid).get();
         if (userDoc.exists) {
           final data = userDoc.data();
+          final friendIds = List<String>.from(data?['friends'] ?? []);
+          final friendOrder = List<String>.from(data?['friendOrder'] ?? []);
+          
+          // Use friendOrder if available, otherwise use friendIds order
+          final orderedIds = friendOrder.isEmpty ? friendIds : friendOrder;
+          
+          // Add any new friends not in the order list
+          for (var id in friendIds) {
+            if (!orderedIds.contains(id)) {
+              orderedIds.add(id);
+            }
+          }
+          
+          // Remove any friends that are no longer in the friends list
+          orderedIds.removeWhere((id) => !friendIds.contains(id));
+          
           setState(() {
-            _friendIds = List<String>.from(data?['friends'] ?? []);
+            _friendIds = orderedIds;
           });
         }
       }
