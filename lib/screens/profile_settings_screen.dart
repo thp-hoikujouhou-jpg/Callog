@@ -7,6 +7,7 @@ import '../models/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
+import 'chat_settings_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -606,7 +607,39 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         );
                       },
                     ),
+                    const Divider(height: 1),
+                    ListTile(
+                      leading: const Icon(Icons.chat),
+                      title: Text(localService.translate('chat_settings')),
+                      subtitle: Text(localService.translate('chat_background')),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () {
+                        Navigator.push(
+                          context,
+                          MaterialPageRoute(
+                            builder: (_) => const ChatSettingsScreen(),
+                          ),
+                        );
+                      },
+                    ),
                   ],
+                ),
+              ),
+              const SizedBox(height: 16),
+              Card(
+                child: ListTile(
+                  leading: const Icon(Icons.settings),
+                  title: Text(localService.translate('settings')),
+                  subtitle: Text(localService.translate('chat_background')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (context) => const ChatSettingsScreen(),
+                      ),
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 32),
