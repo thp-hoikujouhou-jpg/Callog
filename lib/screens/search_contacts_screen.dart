@@ -20,6 +20,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
   bool _isLoading = false;
   List<Map<String, dynamic>> _searchResults = [];
   List<String> _friendIds = [];
+  bool _friendsChanged = false; // Track if friend list or order changed
 
   @override
   void initState() {
@@ -130,6 +131,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
 
       setState(() {
         _friendIds.add(friendId);
+        _friendsChanged = true; // Mark as changed
       });
 
       if (mounted) {
@@ -166,6 +168,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
 
       setState(() {
         _friendIds.remove(friendId);
+        _friendsChanged = true; // Mark as changed
       });
 
       if (mounted) {
@@ -194,7 +197,13 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
   Widget build(BuildContext context) {
     final localService = Provider.of<LocalizationService>(context);
 
-    return Scaffold(
+    return WillPopScope(
+      onWillPop: () async {
+        // Return true to indicate friends changed
+        Navigator.pop(context, _friendsChanged);
+        return false; // Prevent default pop
+      },
+      child: Scaffold(
       appBar: AppBar(
         title: Text(localService.translate('add_friend')),
         backgroundColor: Colors.blue.shade600,
@@ -211,6 +220,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
               // Reload friends if changes were saved
               if (result == true) {
                 await _loadFriends();
+                _friendsChanged = true; // Mark as changed
               }
             },
             tooltip: localService.translate('reorder_friends'),
@@ -439,6 +449,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                 ),
         ),
       ],
+    ),
     );
   }
 }

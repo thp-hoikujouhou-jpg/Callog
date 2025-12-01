@@ -121,6 +121,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final friendOrder = List<String>.from(userDoc.data()?['friendOrder'] ?? []);
       final friendIds = List<String>.from(userDoc.data()?['friends'] ?? []);
       
+      if (kDebugMode) {
+        debugPrint('📋 Loading friends - friendIds: ${friendIds.length}, friendOrder: ${friendOrder.length}');
+        debugPrint('   friendOrder: $friendOrder');
+      }
+      
       if (friendIds.isEmpty) {
         setState(() {
           _friends = [];
@@ -131,6 +136,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
       // If no custom order, use the friends list order
       final orderedIds = friendOrder.isEmpty ? friendIds : friendOrder;
+      
+      if (kDebugMode) {
+        debugPrint('   Using order: $orderedIds');
+      }
 
       // Add any new friends not in the order list
       for (var id in friendIds) {
@@ -495,17 +504,17 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             icon: const Icon(Icons.group_add),
             onPressed: () async {
               // Navigate to search contacts screen
-              await Navigator.push(
+              final result = await Navigator.push(
                 context,
                 MaterialPageRoute(builder: (_) => const SearchContactsScreen()),
               );
               
-              // Reload friends list when returning from search screen
+              // Always reload friends list when returning from search screen
               if (mounted) {
-                _loadFriends();
+                await _loadFriends();
                 
                 if (kDebugMode) {
-                  debugPrint('🔄 Reloading friends list after returning from search screen');
+                  debugPrint('🔄 Reloading friends list after returning from search screen (changed: $result)');
                 }
               }
             },
@@ -642,7 +651,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   
                                   // Reload friends list when returning
                                   if (mounted) {
-                                    _loadFriends();
+                                    await _loadFriends();
                                   }
                                 },
                                 icon: const Icon(Icons.person_add),
