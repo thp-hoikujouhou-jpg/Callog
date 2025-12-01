@@ -549,10 +549,21 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                 child: CircleAvatar(
                                   radius: isSelected ? 32 : 28,
                                   backgroundColor: Colors.blue.shade600,
-                                  backgroundImage: friend['photoUrl'] != null
+                                  backgroundImage: (friend['photoUrl'] != null && 
+                                                    friend['photoUrl'].toString().isNotEmpty)
                                       ? NetworkImage(friend['photoUrl'])
                                       : null,
-                                  child: friend['photoUrl'] == null
+                                  onBackgroundImageError: (friend['photoUrl'] != null && 
+                                                          friend['photoUrl'].toString().isNotEmpty)
+                                      ? (exception, stackTrace) {
+                                          // Silently handle image loading errors
+                                          if (kDebugMode) {
+                                            debugPrint('Failed to load profile image: $exception');
+                                          }
+                                        }
+                                      : null,
+                                  child: (friend['photoUrl'] == null || 
+                                         friend['photoUrl'].toString().isEmpty)
                                       ? Text(
                                           (friend['username'] ?? '?')[0].toUpperCase(),
                                           style: TextStyle(
@@ -714,10 +725,20 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               CircleAvatar(
                 radius: 20,
                 backgroundColor: Colors.blue.shade600,
-                backgroundImage: _selectedFriend!['photoUrl'] != null
+                backgroundImage: (_selectedFriend!['photoUrl'] != null && 
+                                  _selectedFriend!['photoUrl'].toString().isNotEmpty)
                     ? NetworkImage(_selectedFriend!['photoUrl'])
                     : null,
-                child: _selectedFriend!['photoUrl'] == null
+                onBackgroundImageError: (_selectedFriend!['photoUrl'] != null && 
+                                        _selectedFriend!['photoUrl'].toString().isNotEmpty)
+                    ? (exception, stackTrace) {
+                        if (kDebugMode) {
+                          debugPrint('Failed to load profile image: $exception');
+                        }
+                      }
+                    : null,
+                child: (_selectedFriend!['photoUrl'] == null || 
+                       _selectedFriend!['photoUrl'].toString().isEmpty)
                     ? Text(
                         (_selectedFriend!['username'] ?? '?')[0].toUpperCase(),
                         style: const TextStyle(color: Colors.white),

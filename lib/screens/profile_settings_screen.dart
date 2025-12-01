@@ -3,10 +3,9 @@ import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/auth_service.dart';
 import '../models/user_profile.dart';
-import 'login_screen.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import 'package:flutter/foundation.dart' show kIsWeb;
+import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -406,13 +405,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     if (confirmed == true && mounted) {
       try {
+        // Sign out - AuthWrapper will automatically navigate to LoginScreen
         await authService.signOut();
+        
+        // Close ProfileSettingsScreen to allow AuthWrapper to show LoginScreen
         if (mounted) {
-          Navigator.pushAndRemoveUntil(
-            context,
-            MaterialPageRoute(builder: (_) => const LoginScreen()),
-            (route) => false,
-          );
+          Navigator.of(context).pop();
         }
       } catch (e) {
         if (mounted) {
@@ -461,6 +459,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                         radius: 60,
                         backgroundColor: Colors.blue.shade100,
                         backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        onBackgroundImageError: hasPhoto
+                            ? (exception, stackTrace) {
+                                if (kDebugMode) {
+                                  debugPrint('Failed to load profile image: $exception');
+                                }
+                              }
+                            : null,
                         child: hasPhoto
                             ? null
                             : Icon(
