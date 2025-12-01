@@ -184,6 +184,7 @@ class _LoginScreenState extends State<LoginScreen> {
     // Language can be changed later in Profile Settings
 
     return Scaffold(
+      backgroundColor: Colors.blue.shade700, // Blue background
       body: SafeArea(
           child: Center(
             child: SingleChildScrollView(
@@ -200,10 +201,11 @@ class _LoginScreenState extends State<LoginScreen> {
                     child: Column(
                       mainAxisSize: MainAxisSize.min,
                       children: [
-                        Icon(
-                          Icons.phone_in_talk,
-                          size: 64,
-                          color: Colors.blue.shade600,
+                        // Use transparent app icon
+                        Image.asset(
+                          'assets/icon/app_icon.png',
+                          width: 80,
+                          height: 80,
                         ),
                         const SizedBox(height: 16),
                         Text(
