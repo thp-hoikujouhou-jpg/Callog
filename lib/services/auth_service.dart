@@ -25,10 +25,32 @@ class AuthService {
     String password,
   ) async {
     try {
-      return await _auth.signInWithEmailAndPassword(
+      final result = await _auth.signInWithEmailAndPassword(
         email: email,
         password: password,
       );
+      
+      // Check if user profile exists, if not create one
+      if (result.user != null) {
+        final profileExists = await userProfileExists(result.user!.uid);
+        if (!profileExists) {
+          final profile = UserProfile(
+            uid: result.user!.uid,
+            email: email,
+            displayName: result.user!.displayName ?? email.split('@')[0],
+            username: email.split('@')[0],
+            photoUrl: result.user!.photoURL ?? '',
+            location: null,
+            language: 'en',
+            isOnline: true,
+            lastSeen: DateTime.now(),
+            friendsList: [],
+          );
+          await createUserProfile(profile);
+        }
+      }
+      
+      return result;
     } catch (e) {
       rethrow;
     }
