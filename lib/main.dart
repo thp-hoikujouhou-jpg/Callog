@@ -6,6 +6,7 @@ import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
+import 'services/theme_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
 
@@ -64,21 +65,36 @@ class CallogApp extends StatelessWidget {
         ChangeNotifierProvider<LocalizationService>(
           create: (_) => LocalizationService(),
         ),
+        ChangeNotifierProvider<ThemeService>(
+          create: (_) => ThemeService(),
+        ),
         Provider<AuthService>(
           create: (_) => AuthService(),
         ),
       ],
-      child: MaterialApp(
-        title: 'Callog',
-        debugShowCheckedModeBanner: false,
-        theme: ThemeData(
-          colorScheme: ColorScheme.fromSeed(
-            seedColor: Colors.blue,
-            brightness: Brightness.light,
-          ),
-          useMaterial3: true,
-        ),
-        home: const AuthWrapper(),
+      child: Consumer<ThemeService>(
+        builder: (context, themeService, child) {
+          return MaterialApp(
+            title: 'Callog',
+            debugShowCheckedModeBanner: false,
+            themeMode: themeService.themeMode,
+            theme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
+                brightness: Brightness.light,
+              ),
+              useMaterial3: true,
+            ),
+            darkTheme: ThemeData(
+              colorScheme: ColorScheme.fromSeed(
+                seedColor: Colors.blue,
+                brightness: Brightness.dark,
+              ),
+              useMaterial3: true,
+            ),
+            home: const AuthWrapper(),
+          );
+        },
       ),
     );
   }

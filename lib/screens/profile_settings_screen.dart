@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/auth_service.dart';
+import '../services/theme_service.dart';
 import '../models/user_profile.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
@@ -574,6 +575,26 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                                       ))
                                   .toList(),
                             ),
+                          ),
+                        );
+                      },
+                    ),
+                    const Divider(height: 1),
+                    Consumer<ThemeService>(
+                      builder: (context, themeService, child) {
+                        return ListTile(
+                          leading: Icon(
+                            themeService.isDarkMode ? Icons.dark_mode : Icons.light_mode,
+                          ),
+                          title: Text(
+                            themeService.isDarkMode ? 'ダークモード' : 'ライトモード',
+                          ),
+                          subtitle: const Text('テーマの切り替え'),
+                          trailing: Switch(
+                            value: themeService.isDarkMode,
+                            onChanged: (value) async {
+                              await themeService.toggleTheme();
+                            },
                           ),
                         );
                       },

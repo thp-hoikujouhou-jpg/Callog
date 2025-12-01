@@ -117,6 +117,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return;
       }
 
+      // Load friend order from Firestore
+      final friendOrder = List<String>.from(userDoc.data()?['friendOrder'] ?? []);
       final friendIds = List<String>.from(userDoc.data()?['friends'] ?? []);
       
       if (friendIds.isEmpty) {
@@ -127,9 +129,22 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return;
       }
 
+      // If no custom order, use the friends list order
+      final orderedIds = friendOrder.isEmpty ? friendIds : friendOrder;
+
+      // Add any new friends not in the order list
+      for (var id in friendIds) {
+        if (!orderedIds.contains(id)) {
+          orderedIds.add(id);
+        }
+      }
+
+      // Remove any friends that are no longer in the friends list
+      orderedIds.removeWhere((id) => !friendIds.contains(id));
+
       // Load friend details
       final friendDocs = await Future.wait(
-        friendIds.map((id) => _firestore.collection('users').doc(id).get()),
+        orderedIds.map((id) => _firestore.collection('users').doc(id).get()),
       );
 
       final friends = <Map<String, dynamic>>[];

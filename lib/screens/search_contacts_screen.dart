@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import 'reorder_friends_screen.dart';
 
 class SearchContactsScreen extends StatefulWidget {
   const SearchContactsScreen({super.key});
@@ -182,6 +183,23 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
         title: Text(localService.translate('add_friend')),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.swap_vert),
+            onPressed: () async {
+              final result = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const ReorderFriendsScreen()),
+              );
+              
+              // Reload friends if changes were saved
+              if (result == true) {
+                await _loadFriends();
+              }
+            },
+            tooltip: '友達の並び替え',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
@@ -264,12 +282,23 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blue.shade600,
-                              child: Text(
-                                (user['username'] ?? '?')[0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                            leading: Builder(
+                              builder: (context) {
+                                final photoUrl = user['photoUrl'] as String?;
+                                final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+                                
+                                return CircleAvatar(
+                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                                  onBackgroundImageError: hasPhoto ? (exception, stackTrace) {} : null,
+                                  child: hasPhoto
+                                      ? null
+                                      : Text(
+                                          (user['username'] ?? '?')[0].toUpperCase(),
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                );
+                              },
                             ),
                             title: Text(
                               user['username'] ?? 'Unknown',
@@ -359,12 +388,23 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                         return Card(
                           margin: const EdgeInsets.only(bottom: 12),
                           child: ListTile(
-                            leading: CircleAvatar(
-                              backgroundColor: Colors.blue.shade600,
-                              child: Text(
-                                (data['username'] ?? '?')[0].toUpperCase(),
-                                style: const TextStyle(color: Colors.white),
-                              ),
+                            leading: Builder(
+                              builder: (context) {
+                                final photoUrl = data['photoUrl'] as String?;
+                                final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
+                                
+                                return CircleAvatar(
+                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                                  onBackgroundImageError: hasPhoto ? (exception, stackTrace) {} : null,
+                                  child: hasPhoto
+                                      ? null
+                                      : Text(
+                                          (data['username'] ?? '?')[0].toUpperCase(),
+                                          style: const TextStyle(color: Colors.white),
+                                        ),
+                                );
+                              },
                             ),
                             title: Text(
                               data['username'] ?? 'Unknown',
