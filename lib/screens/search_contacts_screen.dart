@@ -191,13 +191,13 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
         }
         
         return AlertDialog(
-          title: const Text('友達を削除'),
+          title: Text(localService.translate('delete_friend')),
           content: ConstrainedBox(
             constraints: BoxConstraints(
               maxWidth: isSmallScreen ? screenWidth * 0.8 : 400,
             ),
-            child: const Text(
-              '友達を削除することにより、データ（チャット履歴）が失われますが、それでも良いですか？',
+            child: Text(
+              localService.translate('delete_friend_confirmation'),
             ),
           ),
           contentPadding: EdgeInsets.fromLTRB(
@@ -221,7 +221,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                 Navigator.of(dialogContext).pop(false);
               },
               child: Text(
-                'No',
+                localService.translate('no'),
                 style: TextStyle(fontSize: isSmallScreen ? 14 : 16),
               ),
             ),
@@ -236,7 +236,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                 foregroundColor: Colors.red,
               ),
               child: Text(
-                'Yes',
+                localService.translate('yes'),
                 style: TextStyle(
                   fontSize: isSmallScreen ? 14 : 16,
                   fontWeight: FontWeight.bold,

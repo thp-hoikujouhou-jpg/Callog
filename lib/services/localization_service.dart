@@ -706,5 +706,39 @@ class LocalizationService extends ChangeNotifier {
       'es': 'Automático (Sistema)',
       'fr': 'Automatique (Système)',
     },
+
+    // Delete Friend Dialog
+    'delete_friend': {
+      'en': 'Delete Friend',
+      'ja': '友達を削除',
+      'ko': '친구 삭제',
+      'zh': '删除好友',
+      'es': 'Eliminar amigo',
+      'fr': 'Supprimer un ami',
+    },
+    'delete_friend_confirmation': {
+      'en': 'By deleting this friend, all data (chat history) will be lost. Are you sure you want to continue?',
+      'ja': '友達を削除することにより、データ（チャット履歴）が失われますが、それでも良いですか？',
+      'ko': '친구를 삭제하면 데이터(채팅 기록)가 손실됩니다. 계속하시겠습니까?',
+      'zh': '删除好友后，所有数据（聊天记录）将会丢失。您确定要继续吗？',
+      'es': 'Al eliminar este amigo, se perderán todos los datos (historial de chat). ¿Está seguro de que desea continuar?',
+      'fr': 'En supprimant cet ami, toutes les données (historique de chat) seront perdues. Êtes-vous sûr de vouloir continuer?',
+    },
+    'yes': {
+      'en': 'Yes',
+      'ja': 'はい',
+      'ko': '예',
+      'zh': '是',
+      'es': 'Sí',
+      'fr': 'Oui',
+    },
+    'no': {
+      'en': 'No',
+      'ja': 'いいえ',
+      'ko': '아니오',
+      'zh': '否',
+      'es': 'No',
+      'fr': 'Non',
+    },
   };
 }
