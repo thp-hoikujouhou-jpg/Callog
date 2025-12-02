@@ -830,49 +830,75 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           ),
         ),
         
-        // Messages
+        // Messages with dynamic background
         Expanded(
-          child: Container(
-            decoration: BoxDecoration(
-              gradient: LinearGradient(
-                begin: Alignment.topLeft,
-                end: Alignment.bottomRight,
-                colors: [Colors.blue.shade50, Colors.white],
-              ),
-            ),
-            child: StreamBuilder<QuerySnapshot>(
-              stream: _firestore
-                  .collection('chats')
-                  .doc(chatId)
-                  .collection('messages')
-                  .where('timestamp', isGreaterThan: DateTime.now().subtract(const Duration(days: 7)))
-                  .orderBy('timestamp', descending: true)
-                  .limit(50)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
+          child: StreamBuilder<DocumentSnapshot>(
+            stream: _firestore.collection('users').doc(currentUser.uid).snapshots(),
+            builder: (context, userSnapshot) {
+              // Get user's background preference
+              String backgroundId = 'default';
+              if (userSnapshot.hasData && userSnapshot.data != null) {
+                final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+                backgroundId = userData?['chatBackground'] ?? 'default';
+              }
 
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return Center(
-                    child: Text(
-                      localService.translate('no_messages_yet'),
-                      style: TextStyle(color: Colors.grey.shade600),
-                    ),
-                  );
-                }
+              // Define all background gradients
+              final Map<String, List<Color>> backgroundColors = {
+                'default': [const Color(0xFFE3F2FD), const Color(0xFFFFFFFF)],
+                'blue_gradient': [const Color(0xFFBBDEFB), const Color(0xFFE3F2FD)],
+                'purple_gradient': [const Color(0xFFE1BEE7), const Color(0xFFF3E5F5)],
+                'pink_gradient': [const Color(0xFFF8BBD0), const Color(0xFFFCE4EC)],
+                'green_gradient': [const Color(0xFFC8E6C9), const Color(0xFFE8F5E9)],
+                'orange_gradient': [const Color(0xFFFFE0B2), const Color(0xFFFFF3E0)],
+                'dark_blue': [const Color(0xFF0D47A1), const Color(0xFF1565C0)],
+                'dark_purple': [const Color(0xFF4A148C), const Color(0xFF6A1B9A)],
+                'sunset': [const Color(0xFFFF9800), const Color(0xFFE91E63)],
+                'ocean': [const Color(0xFF00BCD4), const Color(0xFF2196F3)],
+              };
 
-                final messages = snapshot.data!.docs;
+              final colors = backgroundColors[backgroundId] ?? backgroundColors['default']!;
 
-                return ListView.builder(
-                  reverse: true,
-                  padding: const EdgeInsets.all(16),
-                  itemCount: messages.length,
-                  itemBuilder: (context, index) {
-                    final message = messages[index].data() as Map<String, dynamic>;
-                    final isMe = message['senderId'] == currentUser.uid;
-                    final isRead = message['read'] ?? false;
+              return Container(
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                    colors: colors,
+                  ),
+                ),
+                child: StreamBuilder<QuerySnapshot>(
+                  stream: _firestore
+                      .collection('chats')
+                      .doc(chatId)
+                      .collection('messages')
+                      .where('timestamp', isGreaterThan: DateTime.now().subtract(const Duration(days: 7)))
+                      .orderBy('timestamp', descending: true)
+                      .limit(50)
+                      .snapshots(),
+                  builder: (context, snapshot) {
+                    if (snapshot.connectionState == ConnectionState.waiting) {
+                      return const Center(child: CircularProgressIndicator());
+                    }
+
+                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                      return Center(
+                        child: Text(
+                          localService.translate('no_messages_yet'),
+                          style: TextStyle(color: Colors.grey.shade600),
+                        ),
+                      );
+                    }
+
+                    final messages = snapshot.data!.docs;
+
+                    return ListView.builder(
+                      reverse: true,
+                      padding: const EdgeInsets.all(16),
+                      itemCount: messages.length,
+                      itemBuilder: (context, index) {
+                        final message = messages[index].data() as Map<String, dynamic>;
+                        final isMe = message['senderId'] == currentUser.uid;
+                        final isRead = message['read'] ?? false;
                         
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -921,13 +947,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                               ),
                           ],
                         ),
-                      );
-                  },
-                );
-              },
-            ),
-          ),
+                        );
+                    },
+                  );
+                },
+              ),
+            );
+          },
         ),
+      ),
       ],
     );
   }

@@ -8,6 +8,7 @@ import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'chat_settings_screen.dart';
+import 'settings_screen.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -636,7 +637,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     Navigator.push(
                       context,
                       MaterialPageRoute(
-                        builder: (context) => const ChatSettingsScreen(),
+                        builder: (context) => const SettingsScreen(),
                       ),
                     );
                   },
