@@ -578,13 +578,24 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       // Navigate to outgoing call screen with WebRTC
       if (!mounted) return;
       
+      // Safely extract friend name
+      final friendData = _selectedFriend!;
+      final String friendName = (friendData['username'] as String?) ?? 
+                                 (friendData['name'] as String?) ?? 
+                                 'Unknown User';
+      final String? friendPhotoUrl = friendData['photoUrl'] as String?;
+      
+      if (kDebugMode) {
+        debugPrint('🔍 Friend data: username=${friendData['username']}, name=${friendData['name']}, photoUrl=${friendData['photoUrl']}');
+      }
+      
       await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => OutgoingVoiceCallScreen(
             friendId: _selectedFriendId!,
-            friendName: _selectedFriend!['username'] ?? _selectedFriend!['name'] ?? 'Unknown',
-            friendPhotoUrl: _selectedFriend!['photoUrl'],
+            friendName: friendName,
+            friendPhotoUrl: friendPhotoUrl,
           ),
         ),
       );
