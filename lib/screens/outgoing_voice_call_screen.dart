@@ -31,6 +31,8 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
   bool _isMuted = false;
   bool _isSpeakerOn = false;
   String _callStatus = 'Calling...';
+  bool _isInitializing = true;
+  String? _initError;
 
   @override
   void initState() {
@@ -53,7 +55,10 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
         if (kDebugMode) {
           debugPrint('❌ User not authenticated');
         }
-        _showError('User not authenticated');
+        setState(() {
+          _initError = 'User not authenticated';
+          _isInitializing = false;
+        });
         return;
       }
 
@@ -67,6 +72,14 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
       
       if (kDebugMode) {
         debugPrint('WebRTC service initialized: $initialized');
+      }
+
+      if (!initialized) {
+        setState(() {
+          _initError = 'Failed to connect to signaling server';
+          _isInitializing = false;
+        });
+        return;
       }
 
       // Set up callbacks
@@ -112,11 +125,24 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
         debugPrint('📞 Call initiation result: $success');
       }
       
+      setState(() {
+        _isInitializing = false;
+      });
+      
       if (!success) {
-        _showError('Failed to initiate call');
+        setState(() {
+          _initError = 'Failed to initiate call';
+        });
       }
-    } catch (e) {
-      _showError('Error initializing call: $e');
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ Error initializing call: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+      setState(() {
+        _initError = 'Error initializing call: $e';
+        _isInitializing = false;
+      });
     }
   }
 
@@ -139,17 +165,6 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
     return '$minutes:$seconds';
   }
 
-  void _showError(String message) {
-    if (mounted) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(
-          content: Text(message),
-          backgroundColor: Colors.red,
-        ),
-      );
-    }
-  }
-
   Future<void> _endCall() async {
     _durationTimer?.cancel();
     await _webrtcService.endCall();
@@ -168,6 +183,85 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
   @override
   Widget build(BuildContext context) {
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
+    
+    // Show loading screen during initialization
+    if (_isInitializing) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF1a1a2e) : Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                const CircularProgressIndicator(),
+                const SizedBox(height: 24),
+                Text(
+                  'Connecting...',
+                  style: TextStyle(
+                    fontSize: 18,
+                    color: isDarkMode ? Colors.white70 : Colors.black54,
+                  ),
+                ),
+              ],
+            ),
+          ),
+        ),
+      );
+    }
+    
+    // Show error screen if initialization failed
+    if (_initError != null) {
+      return Scaffold(
+        backgroundColor: isDarkMode ? const Color(0xFF1a1a2e) : Colors.white,
+        body: SafeArea(
+          child: Center(
+            child: Padding(
+              padding: const EdgeInsets.all(24.0),
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(
+                    Icons.error_outline,
+                    size: 64,
+                    color: Colors.red.shade400,
+                  ),
+                  const SizedBox(height: 24),
+                  Text(
+                    'Connection Failed',
+                    style: TextStyle(
+                      fontSize: 22,
+                      fontWeight: FontWeight.bold,
+                      color: isDarkMode ? Colors.white : Colors.black87,
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  Text(
+                    _initError!,
+                    textAlign: TextAlign.center,
+                    style: TextStyle(
+                      fontSize: 16,
+                      color: isDarkMode ? Colors.white70 : Colors.black54,
+                    ),
+                  ),
+                  const SizedBox(height: 32),
+                  ElevatedButton(
+                    onPressed: () => Navigator.of(context).pop(),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade600,
+                      padding: const EdgeInsets.symmetric(
+                        horizontal: 32,
+                        vertical: 12,
+                      ),
+                    ),
+                    child: const Text('Go Back'),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ),
+      );
+    }
     
     return Scaffold(
       backgroundColor: isDarkMode ? const Color(0xFF1a1a2e) : Colors.white,

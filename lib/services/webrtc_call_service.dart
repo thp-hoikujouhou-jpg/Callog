@@ -55,24 +55,46 @@ class WebRTCCallService {
   // Initialize WebRTC service
   Future<bool> initialize(String userId) async {
     try {
+      if (kDebugMode) {
+        debugPrint('🔌 Connecting to signaling server: $signalingServerUrl');
+      }
+      
       _currentUserId = userId;
       
-      // Connect to signaling server
-      _signalChannel = WebSocketChannel.connect(
-        Uri.parse(signalingServerUrl),
-      );
+      // Connect to signaling server with timeout
+      try {
+        _signalChannel = WebSocketChannel.connect(
+          Uri.parse(signalingServerUrl),
+        );
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('❌ WebSocket connection failed: $e');
+        }
+        return false;
+      }
 
       // Listen for signaling messages
       _signalChannel!.stream.listen((message) {
-        _handleSignalingMessage(jsonDecode(message));
+        if (kDebugMode) {
+          debugPrint('📨 Received signaling message: $message');
+        }
+        try {
+          _handleSignalingMessage(jsonDecode(message));
+        } catch (e) {
+          if (kDebugMode) {
+            debugPrint('❌ Error parsing signaling message: $e');
+          }
+        }
       }, onError: (error) {
         if (kDebugMode) {
-          debugPrint('WebSocket error: $error');
+          debugPrint('❌ WebSocket error: $error');
         }
+        onCallEnded?.call('Connection error');
       }, onDone: () {
         if (kDebugMode) {
-          debugPrint('WebSocket connection closed');
+          debugPrint('🔌 WebSocket connection closed');
         }
+        onCallEnded?.call('Connection closed');
       });
 
       // Register user with signaling server
@@ -81,14 +103,18 @@ class WebRTCCallService {
         'userId': userId,
       });
 
+      // Wait a bit for connection to establish
+      await Future.delayed(const Duration(milliseconds: 500));
+
       if (kDebugMode) {
-        debugPrint('WebRTC service initialized for user: $userId');
+        debugPrint('✅ WebRTC service initialized for user: $userId');
       }
       
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('Error initializing WebRTC: $e');
+        debugPrint('❌ Error initializing WebRTC: $e');
+        debugPrint('Stack trace: $stackTrace');
       }
       return false;
     }
@@ -97,12 +123,34 @@ class WebRTCCallService {
   // Make a call
   Future<bool> makeCall(String targetUserId) async {
     try {
+      if (kDebugMode) {
+        debugPrint('📞 Starting call to $targetUserId');
+      }
+      
       _targetUserId = targetUserId;
       
       // Get local media stream
-      _localStream = await navigator.mediaDevices.getUserMedia(_mediaConstraints);
+      if (kDebugMode) {
+        debugPrint('🎤 Requesting microphone access...');
+      }
+      
+      try {
+        _localStream = await navigator.mediaDevices.getUserMedia(_mediaConstraints);
+        if (kDebugMode) {
+          debugPrint('✅ Microphone access granted');
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('❌ Failed to get microphone access: $e');
+        }
+        return false;
+      }
 
       // Create peer connection
+      if (kDebugMode) {
+        debugPrint('🔗 Creating peer connection...');
+      }
+      
       _peerConnection = await createPeerConnection(_configuration, _constraints);
 
       // Add local stream to peer connection
@@ -112,9 +160,15 @@ class WebRTCCallService {
 
       // Listen for remote stream
       _peerConnection!.onTrack = (RTCTrackEvent event) {
+        if (kDebugMode) {
+          debugPrint('📡 Received remote track');
+        }
         if (event.streams.isNotEmpty) {
           _remoteStream = event.streams[0];
           if (onRemoteStream != null) {
+            if (kDebugMode) {
+              debugPrint('✅ Calling onRemoteStream callback');
+            }
             onRemoteStream!(_remoteStream!);
           }
           if (onConnectionStateChanged != null) {
@@ -125,6 +179,9 @@ class WebRTCCallService {
 
       // Listen for ICE candidates
       _peerConnection!.onIceCandidate = (RTCIceCandidate candidate) {
+        if (kDebugMode) {
+          debugPrint('🧊 Sending ICE candidate');
+        }
         _sendSignalingMessage({
           'type': 'ice-candidate',
           'candidate': candidate.toMap(),
@@ -135,7 +192,7 @@ class WebRTCCallService {
       // Listen for connection state changes
       _peerConnection!.onConnectionState = (RTCPeerConnectionState state) {
         if (kDebugMode) {
-          debugPrint('Connection state: $state');
+          debugPrint('🔌 Connection state: $state');
         }
         if (state == RTCPeerConnectionState.RTCPeerConnectionStateDisconnected ||
             state == RTCPeerConnectionState.RTCPeerConnectionStateFailed ||
@@ -147,10 +204,18 @@ class WebRTCCallService {
       };
 
       // Create offer
+      if (kDebugMode) {
+        debugPrint('📝 Creating offer...');
+      }
+      
       RTCSessionDescription offer = await _peerConnection!.createOffer();
       await _peerConnection!.setLocalDescription(offer);
 
       // Send offer through signaling server
+      if (kDebugMode) {
+        debugPrint('📤 Sending offer to signaling server...');
+      }
+      
       _sendSignalingMessage({
         'type': 'offer',
         'offer': offer.toMap(),
@@ -159,13 +224,14 @@ class WebRTCCallService {
       });
 
       if (kDebugMode) {
-        debugPrint('Call initiated to $targetUserId');
+        debugPrint('✅ Call initiated successfully to $targetUserId');
       }
       
       return true;
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('Error making call: $e');
+        debugPrint('❌ Error making call: $e');
+        debugPrint('Stack trace: $stackTrace');
       }
       return false;
     }
