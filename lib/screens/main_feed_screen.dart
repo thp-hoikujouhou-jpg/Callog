@@ -505,10 +505,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
   }
 
-  // New WebRTC voice call method
-  Future<void> _initiateVoiceCall() async {
+  // WebRTC voice call method (updated to use existing UI)
+  Future<void> _startVoiceCall() async {
     if (kDebugMode) {
-      debugPrint('📞 Voice call button pressed');
+      debugPrint('📞 Voice call button pressed (existing button)');
     }
     
     if (_selectedFriend == null || _selectedFriendId == null) {
@@ -518,77 +518,19 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       return;
     }
 
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    final callService = Provider.of<VoiceCallService>(context, listen: false);
+
     if (kDebugMode) {
       debugPrint('📞 Requesting microphone permission...');
     }
 
-    try {
-      // Request microphone permission
-      final micStatus = await Permission.microphone.request();
-      
-      if (kDebugMode) {
-        debugPrint('🎤 Microphone permission status: $micStatus');
-      }
-
-      if (!micStatus.isGranted) {
-        if (!mounted) return;
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('マイクの権限が必要です'),
-            backgroundColor: Colors.red,
-          ),
-        );
-        return;
-      }
-
-      if (kDebugMode) {
-        debugPrint('✅ Permission granted, navigating to call screen...');
-        debugPrint('   Friend ID: $_selectedFriendId');
-        debugPrint('   Friend Name: ${_selectedFriend!['name']}');
-      }
-
-      // Navigate to outgoing call screen with WebRTC
-      if (!mounted) return;
-      
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OutgoingVoiceCallScreen(
-            friendId: _selectedFriendId!,
-            friendName: _selectedFriend!['name'] ?? 'Unknown',
-            friendPhotoUrl: _selectedFriend!['photoUrl'],
-          ),
-        ),
-      );
-      
-      if (kDebugMode) {
-        debugPrint('📞 Returned from call screen');
-      }
-    } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('❌ Error initiating voice call: $e');
-        debugPrint('Stack trace: $stackTrace');
-      }
-      
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('通話開始エラー: $e'),
-            backgroundColor: Colors.red,
-          ),
-        );
-      }
-    }
-  }
-
-  Future<void> _startVoiceCall() async {
-    if (_selectedFriend == null || _selectedFriendId == null) return;
-
-    final localService = Provider.of<LocalizationService>(context, listen: false);
-    final callService = Provider.of<VoiceCallService>(context, listen: false);
-
     // Request call permissions
     final permissionResult = await callService.requestCallPermissions();
+    
+    if (kDebugMode) {
+      debugPrint('🎤 Microphone permission granted: ${permissionResult.granted}');
+    }
     
     if (!permissionResult.granted) {
       if (!mounted) return;
@@ -626,35 +568,44 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       return;
     }
 
-    // Initiate call
-    final result = await callService.initiateCall(
-      friendId: _selectedFriendId!,
-      friendName: _selectedFriend!['username'] ?? 'Unknown',
-      friendPhotoUrl: _selectedFriend!['photoUrl'],
-      callType: CallType.voice,
-    );
-
-    if (!result.success) {
-      if (!mounted) return;
-      
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text(result.message)),
-      );
-      return;
+    if (kDebugMode) {
+      debugPrint('✅ Permission granted, navigating to call screen...');
+      debugPrint('   Friend ID: $_selectedFriendId');
+      debugPrint('   Friend Name: ${_selectedFriend!['username'] ?? _selectedFriend!['name']}');
     }
 
-    // Navigate to outgoing call screen
-    if (mounted) {
-      Navigator.push(
+    try {
+      // Navigate to outgoing call screen with WebRTC
+      if (!mounted) return;
+      
+      await Navigator.push(
         context,
         MaterialPageRoute(
           builder: (context) => OutgoingVoiceCallScreen(
             friendId: _selectedFriendId!,
-            friendName: _selectedFriend!['username'] ?? 'Unknown',
+            friendName: _selectedFriend!['username'] ?? _selectedFriend!['name'] ?? 'Unknown',
             friendPhotoUrl: _selectedFriend!['photoUrl'],
           ),
         ),
       );
+      
+      if (kDebugMode) {
+        debugPrint('📞 Returned from call screen');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ Error starting voice call: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('通話開始エラー: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
     }
   }
 
@@ -894,17 +845,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         ),
                         onSubmitted: (_) => _sendMessage(),
                       ),
-                    ),
-                    const SizedBox(width: 8),
-                    // Voice call button
-                    IconButton(
-                      onPressed: _initiateVoiceCall,
-                      icon: const Icon(Icons.phone),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.green.shade600,
-                        foregroundColor: Colors.white,
-                      ),
-                      tooltip: 'Voice Call',
                     ),
                     const SizedBox(width: 8),
                     IconButton(
