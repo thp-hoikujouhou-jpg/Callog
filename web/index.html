@@ -33,6 +33,12 @@
   <link rel="manifest" href="manifest.json">
 </head>
 <body>
+  <script>
+    // Disable service worker to prevent initialization timeout
+    window.flutterConfiguration = {
+      serviceWorkerVersion: null,
+    };
+  </script>
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
