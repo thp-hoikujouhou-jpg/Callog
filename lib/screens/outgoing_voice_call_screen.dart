@@ -16,7 +16,8 @@ class OutgoingVoiceCallScreen extends StatefulWidget {
     required this.friendId,
     required this.friendName,
     this.friendPhotoUrl,
-  });
+  }) : assert(friendId != '', 'friendId cannot be empty'),
+       assert(friendName != '', 'friendName cannot be empty');
 
   @override
   State<OutgoingVoiceCallScreen> createState() => _OutgoingVoiceCallScreenState();

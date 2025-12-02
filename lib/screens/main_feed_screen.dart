@@ -583,15 +583,40 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return;
       }
       
-      // Safely extract friend name
+      // Safely extract friend name and validate data
       final friendData = _selectedFriend!;
+      
+      // Extract friend ID with validation
+      final String? friendId = _selectedFriendId;
+      if (friendId == null || friendId.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('❌ Friend ID is null or empty');
+        }
+        throw Exception('Friend ID is required');
+      }
+      
+      // Extract friend name with fallback
       final String friendName = (friendData['username'] as String?) ?? 
                                  (friendData['name'] as String?) ?? 
+                                 (friendData['displayName'] as String?) ??
                                  'Unknown User';
+      
+      // Validate friend name is not empty
+      if (friendName.isEmpty || friendName == 'Unknown User') {
+        if (kDebugMode) {
+          debugPrint('⚠️ Friend name is empty or unknown, using fallback');
+        }
+      }
+      
       final String? friendPhotoUrl = friendData['photoUrl'] as String?;
       
       if (kDebugMode) {
-        debugPrint('🔍 Friend data: username=${friendData['username']}, name=${friendData['name']}, photoUrl=${friendData['photoUrl']}');
+        debugPrint('🔍 Friend data validation:');
+        debugPrint('   - friendId: $friendId (${friendId.isNotEmpty ? "valid" : "INVALID"})');
+        debugPrint('   - friendName: $friendName (${friendName.isNotEmpty ? "valid" : "INVALID"})');
+        debugPrint('   - username: ${friendData['username']}');
+        debugPrint('   - name: ${friendData['name']}');
+        debugPrint('   - photoUrl: ${friendData['photoUrl']}');
         debugPrint('🚀 About to navigate to OutgoingVoiceCallScreen...');
       }
       
@@ -602,9 +627,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             builder: (context) {
               if (kDebugMode) {
                 debugPrint('📱 Building OutgoingVoiceCallScreen...');
+                debugPrint('   - friendId: $friendId');
+                debugPrint('   - friendName: $friendName');
               }
               return OutgoingVoiceCallScreen(
-                friendId: _selectedFriendId!,
+                friendId: friendId,
                 friendName: friendName,
                 friendPhotoUrl: friendPhotoUrl,
               );
