@@ -4,7 +4,6 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
-import '../services/voice_call_service.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
 import 'profile_settings_screen.dart';
@@ -508,60 +507,55 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   // WebRTC voice call method (updated to use existing UI)
   Future<void> _startVoiceCall() async {
     if (kDebugMode) {
-      debugPrint('📞 Voice call button pressed (existing button)');
+      debugPrint('📞 [VOICE CALL] Button pressed');
     }
     
     if (_selectedFriend == null || _selectedFriendId == null) {
       if (kDebugMode) {
-        debugPrint('❌ No friend selected');
+        debugPrint('❌ [VOICE CALL] No friend selected');
       }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('友達を選択してください')),
+      );
       return;
     }
 
-    final localService = Provider.of<LocalizationService>(context, listen: false);
-    final callService = Provider.of<VoiceCallService>(context, listen: false);
-
     if (kDebugMode) {
-      debugPrint('📞 Requesting microphone permission...');
+      debugPrint('✅ [VOICE CALL] Friend selected: $_selectedFriendId');
+      debugPrint('📱 [VOICE CALL] Requesting microphone permission...');
     }
 
-    // Request call permissions
-    final permissionResult = await callService.requestCallPermissions();
+    // Request microphone permission
+    final micStatus = await Permission.microphone.request();
     
     if (kDebugMode) {
-      debugPrint('🎤 Microphone permission granted: ${permissionResult.granted}');
+      debugPrint('🎤 [VOICE CALL] Microphone permission: $micStatus');
     }
     
-    if (!permissionResult.granted) {
+    if (!micStatus.isGranted) {
+      if (kDebugMode) {
+        debugPrint('❌ [VOICE CALL] Microphone permission denied');
+      }
+      
       if (!mounted) return;
       
       showDialog(
         context: context,
         builder: (context) => AlertDialog(
-          title: Text(localService.translate('permission_required')),
-          content: Text(localService.translate('microphone_permission')),
+          title: const Text('マイクの許可が必要です'),
+          content: const Text('音声通話を行うには、マイクへのアクセスを許可してください。'),
           actions: [
             TextButton(
               onPressed: () => Navigator.pop(context),
-              child: Text(localService.translate('cancel')),
+              child: const Text('キャンセル'),
             ),
-            if (permissionResult.shouldOpenSettings)
-              TextButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  openAppSettings();
-                },
-                child: Text(localService.translate('open_settings')),
-              )
-            else
-              TextButton(
-                onPressed: () async {
-                  Navigator.pop(context);
-                  // Request again
-                  await callService.requestCallPermissions();
-                },
-                child: Text(localService.translate('grant_permission')),
-              ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openAppSettings();
+              },
+              child: const Text('設定を開く'),
+            ),
           ],
         ),
       );
@@ -569,59 +563,36 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
 
     if (kDebugMode) {
-      debugPrint('✅ Permission granted, navigating to call screen...');
-      debugPrint('   Friend ID: $_selectedFriendId');
-      debugPrint('   Friend Name: ${_selectedFriend!['username'] ?? _selectedFriend!['name']}');
+      debugPrint('✅ [VOICE CALL] Permission granted! Preparing to navigate...');
+      debugPrint('   - Friend ID: $_selectedFriendId');
+      debugPrint('   - Friend Name: ${_selectedFriend!['username'] ?? _selectedFriend!['name'] ?? 'Unknown'}');
+      debugPrint('   - Friend Photo: ${_selectedFriend!['photoUrl']}');
     }
 
     try {
-      // Navigate to outgoing call screen with WebRTC
       if (!mounted) {
         if (kDebugMode) {
-          debugPrint('❌ Widget not mounted, cannot navigate');
+          debugPrint('❌ [VOICE CALL] Widget not mounted');
         }
         return;
       }
       
-      // Safely extract friend name and validate data
-      final friendData = _selectedFriend!;
-      
-      // Extract friend ID with validation
-      final String? friendId = _selectedFriendId;
-      if (friendId == null || friendId.isEmpty) {
-        if (kDebugMode) {
-          debugPrint('❌ Friend ID is null or empty');
-        }
-        throw Exception('Friend ID is required');
-      }
-      
-      // Extract friend name with fallback
-      final String friendName = (friendData['username'] as String?) ?? 
-                                 (friendData['name'] as String?) ?? 
-                                 (friendData['displayName'] as String?) ??
-                                 'Unknown User';
-      
-      // Validate friend name is not empty
-      if (friendName.isEmpty || friendName == 'Unknown User') {
-        if (kDebugMode) {
-          debugPrint('⚠️ Friend name is empty or unknown, using fallback');
-        }
-      }
-      
-      final String? friendPhotoUrl = friendData['photoUrl'] as String?;
+      // Extract friend data
+      final friendId = _selectedFriendId!;
+      final friendName = _selectedFriend!['username'] as String? ?? 
+                         _selectedFriend!['name'] as String? ?? 
+                         'Unknown';
+      final friendPhotoUrl = _selectedFriend!['photoUrl'] as String?;
       
       if (kDebugMode) {
-        debugPrint('🔍 Friend data validation:');
-        debugPrint('   - friendId: $friendId (${friendId.isNotEmpty ? "valid" : "INVALID"})');
-        debugPrint('   - friendName: $friendName (${friendName.isNotEmpty ? "valid" : "INVALID"})');
-        debugPrint('   - username: ${friendData['username']}');
-        debugPrint('   - name: ${friendData['name']}');
-        debugPrint('   - photoUrl: ${friendData['photoUrl']}');
-        debugPrint('🚀 About to navigate to OutgoingVoiceCallScreen...');
+        debugPrint('🚀 [VOICE CALL] Navigating to OutgoingVoiceCallScreen...');
+        debugPrint('   - ID: $friendId');
+        debugPrint('   - Name: $friendName');
+        debugPrint('   - Photo: $friendPhotoUrl');
       }
       
       try {
-        await Navigator.push(
+        final result = await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) {
