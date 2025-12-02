@@ -10,7 +10,7 @@ logger = logging.getLogger(__name__)
 # Store connected clients: {userId: websocket}
 clients = {}
 
-async def handle_client(websocket, path):
+async def handle_client(websocket):
     user_id = None
     try:
         async for message in websocket:
