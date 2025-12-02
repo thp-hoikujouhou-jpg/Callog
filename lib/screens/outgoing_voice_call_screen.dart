@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import '../services/webrtc_call_service.dart';
+import '../services/webrtc_call_service_stub.dart';
 import 'dart:async';
 
 /// Outgoing Voice Call Screen with WebRTC
