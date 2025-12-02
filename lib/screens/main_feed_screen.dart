@@ -507,33 +507,78 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
   // New WebRTC voice call method
   Future<void> _initiateVoiceCall() async {
-    if (_selectedFriend == null || _selectedFriendId == null) return;
-
-    // Request microphone permission
-    final micStatus = await Permission.microphone.request();
-    if (!micStatus.isGranted) {
-      if (!mounted) return;
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('マイクの権限が必要です'),
-          backgroundColor: Colors.red,
-        ),
-      );
+    if (kDebugMode) {
+      debugPrint('📞 Voice call button pressed');
+    }
+    
+    if (_selectedFriend == null || _selectedFriendId == null) {
+      if (kDebugMode) {
+        debugPrint('❌ No friend selected');
+      }
       return;
     }
 
-    // Navigate to outgoing call screen with WebRTC
-    if (!mounted) return;
-    Navigator.push(
-      context,
-      MaterialPageRoute(
-        builder: (context) => OutgoingVoiceCallScreen(
-          friendId: _selectedFriendId!,
-          friendName: _selectedFriend!['name'] ?? 'Unknown',
-          friendPhotoUrl: _selectedFriend!['photoUrl'],
+    if (kDebugMode) {
+      debugPrint('📞 Requesting microphone permission...');
+    }
+
+    try {
+      // Request microphone permission
+      final micStatus = await Permission.microphone.request();
+      
+      if (kDebugMode) {
+        debugPrint('🎤 Microphone permission status: $micStatus');
+      }
+
+      if (!micStatus.isGranted) {
+        if (!mounted) return;
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Text('マイクの権限が必要です'),
+            backgroundColor: Colors.red,
+          ),
+        );
+        return;
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ Permission granted, navigating to call screen...');
+        debugPrint('   Friend ID: $_selectedFriendId');
+        debugPrint('   Friend Name: ${_selectedFriend!['name']}');
+      }
+
+      // Navigate to outgoing call screen with WebRTC
+      if (!mounted) return;
+      
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OutgoingVoiceCallScreen(
+            friendId: _selectedFriendId!,
+            friendName: _selectedFriend!['name'] ?? 'Unknown',
+            friendPhotoUrl: _selectedFriend!['photoUrl'],
+          ),
         ),
-      ),
-    );
+      );
+      
+      if (kDebugMode) {
+        debugPrint('📞 Returned from call screen');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ Error initiating voice call: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('通話開始エラー: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
 
   Future<void> _startVoiceCall() async {

@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/foundation.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/webrtc_call_service.dart';
 import '../services/localization_service.dart';
@@ -35,22 +36,45 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
   @override
   void initState() {
     super.initState();
+    if (kDebugMode) {
+      debugPrint('📱 OutgoingVoiceCallScreen initialized');
+      debugPrint('   Target: ${widget.friendName} (${widget.friendId})');
+    }
     _initializeCall();
   }
 
   Future<void> _initializeCall() async {
     try {
+      if (kDebugMode) {
+        debugPrint('🔧 Initializing WebRTC call...');
+      }
+      
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
+        if (kDebugMode) {
+          debugPrint('❌ User not authenticated');
+        }
         _showError('User not authenticated');
         return;
       }
 
+      if (kDebugMode) {
+        debugPrint('✅ Current user: ${currentUser.uid}');
+        debugPrint('🔌 Initializing WebRTC service...');
+      }
+
       // Initialize WebRTC service
-      await _webrtcService.initialize(currentUser.uid);
+      final initialized = await _webrtcService.initialize(currentUser.uid);
+      
+      if (kDebugMode) {
+        debugPrint('WebRTC service initialized: $initialized');
+      }
 
       // Set up callbacks
       _webrtcService.onRemoteStream = (stream) {
+        if (kDebugMode) {
+          debugPrint('📞 Remote stream received!');
+        }
         setState(() {
           _isConnected = true;
           _callStatus = 'Connected';
@@ -60,10 +84,16 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
       };
 
       _webrtcService.onCallEnded = (reason) {
+        if (kDebugMode) {
+          debugPrint('📞 Call ended: $reason');
+        }
         _endCall();
       };
 
       _webrtcService.onConnectionStateChanged = (connected) {
+        if (kDebugMode) {
+          debugPrint('🔌 Connection state changed: $connected');
+        }
         setState(() {
           _isConnected = connected;
           if (!connected) {
@@ -72,8 +102,17 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
         });
       };
 
+      if (kDebugMode) {
+        debugPrint('📞 Making call to ${widget.friendId}...');
+      }
+
       // Make the call
       final success = await _webrtcService.makeCall(widget.friendId);
+      
+      if (kDebugMode) {
+        debugPrint('📞 Call initiation result: $success');
+      }
+      
       if (!success) {
         _showError('Failed to initiate call');
       }
