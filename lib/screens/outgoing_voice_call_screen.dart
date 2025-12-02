@@ -38,10 +38,19 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
   void initState() {
     super.initState();
     if (kDebugMode) {
-      debugPrint('📱 OutgoingVoiceCallScreen initialized');
+      debugPrint('📱 OutgoingVoiceCallScreen.initState() called');
       debugPrint('   Target: ${widget.friendName} (${widget.friendId})');
+      debugPrint('   Photo URL: ${widget.friendPhotoUrl}');
+      debugPrint('   _isInitializing: $_isInitializing');
     }
-    _initializeCall();
+    
+    // Ensure initialization starts on next frame
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (kDebugMode) {
+        debugPrint('📱 Post-frame callback: Starting call initialization...');
+      }
+      _initializeCall();
+    });
   }
 
   Future<void> _initializeCall() async {
@@ -182,10 +191,17 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
 
   @override
   Widget build(BuildContext context) {
+    if (kDebugMode) {
+      debugPrint('🎨 OutgoingVoiceCallScreen.build() called - _isInitializing: $_isInitializing, _initError: $_initError');
+    }
+    
     final isDarkMode = Theme.of(context).brightness == Brightness.dark;
     
     // Show loading screen during initialization
     if (_isInitializing) {
+      if (kDebugMode) {
+        debugPrint('⏳ Showing loading screen...');
+      }
       return Scaffold(
         backgroundColor: isDarkMode ? const Color(0xFF1a1a2e) : Colors.white,
         body: SafeArea(

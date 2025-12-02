@@ -576,7 +576,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
     try {
       // Navigate to outgoing call screen with WebRTC
-      if (!mounted) return;
+      if (!mounted) {
+        if (kDebugMode) {
+          debugPrint('❌ Widget not mounted, cannot navigate');
+        }
+        return;
+      }
       
       // Safely extract friend name
       final friendData = _selectedFriend!;
@@ -587,21 +592,35 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       
       if (kDebugMode) {
         debugPrint('🔍 Friend data: username=${friendData['username']}, name=${friendData['name']}, photoUrl=${friendData['photoUrl']}');
+        debugPrint('🚀 About to navigate to OutgoingVoiceCallScreen...');
       }
       
-      await Navigator.push(
-        context,
-        MaterialPageRoute(
-          builder: (context) => OutgoingVoiceCallScreen(
-            friendId: _selectedFriendId!,
-            friendName: friendName,
-            friendPhotoUrl: friendPhotoUrl,
+      try {
+        await Navigator.push(
+          context,
+          MaterialPageRoute(
+            builder: (context) {
+              if (kDebugMode) {
+                debugPrint('📱 Building OutgoingVoiceCallScreen...');
+              }
+              return OutgoingVoiceCallScreen(
+                friendId: _selectedFriendId!,
+                friendName: friendName,
+                friendPhotoUrl: friendPhotoUrl,
+              );
+            },
           ),
-        ),
-      );
-      
-      if (kDebugMode) {
-        debugPrint('📞 Returned from call screen');
+        );
+        
+        if (kDebugMode) {
+          debugPrint('📞 Returned from call screen');
+        }
+      } catch (navError, navStackTrace) {
+        if (kDebugMode) {
+          debugPrint('❌ Navigation error: $navError');
+          debugPrint('Navigation stack trace: $navStackTrace');
+        }
+        rethrow;
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
@@ -614,6 +633,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           SnackBar(
             content: Text('通話開始エラー: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
