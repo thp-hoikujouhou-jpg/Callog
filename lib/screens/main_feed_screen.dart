@@ -4,9 +4,12 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import '../services/voice_call_service.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
 import 'profile_settings_screen.dart';
+import 'package:permission_handler/permission_handler.dart';
+import 'outgoing_voice_call_screen.dart';
 
 class MainFeedScreen extends StatefulWidget {
   const MainFeedScreen({super.key});
@@ -487,6 +490,83 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
   }
 
+  Future<void> _startVoiceCall() async {
+    if (_selectedFriend == null || _selectedFriendId == null) return;
+
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    final callService = Provider.of<VoiceCallService>(context, listen: false);
+
+    // Request call permissions
+    final permissionResult = await callService.requestCallPermissions();
+    
+    if (!permissionResult.granted) {
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: Text(localService.translate('permission_required')),
+          content: Text(localService.translate('microphone_permission')),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: Text(localService.translate('cancel')),
+            ),
+            if (permissionResult.shouldOpenSettings)
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context);
+                  openAppSettings();
+                },
+                child: Text(localService.translate('open_settings')),
+              )
+            else
+              TextButton(
+                onPressed: () async {
+                  Navigator.pop(context);
+                  // Request again
+                  await callService.requestCallPermissions();
+                },
+                child: Text(localService.translate('grant_permission')),
+              ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    // Initiate call
+    final result = await callService.initiateCall(
+      friendId: _selectedFriendId!,
+      friendName: _selectedFriend!['username'] ?? 'Unknown',
+      friendPhotoUrl: _selectedFriend!['photoUrl'],
+      callType: CallType.voice,
+    );
+
+    if (!result.success) {
+      if (!mounted) return;
+      
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(content: Text(result.message)),
+      );
+      return;
+    }
+
+    // Navigate to outgoing call screen
+    if (mounted) {
+      Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) => OutgoingVoiceCallScreen(
+            friendId: _selectedFriendId!,
+            friendName: _selectedFriend!['username'] ?? 'Unknown',
+            friendPhotoUrl: _selectedFriend!['photoUrl'],
+          ),
+        ),
+      );
+    }
+  }
+
   @override
   Widget build(BuildContext context) {
     // Use listen: false to avoid rebuild issues during login
@@ -807,9 +887,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               ),
               IconButton(
                 icon: const Icon(Icons.phone),
-                onPressed: () {
-                  // Voice call functionality (placeholder)
-                },
+                onPressed: _startVoiceCall,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.green.shade600,
                   foregroundColor: Colors.white,

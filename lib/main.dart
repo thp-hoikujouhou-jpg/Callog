@@ -7,6 +7,7 @@ import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
+import 'services/voice_call_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
 
@@ -67,6 +68,9 @@ class CallogApp extends StatelessWidget {
         ),
         ChangeNotifierProvider<ThemeService>(
           create: (_) => ThemeService(),
+        ),
+        ChangeNotifierProvider<VoiceCallService>(
+          create: (_) => VoiceCallService(),
         ),
         Provider<AuthService>(
           create: (_) => AuthService(),
