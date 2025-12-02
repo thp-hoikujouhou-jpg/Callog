@@ -176,7 +176,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(localService.translate('chat_background')),
+          title: Text(localService.translate('chat_settings')),
           backgroundColor: Colors.blue.shade600,
           foregroundColor: Colors.white,
           elevation: 0,
@@ -189,7 +189,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('chat_background')),
+        title: Text(localService.translate('chat_settings')),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         elevation: 0,
