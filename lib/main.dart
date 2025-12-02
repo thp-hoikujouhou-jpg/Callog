@@ -2,12 +2,14 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
 import 'services/voice_call_service.dart';
+import 'services/push_notification_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
 
@@ -29,6 +31,9 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
+    
+    // Set up background message handler for push notifications
+    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     
     runApp(const CallogApp());
   } catch (e, stackTrace) {

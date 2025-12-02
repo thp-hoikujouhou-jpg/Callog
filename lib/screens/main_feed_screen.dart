@@ -36,6 +36,21 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     super.initState();
     _loadFriends();
     _globalCleanupOldMessages(); // Clean up old messages on app start
+    _initializePushNotifications(); // Initialize push notifications
+  }
+  
+  Future<void> _initializePushNotifications() async {
+    try {
+      // This will be initialized in CallogApp, but we can get the instance here
+      // No need to do anything special - notifications are handled globally
+      if (kDebugMode) {
+        debugPrint('✅ Push notifications ready');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Push notification initialization error: $e');
+      }
+    }
   }
 
   @override
@@ -490,6 +505,37 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
   }
 
+  // New WebRTC voice call method
+  Future<void> _initiateVoiceCall() async {
+    if (_selectedFriend == null || _selectedFriendId == null) return;
+
+    // Request microphone permission
+    final micStatus = await Permission.microphone.request();
+    if (!micStatus.isGranted) {
+      if (!mounted) return;
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('マイクの権限が必要です'),
+          backgroundColor: Colors.red,
+        ),
+      );
+      return;
+    }
+
+    // Navigate to outgoing call screen with WebRTC
+    if (!mounted) return;
+    Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (context) => OutgoingVoiceCallScreen(
+          friendId: _selectedFriendId!,
+          friendName: _selectedFriend!['name'] ?? 'Unknown',
+          friendPhotoUrl: _selectedFriend!['photoUrl'],
+        ),
+      ),
+    );
+  }
+
   Future<void> _startVoiceCall() async {
     if (_selectedFriend == null || _selectedFriendId == null) return;
 
@@ -803,6 +849,17 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         ),
                         onSubmitted: (_) => _sendMessage(),
                       ),
+                    ),
+                    const SizedBox(width: 8),
+                    // Voice call button
+                    IconButton(
+                      onPressed: _initiateVoiceCall,
+                      icon: const Icon(Icons.phone),
+                      style: IconButton.styleFrom(
+                        backgroundColor: Colors.green.shade600,
+                        foregroundColor: Colors.white,
+                      ),
+                      tooltip: 'Voice Call',
                     ),
                     const SizedBox(width: 8),
                     IconButton(
