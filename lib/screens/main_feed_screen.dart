@@ -830,109 +830,49 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           ),
         ),
         
-        // Messages with background
+        // Messages
         Expanded(
-          child: StreamBuilder<DocumentSnapshot>(
-            stream: _firestore.collection('users').doc(currentUser.uid).snapshots(),
-            builder: (context, userSnapshot) {
-              // Get user's background preference
-              String backgroundId = 'default';
-              if (userSnapshot.hasData && userSnapshot.data != null) {
-                final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
-                backgroundId = userData?['chatBackground'] ?? 'default';
-              }
+          child: Container(
+            decoration: BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topLeft,
+                end: Alignment.bottomRight,
+                colors: [Colors.blue.shade50, Colors.white],
+              ),
+            ),
+            child: StreamBuilder<QuerySnapshot>(
+              stream: _firestore
+                  .collection('chats')
+                  .doc(chatId)
+                  .collection('messages')
+                  .where('timestamp', isGreaterThan: DateTime.now().subtract(const Duration(days: 7)))
+                  .orderBy('timestamp', descending: true)
+                  .limit(50)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
 
-              // Define background gradients
-              final backgroundGradients = {
-                'default': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.blue.shade50, Colors.white],
-                ),
-                'blue_gradient': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.blue.shade100, Colors.blue.shade50],
-                ),
-                'purple_gradient': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.purple.shade100, Colors.purple.shade50],
-                ),
-                'pink_gradient': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.pink.shade100, Colors.pink.shade50],
-                ),
-                'green_gradient': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.green.shade100, Colors.green.shade50],
-                ),
-                'orange_gradient': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.orange.shade100, Colors.orange.shade50],
-                ),
-                'dark_blue': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.blue.shade900, Colors.blue.shade800],
-                ),
-                'dark_purple': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.purple.shade900, Colors.purple.shade800],
-                ),
-                'sunset': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.orange.shade300, Colors.pink.shade300],
-                ),
-                'ocean': LinearGradient(
-                  begin: Alignment.topLeft,
-                  end: Alignment.bottomRight,
-                  colors: [Colors.cyan.shade300, Colors.blue.shade400],
-                ),
-              };
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return Center(
+                    child: Text(
+                      localService.translate('no_messages_yet'),
+                      style: TextStyle(color: Colors.grey.shade600),
+                    ),
+                  );
+                }
 
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: backgroundGradients[backgroundId] ?? backgroundGradients['default'],
-                ),
-                child: StreamBuilder<QuerySnapshot>(
-                  stream: _firestore
-                      .collection('chats')
-                      .doc(chatId)
-                      .collection('messages')
-                      .where('timestamp', isGreaterThan: DateTime.now().subtract(const Duration(days: 7)))
-                      .orderBy('timestamp', descending: true)
-                      .limit(50)
-                      .snapshots(),
-                  builder: (context, snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
-                      return const Center(child: CircularProgressIndicator());
-                    }
+                final messages = snapshot.data!.docs;
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return Center(
-                        child: Text(
-                          localService.translate('no_messages_yet'),
-                          style: TextStyle(color: Colors.grey.shade600),
-                        ),
-                      );
-                    }
-
-                    final messages = snapshot.data!.docs;
-
-                    return ListView.builder(
-                      reverse: true,
-                      padding: const EdgeInsets.all(16),
-                      itemCount: messages.length,
-                      itemBuilder: (context, index) {
-                        final message = messages[index].data() as Map<String, dynamic>;
-                        final isMe = message['senderId'] == currentUser.uid;
-                        final isRead = message['read'] ?? false;
+                return ListView.builder(
+                  reverse: true,
+                  padding: const EdgeInsets.all(16),
+                  itemCount: messages.length,
+                  itemBuilder: (context, index) {
+                    final message = messages[index].data() as Map<String, dynamic>;
+                    final isMe = message['senderId'] == currentUser.uid;
+                    final isRead = message['read'] ?? false;
                         
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -957,37 +897,35 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                 ),
                               ),
                               // 既読/未読表示（自分のメッセージのみ）
-                              if (isMe)
-                                Padding(
-                                  padding: const EdgeInsets.only(right: 8, bottom: 4),
-                                  child: Row(
-                                    mainAxisSize: MainAxisSize.min,
-                                    children: [
-                                      Icon(
-                                        isRead ? Icons.done_all : Icons.done,
-                                        size: 16,
+                            if (isMe)
+                              Padding(
+                                padding: const EdgeInsets.only(right: 8, bottom: 4),
+                                child: Row(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      isRead ? Icons.done_all : Icons.done,
+                                      size: 16,
+                                      color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
+                                    ),
+                                    const SizedBox(width: 4),
+                                    Text(
+                                      isRead ? localService.translate('read') : localService.translate('unread'),
+                                      style: TextStyle(
+                                        fontSize: 11,
                                         color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
                                       ),
-                                      const SizedBox(width: 4),
-                                      Text(
-                                        isRead ? localService.translate('read') : localService.translate('unread'),
-                                        style: TextStyle(
-                                          fontSize: 11,
-                                          color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
+                                    ),
+                                  ],
                                 ),
-                            ],
-                          ),
-                        );
-                      },
-                    );
+                              ),
+                          ],
+                        ),
+                      );
                   },
-                ),
-              );
-            },
+                );
+              },
+            ),
           ),
         ),
       ],

@@ -630,7 +630,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 child: ListTile(
                   leading: const Icon(Icons.settings),
                   title: Text(localService.translate('settings')),
-                  subtitle: Text(localService.translate('chat_background')),
+                  subtitle: Text(localService.translate('settings_coming_soon')),
                   trailing: const Icon(Icons.chevron_right),
                   onTap: () {
                     Navigator.push(
