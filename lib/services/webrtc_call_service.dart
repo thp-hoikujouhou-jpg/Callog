@@ -131,17 +131,31 @@ class WebRTCCallService {
       
       // Get local media stream
       if (kDebugMode) {
-        debugPrint('🎤 Requesting microphone access...');
+        debugPrint('🎤 [MEDIA] Requesting microphone access...');
+        debugPrint('   Media constraints: $_mediaConstraints');
       }
       
       try {
-        _localStream = await navigator.mediaDevices.getUserMedia(_mediaConstraints);
+        _localStream = await navigator.mediaDevices.getUserMedia(_mediaConstraints)
+            .timeout(
+              const Duration(seconds: 10),
+              onTimeout: () {
+                if (kDebugMode) {
+                  debugPrint('⏱️ [MEDIA] getUserMedia timed out');
+                }
+                throw Exception('Microphone access timed out');
+              },
+            );
+        
         if (kDebugMode) {
-          debugPrint('✅ Microphone access granted');
+          debugPrint('✅ [MEDIA] Microphone access granted');
+          debugPrint('   Local stream tracks: ${_localStream!.getTracks().length}');
         }
-      } catch (e) {
+      } catch (e, stackTrace) {
         if (kDebugMode) {
-          debugPrint('❌ Failed to get microphone access: $e');
+          debugPrint('❌ [MEDIA] Failed to get microphone access: $e');
+          debugPrint('   Error type: ${e.runtimeType}');
+          debugPrint('   Stack trace: $stackTrace');
         }
         return false;
       }

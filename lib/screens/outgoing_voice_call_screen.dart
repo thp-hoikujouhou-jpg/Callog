@@ -57,13 +57,13 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
   Future<void> _initializeCall() async {
     try {
       if (kDebugMode) {
-        debugPrint('🔧 Initializing WebRTC call...');
+        debugPrint('🔧 [INIT] Starting WebRTC call initialization...');
       }
       
       final currentUser = FirebaseAuth.instance.currentUser;
       if (currentUser == null) {
         if (kDebugMode) {
-          debugPrint('❌ User not authenticated');
+          debugPrint('❌ [INIT] User not authenticated');
         }
         setState(() {
           _initError = 'User not authenticated';
@@ -73,29 +73,45 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
       }
 
       if (kDebugMode) {
-        debugPrint('✅ Current user: ${currentUser.uid}');
-        debugPrint('🔌 Initializing WebRTC service...');
+        debugPrint('✅ [INIT] Current user: ${currentUser.uid}');
+        debugPrint('🔌 [INIT] Initializing WebRTC service...');
       }
 
-      // Initialize WebRTC service
-      final initialized = await _webrtcService.initialize(currentUser.uid);
+      // Initialize WebRTC service with timeout
+      final initialized = await _webrtcService.initialize(currentUser.uid)
+          .timeout(
+            const Duration(seconds: 10),
+            onTimeout: () {
+              if (kDebugMode) {
+                debugPrint('⏱️ [INIT] WebRTC service initialization timed out');
+              }
+              return false;
+            },
+          );
       
       if (kDebugMode) {
-        debugPrint('WebRTC service initialized: $initialized');
+        debugPrint('📊 [INIT] WebRTC service initialized: $initialized');
       }
 
       if (!initialized) {
+        if (kDebugMode) {
+          debugPrint('❌ [INIT] Failed to initialize WebRTC service');
+        }
         setState(() {
-          _initError = 'Failed to connect to signaling server';
+          _initError = 'Failed to connect to signaling server. Please check your internet connection.';
           _isInitializing = false;
         });
         return;
       }
 
+      if (kDebugMode) {
+        debugPrint('✅ [INIT] WebRTC service connected successfully');
+      }
+
       // Set up callbacks
       _webrtcService.onRemoteStream = (stream) {
         if (kDebugMode) {
-          debugPrint('📞 Remote stream received!');
+          debugPrint('📞 [STREAM] Remote stream received!');
         }
         setState(() {
           _isConnected = true;
@@ -107,14 +123,14 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
 
       _webrtcService.onCallEnded = (reason) {
         if (kDebugMode) {
-          debugPrint('📞 Call ended: $reason');
+          debugPrint('📞 [CALL] Call ended: $reason');
         }
         _endCall();
       };
 
       _webrtcService.onConnectionStateChanged = (connected) {
         if (kDebugMode) {
-          debugPrint('🔌 Connection state changed: $connected');
+          debugPrint('🔌 [CONNECTION] State changed: $connected');
         }
         setState(() {
           _isConnected = connected;
@@ -125,14 +141,30 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
       };
 
       if (kDebugMode) {
-        debugPrint('📞 Making call to ${widget.friendId}...');
+        debugPrint('📞 [CALL] Making call to ${widget.friendId}...');
       }
 
-      // Make the call
-      final success = await _webrtcService.makeCall(widget.friendId);
+      // Make the call with timeout
+      final success = await _webrtcService.makeCall(widget.friendId)
+          .timeout(
+            const Duration(seconds: 15),
+            onTimeout: () {
+              if (kDebugMode) {
+                debugPrint('⏱️ [CALL] makeCall timed out');
+              }
+              return false;
+            },
+          );
       
       if (kDebugMode) {
-        debugPrint('📞 Call initiation result: $success');
+        debugPrint('📊 [CALL] Call initiation result: $success');
+      }
+      
+      if (!mounted) {
+        if (kDebugMode) {
+          debugPrint('⚠️ [INIT] Widget unmounted, stopping initialization');
+        }
+        return;
       }
       
       setState(() {
@@ -140,19 +172,28 @@ class _OutgoingVoiceCallScreenState extends State<OutgoingVoiceCallScreen> {
       });
       
       if (!success) {
+        if (kDebugMode) {
+          debugPrint('❌ [CALL] Failed to initiate call');
+        }
         setState(() {
-          _initError = 'Failed to initiate call';
+          _initError = 'Failed to initiate call. The recipient may be offline.';
         });
+      } else {
+        if (kDebugMode) {
+          debugPrint('✅ [CALL] Call initiated successfully, waiting for response...');
+        }
       }
     } catch (e, stackTrace) {
       if (kDebugMode) {
-        debugPrint('❌ Error initializing call: $e');
-        debugPrint('Stack trace: $stackTrace');
+        debugPrint('❌ [ERROR] Exception during call initialization: $e');
+        debugPrint('📋 [ERROR] Stack trace: $stackTrace');
       }
-      setState(() {
-        _initError = 'Error initializing call: $e';
-        _isInitializing = false;
-      });
+      if (mounted) {
+        setState(() {
+          _initError = 'Error: ${e.toString()}';
+          _isInitializing = false;
+        });
+      }
     }
   }
 
