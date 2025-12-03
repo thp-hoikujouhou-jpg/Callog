@@ -8,7 +8,8 @@ import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
 import 'profile_settings_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
-import 'outgoing_voice_call_screen.dart';
+import 'agora_voice_call_screen.dart';
+import 'agora_video_call_screen.dart';
 
 class MainFeedScreen extends StatefulWidget {
   const MainFeedScreen({super.key});
@@ -592,16 +593,16 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       }
       
       try {
-        final result = await Navigator.push(
+        await Navigator.push(
           context,
           MaterialPageRoute(
             builder: (context) {
               if (kDebugMode) {
-                debugPrint('📱 Building OutgoingVoiceCallScreen...');
+                debugPrint('📱 Building AgoraVoiceCallScreen with Agora...');
                 debugPrint('   - friendId: $friendId');
                 debugPrint('   - friendName: $friendName');
               }
-              return OutgoingVoiceCallScreen(
+              return AgoraVoiceCallScreen(
                 friendId: friendId,
                 friendName: friendName,
                 friendPhotoUrl: friendPhotoUrl,
@@ -611,7 +612,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         );
         
         if (kDebugMode) {
-          debugPrint('📞 Returned from call screen');
+          debugPrint('📞 Returned from Agora call screen');
         }
       } catch (navError, navStackTrace) {
         if (kDebugMode) {
@@ -630,6 +631,121 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('通話開始エラー: $e'),
+            backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
+          ),
+        );
+      }
+    }
+  }
+
+  // Video call method (similar to voice call)
+  Future<void> _startVideoCall() async {
+    if (kDebugMode) {
+      debugPrint('📹 [VIDEO CALL] Button pressed');
+    }
+    
+    if (_selectedFriend == null || _selectedFriendId == null) {
+      if (kDebugMode) {
+        debugPrint('❌ [VIDEO CALL] No friend selected');
+      }
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(content: Text('友達を選択してください')),
+      );
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ [VIDEO CALL] Friend selected: $_selectedFriendId');
+      debugPrint('📱 [VIDEO CALL] Requesting camera and microphone permissions...');
+    }
+
+    // Request camera and microphone permissions
+    final cameraStatus = await Permission.camera.request();
+    final micStatus = await Permission.microphone.request();
+    
+    if (kDebugMode) {
+      debugPrint('📹 [VIDEO CALL] Camera permission: $cameraStatus');
+      debugPrint('🎤 [VIDEO CALL] Microphone permission: $micStatus');
+    }
+    
+    if (!cameraStatus.isGranted || !micStatus.isGranted) {
+      if (kDebugMode) {
+        debugPrint('❌ [VIDEO CALL] Permissions denied');
+      }
+      
+      if (!mounted) return;
+      
+      showDialog(
+        context: context,
+        builder: (context) => AlertDialog(
+          title: const Text('カメラとマイクの許可が必要です'),
+          content: const Text('ビデオ通話を行うには、カメラとマイクへのアクセスを許可してください。'),
+          actions: [
+            TextButton(
+              onPressed: () => Navigator.pop(context),
+              child: const Text('キャンセル'),
+            ),
+            TextButton(
+              onPressed: () {
+                Navigator.pop(context);
+                openAppSettings();
+              },
+              child: const Text('設定を開く'),
+            ),
+          ],
+        ),
+      );
+      return;
+    }
+
+    if (kDebugMode) {
+      debugPrint('✅ [VIDEO CALL] Permissions granted! Preparing to navigate...');
+    }
+
+    try {
+      if (!mounted) return;
+      
+      final friendId = _selectedFriendId!;
+      final friendName = _selectedFriend!['username'] as String? ?? 
+                         _selectedFriend!['name'] as String? ?? 
+                         'Unknown';
+      final friendPhotoUrl = _selectedFriend!['photoUrl'] as String?;
+      
+      if (kDebugMode) {
+        debugPrint('🚀 [VIDEO CALL] Navigating to AgoraVideoCallScreen...');
+      }
+      
+      // Navigate to Agora Video Call Screen
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (context) {
+            if (kDebugMode) {
+              debugPrint('📱 Building AgoraVideoCallScreen...');
+            }
+            return AgoraVideoCallScreen(
+              friendId: friendId,
+              friendName: friendName,
+              friendPhotoUrl: friendPhotoUrl,
+            );
+          },
+        ),
+      );
+      
+      if (kDebugMode) {
+        debugPrint('📞 Returned from video call screen');
+      }
+    } catch (e, stackTrace) {
+      if (kDebugMode) {
+        debugPrint('❌ Error starting video call: $e');
+        debugPrint('Stack trace: $stackTrace');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('ビデオ通話開始エラー: $e'),
             backgroundColor: Colors.red,
             duration: const Duration(seconds: 5),
           ),
@@ -967,9 +1083,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               const SizedBox(width: 8),
               IconButton(
                 icon: const Icon(Icons.videocam),
-                onPressed: () {
-                  // Video call functionality (placeholder)
-                },
+                onPressed: _startVideoCall,
                 style: IconButton.styleFrom(
                   backgroundColor: Colors.blue.shade600,
                   foregroundColor: Colors.white,

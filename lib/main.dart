@@ -33,7 +33,7 @@ void main() async {
     }
     
     // Set up background message handler for push notifications
-    FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
+    // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
     
     runApp(const CallogApp());
   } catch (e, stackTrace) {

@@ -1,0 +1,468 @@
+import 'package:flutter/material.dart';
+import 'dart:async';
+import '../services/agora_voice_call_service.dart';
+import '../services/call_history_service.dart';
+import 'package:agora_rtc_engine/agora_rtc_engine.dart';
+
+/// Agora Voice Call Screen - LINE/WhatsApp-level voice calling UI
+/// 
+/// Features:
+/// - Clean, modern voice call interface
+/// - Real-time connection status
+/// - Mute/unmute microphone
+/// - Speaker on/off toggle
+/// - Call duration timer
+class AgoraVoiceCallScreen extends StatefulWidget {
+  final String friendId;
+  final String friendName;
+  final String? friendPhotoUrl;
+
+  const AgoraVoiceCallScreen({
+    super.key,
+    required this.friendId,
+    required this.friendName,
+    this.friendPhotoUrl,
+  });
+
+  @override
+  State<AgoraVoiceCallScreen> createState() => _AgoraVoiceCallScreenState();
+}
+
+class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
+  final AgoraVoiceCallService _callService = AgoraVoiceCallService();
+  final CallHistoryService _historyService = CallHistoryService();
+  
+  // Call State
+  bool _isConnecting = true;
+  bool _isConnected = false;
+  bool _isMuted = false;
+  bool _isSpeakerOn = true;
+  int _callDuration = 0;
+  Timer? _callTimer;
+  String _connectionStatus = '接続中...';
+  DateTime? _callStartTime;
+  
+  @override
+  void initState() {
+    super.initState();
+    debugPrint('🎬 [Agora Screen] Initializing voice call screen');
+    _initializeCall();
+  }
+
+  @override
+  void dispose() {
+    debugPrint('🧹 [Agora Screen] Disposing voice call screen');
+    _callTimer?.cancel();
+    _endCall();
+    super.dispose();
+  }
+
+  /// Initialize Agora call
+  Future<void> _initializeCall() async {
+    try {
+      debugPrint('🚀 [Agora Screen] Starting call initialization...');
+      
+      // Set up event handlers
+      _callService.onUserJoined = (userId) {
+        debugPrint('✅ [Agora Screen] User joined: $userId');
+        setState(() {
+          _isConnecting = false;
+          _isConnected = true;
+          _connectionStatus = '通話中';
+          _callStartTime = DateTime.now();
+        });
+        _startCallTimer();
+        
+        // Log call start
+        _historyService.logCallStart(
+          friendId: widget.friendId,
+          callType: 'voice',
+          direction: 'outgoing',
+        );
+      };
+      
+      _callService.onUserLeft = (userId) {
+        debugPrint('👋 [Agora Screen] User left: $userId');
+        if (mounted) {
+          _endCallAndReturn();
+        }
+      };
+      
+      _callService.onConnectionStateChanged = (state) {
+        debugPrint('📡 [Agora Screen] Connection state: $state');
+        if (mounted) {
+          setState(() {
+            switch (state) {
+              case ConnectionStateType.connectionStateConnecting:
+                _connectionStatus = '接続中...';
+                break;
+              case ConnectionStateType.connectionStateConnected:
+                _connectionStatus = '接続完了';
+                break;
+              case ConnectionStateType.connectionStateReconnecting:
+                _connectionStatus = '再接続中...';
+                break;
+              case ConnectionStateType.connectionStateFailed:
+                _connectionStatus = '接続失敗';
+                break;
+              case ConnectionStateType.connectionStateDisconnected:
+                _connectionStatus = '切断されました';
+                break;
+            }
+          });
+        }
+      };
+      
+      _callService.onError = (error) {
+        debugPrint('❌ [Agora Screen] Error: $error');
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('通話エラー: $error'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      };
+
+      // Initialize Agora engine
+      await _callService.initialize();
+      debugPrint('✅ [Agora Screen] Agora engine initialized');
+      
+      // Generate channel name from friend IDs (ensure same channel for both users)
+      final channelName = _generateChannelName(widget.friendId);
+      debugPrint('📞 [Agora Screen] Joining channel: $channelName');
+      
+      // Join the channel
+      await _callService.joinChannel(channelName);
+      debugPrint('✅ [Agora Screen] Join channel request sent');
+      
+    } catch (e) {
+      debugPrint('❌ [Agora Screen] Initialization failed: $e');
+      if (mounted) {
+        setState(() {
+          _isConnecting = false;
+          _connectionStatus = '接続失敗';
+        });
+        
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('通話開始エラー: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+
+  /// Generate consistent channel name for both users
+  String _generateChannelName(String friendId) {
+    // Use a simple channel name based on friend ID
+    // In production, you'd want to use a unique chat ID from Firestore
+    return 'call_${widget.friendId}';
+  }
+
+  /// Start call duration timer
+  void _startCallTimer() {
+    _callTimer = Timer.periodic(const Duration(seconds: 1), (timer) {
+      if (mounted) {
+        setState(() {
+          _callDuration++;
+        });
+      }
+    });
+  }
+
+  /// Format call duration
+  String _formatDuration(int seconds) {
+    final minutes = seconds ~/ 60;
+    final remainingSeconds = seconds % 60;
+    return '${minutes.toString().padLeft(2, '0')}:${remainingSeconds.toString().padLeft(2, '0')}';
+  }
+
+  /// Toggle mute/unmute
+  Future<void> _toggleMute() async {
+    await _callService.muteLocalAudio(!_isMuted);
+    setState(() {
+      _isMuted = !_isMuted;
+    });
+  }
+
+  /// Toggle speaker on/off
+  Future<void> _toggleSpeaker() async {
+    await _callService.setEnableSpeakerphone(!_isSpeakerOn);
+    setState(() {
+      _isSpeakerOn = !_isSpeakerOn;
+    });
+  }
+
+  /// End call
+  Future<void> _endCall() async {
+    debugPrint('🔴 [Agora Screen] Ending call...');
+    _callTimer?.cancel();
+    
+    // Log call end
+    if (_callStartTime != null) {
+      final duration = DateTime.now().difference(_callStartTime!).inSeconds;
+      await _historyService.logCallEnd(
+        friendId: widget.friendId,
+        callType: 'voice',
+        direction: 'outgoing',
+        durationSeconds: duration,
+        status: _isConnected ? 'completed' : 'failed',
+      );
+    }
+    
+    await _callService.leaveChannel();
+  }
+
+  /// End call and return to previous screen
+  void _endCallAndReturn() {
+    _endCall();
+    if (mounted) {
+      Navigator.of(context).pop();
+    }
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return Scaffold(
+      backgroundColor: Colors.grey.shade900,
+      body: SafeArea(
+        child: Column(
+          children: [
+            // Top bar
+            Padding(
+              padding: const EdgeInsets.all(16.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    _connectionStatus,
+                    style: TextStyle(
+                      color: _isConnected ? Colors.greenAccent : Colors.white70,
+                      fontSize: 14,
+                    ),
+                  ),
+                  if (_isConnected)
+                    Text(
+                      _formatDuration(_callDuration),
+                      style: const TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                ],
+              ),
+            ),
+
+            const Spacer(),
+
+            // User avatar and name
+            Column(
+              children: [
+                // Avatar
+                Container(
+                  width: 120,
+                  height: 120,
+                  decoration: BoxDecoration(
+                    shape: BoxShape.circle,
+                    color: Colors.blue.shade700,
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.3),
+                        blurRadius: 20,
+                        spreadRadius: 5,
+                      ),
+                    ],
+                  ),
+                  child: widget.friendPhotoUrl != null
+                      ? ClipOval(
+                          child: Image.network(
+                            widget.friendPhotoUrl!,
+                            fit: BoxFit.cover,
+                            errorBuilder: (context, error, stackTrace) {
+                              return Center(
+                                child: Text(
+                                  widget.friendName[0].toUpperCase(),
+                                  style: const TextStyle(
+                                    color: Colors.white,
+                                    fontSize: 48,
+                                    fontWeight: FontWeight.bold,
+                                  ),
+                                ),
+                              );
+                            },
+                          ),
+                        )
+                      : Center(
+                          child: Text(
+                            widget.friendName[0].toUpperCase(),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 48,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                        ),
+                ),
+
+                const SizedBox(height: 24),
+
+                // Friend name
+                Text(
+                  widget.friendName,
+                  style: const TextStyle(
+                    color: Colors.white,
+                    fontSize: 28,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+
+                const SizedBox(height: 8),
+
+                // Connection indicator
+                if (_isConnecting)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      SizedBox(
+                        width: 16,
+                        height: 16,
+                        child: CircularProgressIndicator(
+                          strokeWidth: 2,
+                          valueColor: AlwaysStoppedAnimation<Color>(
+                            Colors.greenAccent,
+                          ),
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                      Text(
+                        '接続中...',
+                        style: TextStyle(
+                          color: Colors.grey.shade400,
+                          fontSize: 16,
+                        ),
+                      ),
+                    ],
+                  )
+                else if (_isConnected)
+                  Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      Icon(
+                        Icons.check_circle,
+                        color: Colors.greenAccent,
+                        size: 20,
+                      ),
+                      const SizedBox(width: 8),
+                      Text(
+                        '通話中',
+                        style: TextStyle(
+                          color: Colors.greenAccent,
+                          fontSize: 16,
+                          fontWeight: FontWeight.w600,
+                        ),
+                      ),
+                    ],
+                  ),
+              ],
+            ),
+
+            const Spacer(),
+
+            // Control buttons
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  // Speaker button
+                  _buildControlButton(
+                    icon: _isSpeakerOn ? Icons.volume_up : Icons.volume_off,
+                    label: 'スピーカー',
+                    onPressed: _toggleSpeaker,
+                    backgroundColor: _isSpeakerOn ? Colors.white : Colors.grey.shade700,
+                    iconColor: _isSpeakerOn ? Colors.grey.shade900 : Colors.white,
+                  ),
+
+                  // Mute button
+                  _buildControlButton(
+                    icon: _isMuted ? Icons.mic_off : Icons.mic,
+                    label: 'ミュート',
+                    onPressed: _toggleMute,
+                    backgroundColor: _isMuted ? Colors.red : Colors.white,
+                    iconColor: _isMuted ? Colors.white : Colors.grey.shade900,
+                  ),
+
+                  // End call button
+                  _buildControlButton(
+                    icon: Icons.call_end,
+                    label: '終了',
+                    onPressed: _endCallAndReturn,
+                    backgroundColor: Colors.red,
+                    iconColor: Colors.white,
+                    isLarge: true,
+                  ),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildControlButton({
+    required IconData icon,
+    required String label,
+    required VoidCallback onPressed,
+    required Color backgroundColor,
+    required Color iconColor,
+    bool isLarge = false,
+  }) {
+    final size = isLarge ? 72.0 : 60.0;
+    final iconSize = isLarge ? 36.0 : 28.0;
+
+    return Column(
+      children: [
+        Material(
+          color: backgroundColor,
+          borderRadius: BorderRadius.circular(size / 2),
+          child: InkWell(
+            onTap: onPressed,
+            borderRadius: BorderRadius.circular(size / 2),
+            child: Container(
+              width: size,
+              height: size,
+              decoration: BoxDecoration(
+                borderRadius: BorderRadius.circular(size / 2),
+                boxShadow: [
+                  BoxShadow(
+                    color: Colors.black.withValues(alpha: 0.3),
+                    blurRadius: 8,
+                    spreadRadius: 2,
+                  ),
+                ],
+              ),
+              child: Icon(
+                icon,
+                color: iconColor,
+                size: iconSize,
+              ),
+            ),
+          ),
+        ),
+        const SizedBox(height: 8),
+        Text(
+          label,
+          style: TextStyle(
+            color: Colors.grey.shade400,
+            fontSize: 12,
+          ),
+        ),
+      ],
+    );
+  }
+}
