@@ -81,14 +81,17 @@ class AgoraVideoCallService {
         rethrow;
       }
       
+      // Copy to local variable for null safety (after null check)
+      final localEngine = engine!;
+      
       // Initialize the engine
-      await engine!.initialize(RtcEngineContext(
+      await localEngine.initialize(RtcEngineContext(
         appId: appId,
         channelProfile: ChannelProfileType.channelProfileCommunication,
       ));
 
       // Register event handlers
-      engine!.registerEventHandler(RtcEngineEventHandler(
+      localEngine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint('[AgoraVideo] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
@@ -120,13 +123,13 @@ class AgoraVideoCallService {
       ));
 
       // Enable video
-      await engine!.enableVideo();
+      await localEngine.enableVideo();
       
       // Enable audio
-      await engine!.enableAudio();
+      await localEngine.enableAudio();
       
       // Set video configuration for high quality
-      await engine!.setVideoEncoderConfiguration(
+      await localEngine.setVideoEncoderConfiguration(
         const VideoEncoderConfiguration(
           dimensions: VideoDimensions(width: 1280, height: 720),
           frameRate: 30,
@@ -176,6 +179,10 @@ class AgoraVideoCallService {
 
     try {
       debugPrint('[AgoraVideo] Joining channel: $channelName with uid: $uid');
+      
+      if (engine == null) {
+        throw Exception('Agora video engine is not initialized');
+      }
       
       _currentChannelName = channelName;
 

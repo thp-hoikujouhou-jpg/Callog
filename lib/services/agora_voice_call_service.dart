@@ -76,10 +76,13 @@ class AgoraVoiceCallService {
         rethrow;
       }
       
+      // At this point, _engine is guaranteed to be non-null
+      final engine = _engine!;
+      
       // Initialize the engine
       debugPrint('[Agora] Initializing engine with context...');
       try {
-        await _engine!.initialize(RtcEngineContext(
+        await engine.initialize(RtcEngineContext(
           appId: appId,
           channelProfile: ChannelProfileType.channelProfileCommunication,
         ));
@@ -92,7 +95,7 @@ class AgoraVoiceCallService {
       // Register event handlers
       debugPrint('[Agora] Registering event handlers...');
       try {
-        _engine!.registerEventHandler(RtcEngineEventHandler(
+        engine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
@@ -131,7 +134,7 @@ class AgoraVoiceCallService {
       // Enable audio
       debugPrint('[Agora] Enabling audio...');
       try {
-        await _engine!.enableAudio();
+        await engine.enableAudio();
         debugPrint('[Agora] ✅ Audio enabled');
       } catch (e) {
         debugPrint('[Agora] ❌ Failed to enable audio: $e');
@@ -141,7 +144,7 @@ class AgoraVoiceCallService {
       // Set audio profile for voice call
       debugPrint('[Agora] Setting audio profile...');
       try {
-        await _engine!.setAudioProfile(
+        await engine.setAudioProfile(
         profile: AudioProfileType.audioProfileDefault,
         scenario: AudioScenarioType.audioScenarioGameStreaming,
       );
@@ -191,6 +194,10 @@ class AgoraVoiceCallService {
 
     try {
       debugPrint('[Agora] Joining channel: $channelName with uid: $uid');
+      
+      if (_engine == null) {
+        throw Exception('Agora engine is not initialized');
+      }
       
       _currentChannelName = channelName;
 
