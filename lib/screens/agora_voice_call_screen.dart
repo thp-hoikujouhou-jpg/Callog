@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/agora_voice_call_service.dart';
 import '../services/call_history_service.dart';
+import '../services/push_notification_service.dart';
+import '../services/auth_service.dart';
 import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
@@ -137,6 +139,26 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       // Join the channel
       await _callService.joinChannel(channelName);
       debugPrint('✅ [Agora Screen] Join channel request sent');
+      
+      // Send push notification to peer
+      try {
+        final pushService = PushNotificationService();
+        final authService = AuthService();
+        final currentUser = authService.currentUser;
+        final callerName = currentUser?.displayName ?? 
+                          currentUser?.email?.split('@')[0] ?? 
+                          '不明なユーザー';
+        
+        await pushService.sendCallNotification(
+          peerId: widget.friendId,
+          channelId: channelName,
+          callType: 'voice_call',
+          callerName: callerName,
+        );
+        debugPrint('📲 [Agora Screen] Push notification sent to peer');
+      } catch (e) {
+        debugPrint('⚠️ [Agora Screen] Failed to send push notification: $e');
+      }
       
     } catch (e) {
       debugPrint('❌ [Agora Screen] Initialization failed: $e');
@@ -312,7 +334,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                             errorBuilder: (context, error, stackTrace) {
                               return Center(
                                 child: Text(
-                                  widget.friendName[0].toUpperCase(),
+                                  widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : '?',
                                   style: const TextStyle(
                                     color: Colors.white,
                                     fontSize: 48,
@@ -325,7 +347,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                         )
                       : Center(
                           child: Text(
-                            widget.friendName[0].toUpperCase(),
+                            widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : '?',
                             style: const TextStyle(
                               color: Colors.white,
                               fontSize: 48,

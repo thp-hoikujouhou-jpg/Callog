@@ -185,7 +185,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                           errorBuilder: (context, error, stackTrace) {
                             return Center(
                               child: Text(
-                                widget.callerName[0].toUpperCase(),
+                                widget.callerName.isNotEmpty ? widget.callerName[0].toUpperCase() : '?',
                                 style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 60,
@@ -198,7 +198,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                       )
                     : Center(
                         child: Text(
-                          widget.callerName[0].toUpperCase(),
+                          widget.callerName.isNotEmpty ? widget.callerName[0].toUpperCase() : '?',
                           style: const TextStyle(
                             color: Colors.white,
                             fontSize: 60,

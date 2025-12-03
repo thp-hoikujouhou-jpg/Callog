@@ -2,6 +2,8 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/agora_video_call_service.dart';
 import '../services/call_history_service.dart';
+import '../services/push_notification_service.dart';
+import '../services/auth_service.dart';
 import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
@@ -141,6 +143,26 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       // Join the channel
       await _callService.joinChannel(channelName);
       debugPrint('✅ [Agora Video] Join channel request sent');
+      
+      // Send push notification to peer
+      try {
+        final pushService = PushNotificationService();
+        final authService = AuthService();
+        final currentUser = authService.currentUser;
+        final callerName = currentUser?.displayName ?? 
+                          currentUser?.email?.split('@')[0] ?? 
+                          '不明なユーザー';
+        
+        await pushService.sendCallNotification(
+          peerId: widget.friendId,
+          channelId: channelName,
+          callType: 'video_call',
+          callerName: callerName,
+        );
+        debugPrint('📲 [Agora Video] Push notification sent to peer');
+      } catch (e) {
+        debugPrint('⚠️ [Agora Video] Failed to send push notification: $e');
+      }
       
     } catch (e) {
       debugPrint('❌ [Agora Video] Initialization failed: $e');
@@ -340,7 +362,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
                         errorBuilder: (context, error, stackTrace) {
                           return Center(
                             child: Text(
-                              widget.friendName[0].toUpperCase(),
+                              widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : '?',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 48,
@@ -353,7 +375,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
                     )
                   : Center(
                       child: Text(
-                        widget.friendName[0].toUpperCase(),
+                        widget.friendName.isNotEmpty ? widget.friendName[0].toUpperCase() : '?',
                         style: const TextStyle(
                           color: Colors.white,
                           fontSize: 48,
