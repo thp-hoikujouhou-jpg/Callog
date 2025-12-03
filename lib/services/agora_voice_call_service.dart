@@ -195,14 +195,15 @@ class AgoraVoiceCallService {
     try {
       debugPrint('[Agora] Joining channel: $channelName with uid: $uid');
       
-      if (_engine == null) {
+      final engine = _engine;
+      if (engine == null) {
         throw Exception('Agora engine is not initialized');
       }
       
       _currentChannelName = channelName;
 
       // Join the channel
-      await _engine!.joinChannel(
+      await engine.joinChannel(
         token: token ?? '', // Use empty string if no token provided
         channelId: channelName,
         uid: uid,

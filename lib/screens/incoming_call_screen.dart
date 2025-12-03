@@ -180,7 +180,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                 child: widget.callerPhotoUrl != null
                     ? ClipOval(
                         child: Image.network(
-                          ImageProxy.getCorsProxyUrl(widget.callerPhotoUrl!),
+                          ImageProxy.getCorsProxyUrl(widget.callerPhotoUrl ?? ''),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Center(

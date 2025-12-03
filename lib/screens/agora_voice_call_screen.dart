@@ -228,8 +228,9 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
     _callTimer?.cancel();
     
     // Log call end
-    if (_callStartTime != null) {
-      final duration = DateTime.now().difference(_callStartTime!).inSeconds;
+    final callStartTime = _callStartTime;
+    if (callStartTime != null) {
+      final duration = DateTime.now().difference(callStartTime).inSeconds;
       await _historyService.logCallEnd(
         friendId: widget.friendId,
         callType: 'voice',
@@ -306,7 +307,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                   child: widget.friendPhotoUrl != null
                       ? ClipOval(
                           child: Image.network(
-                            ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
+                            ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl ?? ''),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Center(

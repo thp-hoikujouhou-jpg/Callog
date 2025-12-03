@@ -86,7 +86,7 @@ class _IncomingVoiceCallScreenState extends State<IncomingVoiceCallScreen>
                   radius: 80,
                   backgroundColor: Colors.grey[300],
                   backgroundImage: widget.callerPhotoUrl != null
-                      ? ImageProxy.getImageProvider(widget.callerPhotoUrl!)
+                      ? ImageProxy.getImageProvider(widget.callerPhotoUrl ?? '')
                       : null,
                   child: widget.callerPhotoUrl == null
                       ? Icon(

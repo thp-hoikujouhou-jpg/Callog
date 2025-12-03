@@ -243,8 +243,9 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     _callTimer?.cancel();
     
     // Log call end
-    if (_callStartTime != null) {
-      final duration = DateTime.now().difference(_callStartTime!).inSeconds;
+    final callStartTime = _callStartTime;
+    if (callStartTime != null) {
+      final duration = DateTime.now().difference(callStartTime).inSeconds;
       await _historyService.logCallEnd(
         friendId: widget.friendId,
         callType: 'video',
@@ -334,7 +335,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
               child: widget.friendPhotoUrl != null
                   ? ClipOval(
                       child: Image.network(
-                        ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
+                        ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl ?? ''),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Center(
@@ -402,16 +403,20 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: _callService.engine != null
-              ? AgoraVideoView(
-                  controller: VideoViewController(
-                    rtcEngine: _callService.engine!,
-                    canvas: const VideoCanvas(uid: 0),
-                  ),
-                )
-              : const Center(
-                  child: Icon(Icons.videocam_off, color: Colors.white, size: 40),
+          child: () {
+            final engine = _callService.engine;
+            if (engine != null) {
+              return AgoraVideoView(
+                controller: VideoViewController(
+                  rtcEngine: engine,
+                  canvas: const VideoCanvas(uid: 0),
                 ),
+              );
+            }
+            return const Center(
+              child: Icon(Icons.videocam_off, color: Colors.white, size: 40),
+            );
+          }(),
         ),
       ),
     );

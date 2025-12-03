@@ -180,17 +180,18 @@ class AgoraVideoCallService {
     try {
       debugPrint('[AgoraVideo] Joining channel: $channelName with uid: $uid');
       
-      if (engine == null) {
+      final localEngine = engine;
+      if (localEngine == null) {
         throw Exception('Agora video engine is not initialized');
       }
       
       _currentChannelName = channelName;
 
       // Enable local video preview
-      await engine!.startPreview();
+      await localEngine.startPreview();
 
       // Join the channel
-      await engine!.joinChannel(
+      await localEngine.joinChannel(
         token: token ?? '',
         channelId: channelName,
         uid: uid,

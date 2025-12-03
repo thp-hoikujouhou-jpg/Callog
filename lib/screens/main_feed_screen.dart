@@ -440,8 +440,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final currentUser = _auth.currentUser;
       if (currentUser == null) return;
 
-      if (_selectedFriendId == null) return;
-      final chatId = _getChatId(currentUser.uid, _selectedFriendId!);
+      final selectedFriendId = _selectedFriendId;
+      if (selectedFriendId == null) return;
+      final chatId = _getChatId(currentUser.uid, selectedFriendId);
       final messageText = _messageController.text.trim();
       final now = DateTime.now();
       
