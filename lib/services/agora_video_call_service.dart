@@ -21,7 +21,7 @@ class AgoraVideoCallService {
   // Agora Configuration
   // IMPORTANT: Replace with your valid Agora App ID from https://console.agora.io/
   // Error -17 (INVALID_APP_ID) means the App ID is invalid or expired
-  static const String appId = 'd1a8161eb70448d89eea1722b';
+  static const String appId = 'd1a8161eb70448d89eea1722bc169c92';
   
   // Validate App ID format
   static bool _isValidAppId(String appId) {

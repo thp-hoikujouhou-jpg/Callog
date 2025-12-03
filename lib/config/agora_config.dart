@@ -18,7 +18,7 @@
 class AgoraConfig {
   // Replace with your Agora App ID from https://console.agora.io/
   // Example: 'a1b2c3d4e5f6g7h8i9j0k1l2m3n4o5p6'
-  static const String appId = 'd1a8161eb70448d89eea1722b';
+  static const String appId = 'd1a8161eb70448d89eea1722bc169c92';
   
   // Optional: Agora Token (for production use)
   // Leave empty for testing without token
