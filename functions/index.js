@@ -1,10 +1,10 @@
 /**
- * Firebase Cloud Functions for Callog
+ * Callog - Cloud Functions for Push Notifications
  * 
  * Features:
  * - Send push notifications for incoming voice/video calls
- * - Handle call signaling and routing
- * - Log call history
+ * - Automatic FCM message delivery
+ * - Call notification cleanup after 30 seconds
  */
 
 const functions = require('firebase-functions');
@@ -13,210 +13,156 @@ const admin = require('firebase-admin');
 admin.initializeApp();
 
 /**
- * Send call notification when a new call_notification document is created
- * 
- * Triggered by: /call_notifications/{notificationId}
+ * Send Call Notification
+ * Triggered when a new document is created in call_notifications collection
  */
 exports.sendCallNotification = functions.firestore
   .document('call_notifications/{notificationId}')
   .onCreate(async (snapshot, context) => {
+    const data = snapshot.data();
+    const notificationId = context.params.notificationId;
+    
+    console.log('📲 New call notification:', data);
+    
     try {
-      const data = snapshot.data();
-      const { peerId, peerToken, channelId, callType, callerName, timestamp } = data;
-
-      console.log(`Sending ${callType} notification to ${peerId} from ${callerName}`);
-
-      // Check if peer token exists
-      if (!peerToken) {
-        console.error('No FCM token for peer:', peerId);
-        await snapshot.ref.update({ status: 'failed', error: 'No FCM token' });
+      // Validate required fields
+      if (!data.peerToken || !data.callType || !data.callerName) {
+        console.error('❌ Missing required fields:', data);
         return null;
       }
-
-      // Prepare notification message
-      const callTypeText = callType === 'video_call' ? 'ビデオ通話' : '音声通話';
+      
+      // Determine call type display name
+      const callTypeDisplay = data.callType === 'voice_call' ? '音声通話' : 'ビデオ通話';
+      
+      // Create FCM message
       const message = {
-        token: peerToken,
         notification: {
-          title: `${callTypeText}着信`,
-          body: `${callerName} さんから${callTypeText}がかかってきています`,
+          title: `着信: ${callTypeDisplay}`,
+          body: `${data.callerName}から通話があります`,
         },
         data: {
-          type: callType,
-          channelId: channelId,
-          callerName: callerName,
-          timestamp: timestamp || Date.now().toString(),
-          click_action: 'FLUTTER_NOTIFICATION_CLICK',
+          callType: data.callType,
+          channelId: data.channelId || '',
+          callerName: data.callerName,
+          peerId: data.peerId || '',
+          notificationId: notificationId,
         },
+        token: data.peerToken,
         android: {
           priority: 'high',
           notification: {
-            channelId: 'incoming_calls',
-            sound: 'call_ringtone',
-            priority: 'max',
-            visibility: 'public',
+            channelId: 'call_notifications',
+            priority: 'high',
+            sound: 'default',
+            defaultSound: true,
+            defaultVibrateTimings: true,
           },
         },
         apns: {
           payload: {
             aps: {
-              sound: 'call_ringtone.aiff',
-              category: 'CALL_INVITATION',
-              'thread-id': channelId,
+              sound: 'default',
+              badge: 1,
             },
           },
         },
+        webpush: {
+          notification: {
+            icon: '/icons/Icon-192.png',
+            badge: '/icons/Icon-192.png',
+            vibrate: [200, 100, 200],
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'answer',
+                title: '応答',
+              },
+              {
+                action: 'decline',
+                title: '拒否',
+              },
+            ],
+          },
+        },
       };
-
-      // Send the notification
+      
+      // Send FCM message
       const response = await admin.messaging().send(message);
-      console.log('Successfully sent notification:', response);
-
-      // Update notification status
-      await snapshot.ref.update({
-        status: 'sent',
-        sentAt: admin.firestore.FieldValue.serverTimestamp(),
-        messageId: response,
-      });
-
-      return response;
-    } catch (error) {
-      console.error('Error sending notification:', error);
+      console.log('✅ Notification sent successfully:', response);
       
       // Update notification status
-      await snapshot.ref.update({
-        status: 'failed',
-        error: error.message,
-        failedAt: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      return null;
-    }
-  });
-
-/**
- * Log call history when a call ends
- * 
- * Triggered by: /call_sessions/{sessionId}
- * When: status changes to 'ended'
- */
-exports.logCallHistory = functions.firestore
-  .document('call_sessions/{sessionId}')
-  .onUpdate(async (change, context) => {
-    try {
-      const before = change.before.data();
-      const after = change.after.data();
-
-      // Only log when call status changes to 'ended'
-      if (before.status !== 'ended' && after.status === 'ended') {
-        const { callerId, receiverId, callType, startTime, endTime, channelId } = after;
-        
-        const duration = endTime && startTime 
-          ? (endTime.toMillis() - startTime.toMillis()) / 1000
-          : 0;
-
-        console.log(`Logging call history: ${callType} from ${callerId} to ${receiverId}, duration: ${duration}s`);
-
-        // Create call history entry
-        const historyData = {
-          callerId,
-          receiverId,
-          callType,
-          startTime,
-          endTime,
-          duration,
-          channelId,
-          sessionId: context.params.sessionId,
-          timestamp: admin.firestore.FieldValue.serverTimestamp(),
-        };
-
-        // Add to both users' call history
-        const batch = admin.firestore().batch();
-        
-        batch.set(
-          admin.firestore().collection('users').doc(callerId).collection('call_history').doc(),
-          { ...historyData, direction: 'outgoing' }
-        );
-        
-        batch.set(
-          admin.firestore().collection('users').doc(receiverId).collection('call_history').doc(),
-          { ...historyData, direction: 'incoming' }
-        );
-
-        await batch.commit();
-        console.log('Call history logged successfully');
-      }
-
-      return null;
+      await admin.firestore()
+        .collection('call_notifications')
+        .doc(notificationId)
+        .update({
+          status: 'sent',
+          sentAt: admin.firestore.FieldValue.serverTimestamp(),
+          fcmResponse: response,
+        });
+      
+      // Schedule cleanup after 30 seconds (unanswered calls)
+      setTimeout(async () => {
+        try {
+          const doc = await admin.firestore()
+            .collection('call_notifications')
+            .doc(notificationId)
+            .get();
+          
+          if (doc.exists && doc.data().status === 'sent') {
+            await admin.firestore()
+              .collection('call_notifications')
+              .doc(notificationId)
+              .update({
+                status: 'expired',
+                expiredAt: admin.firestore.FieldValue.serverTimestamp(),
+              });
+            console.log('⏰ Notification expired:', notificationId);
+          }
+        } catch (error) {
+          console.error('❌ Cleanup error:', error);
+        }
+      }, 30000); // 30 seconds
+      
+      return response;
+      
     } catch (error) {
-      console.error('Error logging call history:', error);
-      return null;
+      console.error('❌ Error sending notification:', error);
+      
+      // Update notification status to failed
+      await admin.firestore()
+        .collection('call_notifications')
+        .doc(notificationId)
+        .update({
+          status: 'failed',
+          error: error.message,
+          failedAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      
+      throw error;
     }
   });
 
 /**
- * Clean up old notifications (runs daily)
+ * Clean up old notifications
+ * Runs every hour to delete notifications older than 1 hour
  */
 exports.cleanupOldNotifications = functions.pubsub
-  .schedule('every 24 hours')
+  .schedule('every 1 hours')
   .onRun(async (context) => {
-    try {
-      const oneDayAgo = new Date();
-      oneDayAgo.setDate(oneDayAgo.getDate() - 1);
-
-      const snapshot = await admin.firestore()
-        .collection('call_notifications')
-        .where('timestamp', '<', oneDayAgo)
-        .limit(500)
-        .get();
-
-      console.log(`Cleaning up ${snapshot.size} old notifications`);
-
-      const batch = admin.firestore().batch();
-      snapshot.docs.forEach((doc) => {
-        batch.delete(doc.ref);
-      });
-
-      await batch.commit();
-      console.log('Old notifications cleaned up successfully');
-      
-      return null;
-    } catch (error) {
-      console.error('Error cleaning up notifications:', error);
-      return null;
-    }
-  });
-
-/**
- * Update user's online status
- * 
- * Triggered by: /users/{userId}/sessions/{sessionId}
- */
-exports.updateOnlineStatus = functions.firestore
-  .document('users/{userId}/sessions/{sessionId}')
-  .onWrite(async (change, context) => {
-    try {
-      const userId = context.params.userId;
-      
-      // Check if user has any active sessions
-      const sessionsSnapshot = await admin.firestore()
-        .collection('users').doc(userId).collection('sessions')
-        .where('active', '==', true)
-        .limit(1)
-        .get();
-
-      const isOnline = !sessionsSnapshot.empty;
-
-      // Update user's online status
-      await admin.firestore().collection('users').doc(userId).update({
-        isOnline,
-        lastSeen: admin.firestore.FieldValue.serverTimestamp(),
-      });
-
-      console.log(`Updated online status for ${userId}: ${isOnline}`);
-      return null;
-    } catch (error) {
-      console.error('Error updating online status:', error);
-      return null;
-    }
+    const cutoffTime = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
+    
+    const snapshot = await admin.firestore()
+      .collection('call_notifications')
+      .where('timestamp', '<', cutoffTime)
+      .get();
+    
+    const batch = admin.firestore().batch();
+    snapshot.docs.forEach(doc => {
+      batch.delete(doc.ref);
+    });
+    
+    await batch.commit();
+    console.log(`🧹 Cleaned up ${snapshot.size} old notifications`);
+    
+    return null;
   });

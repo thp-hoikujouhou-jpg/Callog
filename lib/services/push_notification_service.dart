@@ -3,6 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// Push Notification Service for Callog
 /// 
@@ -224,7 +226,7 @@ class PushNotificationService {
     // TODO: Navigate to appropriate screen based on payload
   }
 
-  /// Send call notification to peer
+  /// Send call notification to peer using FCM REST API
   Future<void> sendCallNotification({
     required String peerId,
     required String channelId,
@@ -237,24 +239,99 @@ class PushNotificationService {
       final peerToken = peerDoc.data()?['fcmToken'] as String?;
 
       if (peerToken == null) {
-        debugPrint('[Push] Peer has no FCM token');
+        debugPrint('[Push] ❌ Peer has no FCM token');
         return;
       }
 
-      // Store call notification in Firestore (Cloud Function will send FCM)
-      await _firestore.collection('call_notifications').add({
-        'peerId': peerId,
-        'peerToken': peerToken,
-        'channelId': channelId,
-        'callType': callType,
-        'callerName': callerName,
-        'timestamp': FieldValue.serverTimestamp(),
-        'status': 'pending',
-      });
+      debugPrint('[Push] 📤 Sending notification to peer: $peerId');
+      debugPrint('[Push] 📱 Peer FCM Token: ${peerToken.substring(0, 20)}...');
 
-      debugPrint('[Push] Call notification sent to peer: $peerId');
-    } catch (e) {
-      debugPrint('[Push] Error sending call notification: $e');
+      // FCM Server Key (Legacy API)
+      const serverKey = 'BDk337DMgVNfm-PG-AWhZ7kKwPp_bdzFvzOiccCp3k999vwSc56ZFfVn3j-COgLnJoQ43ULmzxswUTDeg1pRRiA';
+      
+      // Determine call type display name
+      final callTypeDisplay = callType == 'video_call' ? 'ビデオ通話' : '音声通話';
+
+      // Prepare FCM payload
+      final payload = {
+        'to': peerToken,
+        'priority': 'high',
+        'notification': {
+          'title': '着信: $callTypeDisplay',
+          'body': '$callerNameから通話があります',
+          'sound': 'default',
+          'badge': '1',
+        },
+        'data': {
+          'type': callType,
+          'channelId': channelId,
+          'callerName': callerName,
+          'peerId': peerId,
+          'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        },
+        'android': {
+          'priority': 'high',
+          'notification': {
+            'channel_id': 'call_notifications',
+            'sound': 'default',
+            'default_sound': true,
+            'default_vibrate_timings': true,
+          },
+        },
+        'apns': {
+          'payload': {
+            'aps': {
+              'sound': 'default',
+              'badge': 1,
+            },
+          },
+        },
+      };
+
+      // Send FCM REST API request
+      final response = await http.post(
+        Uri.parse('https://fcm.googleapis.com/fcm/send'),
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': 'key=$serverKey',
+        },
+        body: json.encode(payload),
+      );
+
+      if (response.statusCode == 200) {
+        final responseData = json.decode(response.body);
+        debugPrint('[Push] ✅ Notification sent successfully!');
+        debugPrint('[Push] 📊 Response: $responseData');
+        
+        // Store notification record in Firestore for tracking
+        await _firestore.collection('call_notifications').add({
+          'peerId': peerId,
+          'channelId': channelId,
+          'callType': callType,
+          'callerName': callerName,
+          'timestamp': FieldValue.serverTimestamp(),
+          'status': 'sent',
+          'fcmResponse': responseData,
+        });
+      } else {
+        debugPrint('[Push] ❌ Failed to send notification');
+        debugPrint('[Push] Status: ${response.statusCode}');
+        debugPrint('[Push] Body: ${response.body}');
+        
+        // Store failed notification
+        await _firestore.collection('call_notifications').add({
+          'peerId': peerId,
+          'channelId': channelId,
+          'callType': callType,
+          'callerName': callerName,
+          'timestamp': FieldValue.serverTimestamp(),
+          'status': 'failed',
+          'error': 'HTTP ${response.statusCode}: ${response.body}',
+        });
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[Push] ❌ Error sending call notification: $e');
+      debugPrint('[Push] Stack trace: $stackTrace');
     }
   }
 
