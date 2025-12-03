@@ -85,15 +85,13 @@ class AgoraVoiceCallService {
           throw Exception('Engine became null before initialization');
         }
         
-        // Create context with proper null safety
+        // Create context with minimal parameters for Web platform
         debugPrint('[Agora] Creating context with appId=${appId.substring(0, 8)}...');
-        debugPrint('[Agora] Channel profile: ${ChannelProfileType.channelProfileCommunication}');
         
+        // Web platform: Use minimal RtcEngineContext
         final context = RtcEngineContext(
           appId: appId,
-          channelProfile: ChannelProfileType.channelProfileCommunication,
-          // Web platform specific settings
-          areaCode: AreaCode.areaCodeGlob.value(),
+          // Note: On Web, channelProfile may not be supported in context
         );
         
         debugPrint('[Agora] Context created successfully');
@@ -105,7 +103,17 @@ class AgoraVoiceCallService {
         } catch (initError) {
           debugPrint('[Agora] ❌ Initialize method failed: $initError');
           debugPrint('[Agora] ℹ️ Error details: ${initError.toString()}');
-          rethrow;
+          debugPrint('[Agora] 🔍 Trying alternative initialization...');
+          
+          // Try alternative: Create new context with just appId
+          try {
+            final simpleContext = RtcEngineContext(appId: appId);
+            await currentEngine.initialize(simpleContext);
+            debugPrint('[Agora] ✅ Alternative initialization succeeded');
+          } catch (altError) {
+            debugPrint('[Agora] ❌ Alternative initialization also failed: $altError');
+            rethrow;
+          }
         }
       } catch (e) {
         debugPrint('[Agora] ❌ Engine initialization failed: $e');

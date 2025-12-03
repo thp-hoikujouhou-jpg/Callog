@@ -95,11 +95,10 @@ class AgoraVideoCallService {
       try {
         debugPrint('[AgoraVideo] Creating context with appId=${appId.substring(0, 8)}...');
         
+        // Web platform: Use minimal RtcEngineContext
         final context = RtcEngineContext(
           appId: appId,
-          channelProfile: ChannelProfileType.channelProfileCommunication,
-          // Web platform specific settings
-          areaCode: AreaCode.areaCodeGlob.value(),
+          // Note: On Web, channelProfile may not be supported in context
         );
         
         debugPrint('[AgoraVideo] Context created successfully');
@@ -111,7 +110,17 @@ class AgoraVideoCallService {
         } catch (initError) {
           debugPrint('[AgoraVideo] ❌ Initialize method failed: $initError');
           debugPrint('[AgoraVideo] ℹ️ Error details: ${initError.toString()}');
-          rethrow;
+          debugPrint('[AgoraVideo] 🔍 Trying alternative initialization...');
+          
+          // Try alternative: Create new context with just appId
+          try {
+            final simpleContext = RtcEngineContext(appId: appId);
+            await localEngine.initialize(simpleContext);
+            debugPrint('[AgoraVideo] ✅ Alternative initialization succeeded');
+          } catch (altError) {
+            debugPrint('[AgoraVideo] ❌ Alternative initialization also failed: $altError');
+            rethrow;
+          }
         }
       } catch (e) {
         debugPrint('[AgoraVideo] ❌ Engine initialization failed: $e');
