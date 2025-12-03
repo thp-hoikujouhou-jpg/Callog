@@ -54,12 +54,24 @@ class PushNotificationService {
       // Initialize local notifications
       await _initializeLocalNotifications();
 
-      // Get FCM token
-      _fcmToken = await _messaging.getToken();
+      // Get FCM token (Web requires vapidKey)
+      debugPrint('[Push] 🔑 Requesting FCM token...');
+      if (kIsWeb) {
+        // For Web, use vapidKey (same as server key for legacy FCM)
+        _fcmToken = await _messaging.getToken(
+          vapidKey: 'BDk337DMgVNfm-PG-AWhZ7kKwPp_bdzFvzOiccCp3k999vwSc56ZFfVn3j-COgLnJoQ43ULmzxswUTDeg1pRRiA',
+        );
+      } else {
+        // For mobile, no vapidKey needed
+        _fcmToken = await _messaging.getToken();
+      }
+      
       final token = _fcmToken;
       if (token != null) {
-        debugPrint('[Push] FCM Token: $token');
+        debugPrint('[Push] ✅ FCM Token acquired: ${token.substring(0, 20)}...');
         await _saveFCMToken(token);
+      } else {
+        debugPrint('[Push] ⚠️ Failed to get FCM token');
       }
 
       // Listen to token refresh
@@ -110,18 +122,32 @@ class PushNotificationService {
     try {
       final userId = _auth.currentUser?.uid;
       if (userId == null) {
-        debugPrint('[Push] No user logged in, skipping token save');
+        debugPrint('[Push] ❌ No user logged in, skipping token save');
         return;
       }
 
-      await _firestore.collection('users').doc(userId).update({
+      debugPrint('[Push] 💾 Saving FCM token for user: $userId');
+      debugPrint('[Push] Token: ${token.substring(0, 20)}...');
+
+      // Use set with merge to avoid errors if document doesn't exist
+      await _firestore.collection('users').doc(userId).set({
         'fcmToken': token,
         'lastTokenUpdate': FieldValue.serverTimestamp(),
-      });
+      }, SetOptions(merge: true));
 
-      debugPrint('[Push] FCM token saved to Firestore');
-    } catch (e) {
-      debugPrint('[Push] Error saving FCM token: $e');
+      debugPrint('[Push] ✅ FCM token saved to Firestore successfully');
+      
+      // Verify token was saved
+      final doc = await _firestore.collection('users').doc(userId).get();
+      final savedToken = doc.data()?['fcmToken'];
+      if (savedToken == token) {
+        debugPrint('[Push] ✅ Token verification successful');
+      } else {
+        debugPrint('[Push] ⚠️ Token verification failed - saved token does not match');
+      }
+    } catch (e, stackTrace) {
+      debugPrint('[Push] ❌ Error saving FCM token: $e');
+      debugPrint('[Push] Stack trace: $stackTrace');
     }
   }
 

@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import '../services/push_notification_service.dart';
 import '../utils/image_proxy.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
@@ -42,15 +43,24 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   
   Future<void> _initializePushNotifications() async {
     try {
-      // This will be initialized in CallogApp, but we can get the instance here
-      // No need to do anything special - notifications are handled globally
-      if (kDebugMode) {
-        debugPrint('✅ Push notifications ready');
+      debugPrint('🔔 [Push] Starting push notification initialization...');
+      
+      // Initialize PushNotificationService
+      final pushService = PushNotificationService();
+      await pushService.initialize();
+      
+      debugPrint('✅ [Push] Push notification service initialized successfully');
+      
+      // Check if token was saved
+      final token = pushService.fcmToken;
+      if (token != null) {
+        debugPrint('📱 [Push] FCM Token acquired: ${token.substring(0, 20)}...');
+      } else {
+        debugPrint('⚠️ [Push] FCM Token not available yet');
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ Push notification initialization error: $e');
-      }
+    } catch (e, stackTrace) {
+      debugPrint('❌ [Push] Push notification initialization error: $e');
+      debugPrint('Stack trace: $stackTrace');
     }
   }
 
