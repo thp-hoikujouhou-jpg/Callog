@@ -76,26 +76,40 @@ class AgoraVoiceCallService {
         rethrow;
       }
       
-      // At this point, _engine is guaranteed to be non-null
-      final engine = _engine!;
-      
-      // Initialize the engine
+      // Initialize the engine (use _engine directly to avoid null issues)
       debugPrint('[Agora] Initializing engine with context...');
       try {
-        await engine.initialize(RtcEngineContext(
+        // Verify engine is still not null
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine became null before initialization');
+        }
+        
+        // Create context with proper null safety
+        final context = RtcEngineContext(
           appId: appId,
           channelProfile: ChannelProfileType.channelProfileCommunication,
-        ));
+        );
+        
+        debugPrint('[Agora] Context created: appId=${appId.substring(0, 8)}...');
+        
+        await currentEngine.initialize(context);
         debugPrint('[Agora] ✅ Engine initialized successfully');
       } catch (e) {
         debugPrint('[Agora] ❌ Engine initialization failed: $e');
+        debugPrint('[Agora] ℹ️ Error type: ${e.runtimeType}');
         rethrow;
       }
 
       // Register event handlers
       debugPrint('[Agora] Registering event handlers...');
       try {
-        engine.registerEventHandler(RtcEngineEventHandler(
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine is null before registering event handlers');
+        }
+        
+        currentEngine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
@@ -134,7 +148,12 @@ class AgoraVoiceCallService {
       // Enable audio
       debugPrint('[Agora] Enabling audio...');
       try {
-        await engine.enableAudio();
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine is null before enabling audio');
+        }
+        
+        await currentEngine.enableAudio();
         debugPrint('[Agora] ✅ Audio enabled');
       } catch (e) {
         debugPrint('[Agora] ❌ Failed to enable audio: $e');
@@ -144,7 +163,12 @@ class AgoraVoiceCallService {
       // Set audio profile for voice call
       debugPrint('[Agora] Setting audio profile...');
       try {
-        await engine.setAudioProfile(
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine is null before setting audio profile');
+        }
+        
+        await currentEngine.setAudioProfile(
         profile: AudioProfileType.audioProfileDefault,
         scenario: AudioScenarioType.audioScenarioGameStreaming,
       );

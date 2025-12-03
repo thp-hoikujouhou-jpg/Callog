@@ -81,14 +81,32 @@ class AgoraVideoCallService {
         rethrow;
       }
       
-      // Copy to local variable for null safety (after null check)
-      final localEngine = engine!;
+      // Verify engine is not null before proceeding
+      final currentEngine = engine;
+      if (currentEngine == null) {
+        throw Exception('Engine is null after creation');
+      }
       
-      // Initialize the engine
-      await localEngine.initialize(RtcEngineContext(
-        appId: appId,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ));
+      // Now currentEngine is promoted to non-nullable type
+      final localEngine = currentEngine;
+      
+      // Initialize the engine with proper error handling
+      debugPrint('[AgoraVideo] Initializing engine with context...');
+      try {
+        final context = RtcEngineContext(
+          appId: appId,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+        );
+        
+        debugPrint('[AgoraVideo] Context created: appId=${appId.substring(0, 8)}...');
+        
+        await localEngine.initialize(context);
+        debugPrint('[AgoraVideo] ✅ Engine initialized successfully');
+      } catch (e) {
+        debugPrint('[AgoraVideo] ❌ Engine initialization failed: $e');
+        debugPrint('[AgoraVideo] ℹ️ Error type: ${e.runtimeType}');
+        rethrow;
+      }
 
       // Register event handlers
       localEngine.registerEventHandler(RtcEngineEventHandler(
