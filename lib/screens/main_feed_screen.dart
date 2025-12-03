@@ -1023,11 +1023,13 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
   Widget _buildChatArea(LocalizationService localService) {
     final currentUser = _auth.currentUser;
-    if (currentUser == null || _selectedFriendId == null) {
+    final selectedId = _selectedFriendId;
+    
+    if (currentUser == null || selectedId == null) {
       return const SizedBox.shrink();
     }
 
-    final chatId = _getChatId(currentUser.uid, _selectedFriendId!);
+    final chatId = _getChatId(currentUser.uid, selectedId);
 
     return Column(
       children: [

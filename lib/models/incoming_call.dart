@@ -82,8 +82,9 @@ class IncomingCall {
 
   // Calculate call duration if ended
   Duration? get callDuration {
-    if (endTime != null) {
-      return endTime!.difference(startTime);
+    final end = endTime;
+    if (end != null) {
+      return end.difference(startTime);
     }
     return null;
   }

@@ -579,7 +579,8 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (!snapshot.hasData || snapshot.data!.isEmpty) {
+                    final data = snapshot.data;
+                    if (!snapshot.hasData || data == null || data.isEmpty) {
                       return Center(
                         child: Text(
                           localService.translate('no_friends'),

@@ -54,9 +54,10 @@ class PushNotificationService {
 
       // Get FCM token
       _fcmToken = await _messaging.getToken();
-      if (_fcmToken != null) {
-        debugPrint('[Push] FCM Token: $_fcmToken');
-        await _saveFCMToken(_fcmToken!);
+      final token = _fcmToken;
+      if (token != null) {
+        debugPrint('[Push] FCM Token: $token');
+        await _saveFCMToken(token);
       }
 
       // Listen to token refresh
