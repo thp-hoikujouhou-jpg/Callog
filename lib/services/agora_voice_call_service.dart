@@ -47,25 +47,54 @@ class AgoraVoiceCallService {
       return;
     }
 
+    // Web platform support
+    if (kIsWeb) {
+      debugPrint('[Agora] ✅ Web platform detected - using Agora Web SDK');
+    }
+
     try {
       debugPrint('[Agora] Initializing with App ID: $appId');
+      debugPrint('[Agora] Platform: ${kIsWeb ? "Web" : "Mobile"}');
       
       // Request microphone permission
       await _requestPermission();
 
       // Create Agora RTC Engine
-      _engine = createAgoraRtcEngine();
+      debugPrint('[Agora] Creating RTC Engine instance...');
+      try {
+        _engine = createAgoraRtcEngine();
+        debugPrint('[Agora] RTC Engine created: ${_engine != null}');
+        
+        if (_engine == null) {
+          debugPrint('[Agora] ❌ createAgoraRtcEngine returned null');
+          debugPrint('[Agora] ℹ️ This may indicate missing Agora Web SDK');
+          debugPrint('[Agora] ℹ️ Check if AgoraRTC_N script is loaded in index.html');
+          throw Exception('Agora RTC Engine initialization failed: createAgoraRtcEngine returned null. Please ensure Agora Web SDK is properly loaded.');
+        }
+      } catch (e) {
+        debugPrint('[Agora] Failed to create engine: $e');
+        rethrow;
+      }
       
       // Initialize the engine
-      await _engine!.initialize(RtcEngineContext(
-        appId: appId,
-        channelProfile: ChannelProfileType.channelProfileCommunication,
-      ));
+      debugPrint('[Agora] Initializing engine with context...');
+      try {
+        await _engine!.initialize(RtcEngineContext(
+          appId: appId,
+          channelProfile: ChannelProfileType.channelProfileCommunication,
+        ));
+        debugPrint('[Agora] ✅ Engine initialized successfully');
+      } catch (e) {
+        debugPrint('[Agora] ❌ Engine initialization failed: $e');
+        rethrow;
+      }
 
       // Register event handlers
-      _engine!.registerEventHandler(RtcEngineEventHandler(
+      debugPrint('[Agora] Registering event handlers...');
+      try {
+        _engine!.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          debugPrint('[Agora] Successfully joined channel: ${connection.channelId}');
+          debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
@@ -93,18 +122,37 @@ class AgoraVoiceCallService {
           onError?.call('Error $err: $msg');
         },
       ));
+        debugPrint('[Agora] ✅ Event handlers registered');
+      } catch (e) {
+        debugPrint('[Agora] ❌ Failed to register event handlers: $e');
+        rethrow;
+      }
 
       // Enable audio
-      await _engine!.enableAudio();
+      debugPrint('[Agora] Enabling audio...');
+      try {
+        await _engine!.enableAudio();
+        debugPrint('[Agora] ✅ Audio enabled');
+      } catch (e) {
+        debugPrint('[Agora] ❌ Failed to enable audio: $e');
+        rethrow;
+      }
       
       // Set audio profile for voice call
-      await _engine!.setAudioProfile(
+      debugPrint('[Agora] Setting audio profile...');
+      try {
+        await _engine!.setAudioProfile(
         profile: AudioProfileType.audioProfileDefault,
         scenario: AudioScenarioType.audioScenarioGameStreaming,
       );
+        debugPrint('[Agora] ✅ Audio profile set');
+      } catch (e) {
+        debugPrint('[Agora] ❌ Failed to set audio profile: $e');
+        rethrow;
+      }
 
       _isInitialized = true;
-      debugPrint('[Agora] Initialization completed successfully');
+      debugPrint('[Agora] ✅✅✅ Initialization completed successfully');
     } catch (e) {
       debugPrint('[Agora] Initialization failed: $e');
       onError?.call('Initialization failed: $e');

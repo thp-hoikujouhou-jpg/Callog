@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/auth_service.dart';
+import '../utils/image_proxy.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
@@ -90,7 +91,7 @@ class _LoginScreenState extends State<LoginScreen> {
   }
 
   Future<void> _handleEmailAuth() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState?.validate() != true) return;
 
     setState(() => _isLoading = true);
 
@@ -340,7 +341,7 @@ class _LoginScreenState extends State<LoginScreen> {
                                 child: OutlinedButton.icon(
                                   onPressed: _handleGoogleSignIn,
                                   icon: Image.network(
-                                    'https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg',
+                                    ImageProxy.getCorsProxyUrl('https://www.gstatic.com/firebasejs/ui/2.0.0/images/auth/google.svg'),
                                     height: 24,
                                     width: 24,
                                     errorBuilder: (context, error, stackTrace) {

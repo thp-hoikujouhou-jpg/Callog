@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import '../utils/image_proxy.dart';
 import 'reorder_friends_screen.dart';
 
 class SearchContactsScreen extends StatefulWidget {
@@ -500,7 +501,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                                 
                                 return CircleAvatar(
                                   backgroundColor: Colors.blue.shade600,
-                                  backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                                  backgroundImage: hasPhoto ? ImageProxy.getImageProvider(photoUrl) : null,
                                   onBackgroundImageError: hasPhoto ? (exception, stackTrace) {} : null,
                                   child: hasPhoto
                                       ? null
@@ -587,7 +588,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                       );
                     }
 
-                    final friends = snapshot.data!;
+                    final friends = snapshot.data ?? [];
                     return ListView.builder(
                       padding: const EdgeInsets.symmetric(horizontal: 16),
                       itemCount: friends.length,
@@ -606,7 +607,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                                 
                                 return CircleAvatar(
                                   backgroundColor: Colors.blue.shade600,
-                                  backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                                  backgroundImage: hasPhoto ? ImageProxy.getImageProvider(photoUrl) : null,
                                   onBackgroundImageError: hasPhoto ? (exception, stackTrace) {} : null,
                                   child: hasPhoto
                                       ? null

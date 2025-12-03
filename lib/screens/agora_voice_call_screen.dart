@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/agora_voice_call_service.dart';
 import '../services/call_history_service.dart';
+import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
 /// Agora Voice Call Screen - LINE/WhatsApp-level voice calling UI
@@ -145,10 +146,35 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           _connectionStatus = '接続失敗';
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('通話開始エラー: $e'),
-            backgroundColor: Colors.red,
+        // Show user-friendly error message with details
+        final errorMessage = e.toString();
+        
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('⚠️ 音声通話エラー'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('通話の開始に失敗しました。'),
+                  const SizedBox(height: 12),
+                  const Text('エラー詳細:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(errorMessage, style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Close call screen
+                },
+                child: const Text('閉じる'),
+              ),
+            ],
           ),
         );
       }
@@ -280,7 +306,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                   child: widget.friendPhotoUrl != null
                       ? ClipOval(
                           child: Image.network(
-                            widget.friendPhotoUrl!,
+                            ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Center(

@@ -53,6 +53,11 @@ class AgoraVideoCallService {
       return;
     }
 
+    // Web platform support
+    if (kIsWeb) {
+      debugPrint('[AgoraVideo] ✅ Web platform detected - using Agora Web SDK');
+    }
+
     try {
       debugPrint('[AgoraVideo] Initializing with App ID: $appId');
       
@@ -60,7 +65,21 @@ class AgoraVideoCallService {
       await _requestPermissions();
 
       // Create Agora RTC Engine
-      engine = createAgoraRtcEngine();
+      debugPrint('[AgoraVideo] Creating RTC Engine...');
+      try {
+        engine = createAgoraRtcEngine();
+        debugPrint('[AgoraVideo] RTC Engine created: ${engine != null}');
+        
+        if (engine == null) {
+          debugPrint('[AgoraVideo] ❌ createAgoraRtcEngine returned null');
+          debugPrint('[AgoraVideo] ℹ️ This may indicate missing Agora Web SDK');
+          throw Exception('Agora Video Engine initialization failed: createAgoraRtcEngine returned null. Please ensure Agora Web SDK is properly loaded.');
+        }
+        debugPrint('[AgoraVideo] ✅ RTC Engine created successfully');
+      } catch (e) {
+        debugPrint('[AgoraVideo] Failed to create engine: $e');
+        rethrow;
+      }
       
       // Initialize the engine
       await engine!.initialize(RtcEngineContext(
@@ -71,7 +90,7 @@ class AgoraVideoCallService {
       // Register event handlers
       engine!.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          debugPrint('[AgoraVideo] Successfully joined channel: ${connection.channelId}');
+          debugPrint('[AgoraVideo] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {

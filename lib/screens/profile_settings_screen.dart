@@ -4,6 +4,7 @@ import '../services/localization_service.dart';
 import '../services/auth_service.dart';
 import '../services/theme_service.dart';
 import '../models/user_profile.dart';
+import '../utils/image_proxy.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
@@ -237,7 +238,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (result != null && mounted) {
       try {
         final authService = Provider.of<AuthService>(context, listen: false);
-        await authService.changePassword(result['current']!, result['new']!);
+        final currentPassword = result['current'] as String?;
+        final newPassword = result['new'] as String?;
+        
+        if (currentPassword == null || newPassword == null) {
+          throw Exception('パスワードを入力してください');
+        }
+        
+        await authService.changePassword(currentPassword, newPassword);
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -461,7 +469,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                       return CircleAvatar(
                         radius: 60,
                         backgroundColor: Colors.blue.shade100,
-                        backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                        backgroundImage: hasPhoto ? ImageProxy.getImageProvider(photoUrl) : null,
                         onBackgroundImageError: hasPhoto
                             ? (exception, stackTrace) {
                                 if (kDebugMode) {

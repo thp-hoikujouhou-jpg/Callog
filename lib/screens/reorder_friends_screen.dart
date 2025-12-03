@@ -4,6 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/localization_service.dart';
+import '../utils/image_proxy.dart';
 
 class ReorderFriendsScreen extends StatefulWidget {
   const ReorderFriendsScreen({super.key});
@@ -61,7 +62,8 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
       final friends = <Map<String, dynamic>>[];
       for (var doc in friendDocs) {
         if (doc.exists) {
-          final data = doc.data()!;
+          final data = doc.data();
+          if (data == null) continue;
           data['uid'] = doc.id;
           friends.add(data);
         }
@@ -229,7 +231,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.blue.shade600,
-                                  backgroundImage: hasPhoto ? NetworkImage(photoUrl) : null,
+                                  backgroundImage: hasPhoto ? ImageProxy.getImageProvider(photoUrl) : null,
                                   onBackgroundImageError: hasPhoto ? (exception, stackTrace) {} : null,
                                   child: hasPhoto
                                       ? null

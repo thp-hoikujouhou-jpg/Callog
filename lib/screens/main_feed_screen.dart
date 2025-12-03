@@ -4,6 +4,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import '../utils/image_proxy.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
 import 'profile_settings_screen.dart';
@@ -177,7 +178,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final friends = <Map<String, dynamic>>[];
       for (var doc in friendDocs) {
         if (doc.exists) {
-          final data = doc.data()!;
+          final data = doc.data();
+          if (data == null) continue;
           data['uid'] = doc.id;
           friends.add(data);
           
@@ -438,6 +440,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final currentUser = _auth.currentUser;
       if (currentUser == null) return;
 
+      if (_selectedFriendId == null) return;
       final chatId = _getChatId(currentUser.uid, _selectedFriendId!);
       final messageText = _messageController.text.trim();
       final now = DateTime.now();
@@ -566,8 +569,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     if (kDebugMode) {
       debugPrint('✅ [VOICE CALL] Permission granted! Preparing to navigate...');
       debugPrint('   - Friend ID: $_selectedFriendId');
-      debugPrint('   - Friend Name: ${_selectedFriend!['username'] ?? _selectedFriend!['name'] ?? 'Unknown'}');
-      debugPrint('   - Friend Photo: ${_selectedFriend!['photoUrl']}');
+      debugPrint('   - Friend Name: ${_selectedFriend?['username'] ?? _selectedFriend?['name'] ?? 'Unknown'}');
+      debugPrint('   - Friend Photo: ${_selectedFriend?['photoUrl']}');
     }
 
     try {
@@ -580,10 +583,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       
       // Extract friend data
       final friendId = _selectedFriendId!;
-      final friendName = _selectedFriend!['username'] as String? ?? 
-                         _selectedFriend!['name'] as String? ?? 
+      final friendName = _selectedFriend?['username'] as String? ?? 
+                         _selectedFriend?['name'] as String? ?? 
                          'Unknown';
-      final friendPhotoUrl = _selectedFriend!['photoUrl'] as String?;
+      final friendPhotoUrl = _selectedFriend?['photoUrl'] as String?;
       
       if (kDebugMode) {
         debugPrint('🚀 [VOICE CALL] Navigating to OutgoingVoiceCallScreen...');
@@ -669,7 +672,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       debugPrint('🎤 [VIDEO CALL] Microphone permission: $micStatus');
     }
     
-    if (!cameraStatus.isGranted || !micStatus.isGranted) {
+    if (cameraStatus.isGranted == false || micStatus.isGranted == false) {
       if (kDebugMode) {
         debugPrint('❌ [VIDEO CALL] Permissions denied');
       }
@@ -707,10 +710,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       if (!mounted) return;
       
       final friendId = _selectedFriendId!;
-      final friendName = _selectedFriend!['username'] as String? ?? 
-                         _selectedFriend!['name'] as String? ?? 
+      final friendName = _selectedFriend?['username'] as String? ?? 
+                         _selectedFriend?['name'] as String? ?? 
                          'Unknown';
-      final friendPhotoUrl = _selectedFriend!['photoUrl'] as String?;
+      final friendPhotoUrl = _selectedFriend?['photoUrl'] as String?;
       
       if (kDebugMode) {
         debugPrint('🚀 [VIDEO CALL] Navigating to AgoraVideoCallScreen...');
@@ -850,7 +853,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   backgroundColor: Colors.blue.shade600,
                                   backgroundImage: (friend['photoUrl'] != null && 
                                                     friend['photoUrl'].toString().isNotEmpty)
-                                      ? NetworkImage(friend['photoUrl'])
+                                      ? ImageProxy.getImageProvider(friend['photoUrl'])
                                       : null,
                                   onBackgroundImageError: (friend['photoUrl'] != null && 
                                                           friend['photoUrl'].toString().isNotEmpty)
@@ -1026,28 +1029,32 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           color: Colors.blue.shade50,
           child: Row(
             children: [
-              CircleAvatar(
-                radius: 20,
-                backgroundColor: Colors.blue.shade600,
-                backgroundImage: (_selectedFriend!['photoUrl'] != null && 
-                                  _selectedFriend!['photoUrl'].toString().isNotEmpty)
-                    ? NetworkImage(_selectedFriend!['photoUrl'])
-                    : null,
-                onBackgroundImageError: (_selectedFriend!['photoUrl'] != null && 
-                                        _selectedFriend!['photoUrl'].toString().isNotEmpty)
-                    ? (exception, stackTrace) {
-                        if (kDebugMode) {
-                          debugPrint('Failed to load profile image: $exception');
-                        }
-                      }
-                    : null,
-                child: (_selectedFriend!['photoUrl'] == null || 
-                       _selectedFriend!['photoUrl'].toString().isEmpty)
-                    ? Text(
-                        (_selectedFriend!['username'] ?? '?')[0].toUpperCase(),
-                        style: const TextStyle(color: Colors.white),
-                      )
-                    : null,
+              Builder(
+                builder: (context) {
+                  final photoUrl = _selectedFriend?['photoUrl'];
+                  final hasPhoto = photoUrl != null && photoUrl.toString().isNotEmpty;
+                  
+                  return CircleAvatar(
+                    radius: 20,
+                    backgroundColor: Colors.blue.shade600,
+                    backgroundImage: hasPhoto
+                        ? ImageProxy.getImageProvider(photoUrl)
+                        : null,
+                    onBackgroundImageError: hasPhoto
+                        ? (exception, stackTrace) {
+                            if (kDebugMode) {
+                              debugPrint('Failed to load profile image: $exception');
+                            }
+                          }
+                        : null,
+                    child: !hasPhoto
+                        ? Text(
+                            (_selectedFriend?['username'] ?? '?')[0].toUpperCase(),
+                            style: const TextStyle(color: Colors.white),
+                          )
+                        : null,
+                  );
+                },
               ),
               const SizedBox(width: 12),
               Expanded(
@@ -1055,7 +1062,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
                     Text(
-                      _selectedFriend!['username'] ?? 'Unknown',
+                      _selectedFriend?['username'] ?? 'Unknown',
                       style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         fontSize: 16,
@@ -1063,7 +1070,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       ),
                     ),
                     Text(
-                      _selectedFriend!['location'] ?? '',
+                      _selectedFriend?['location'] ?? '',
                       style: TextStyle(
                         fontSize: 12,
                         color: Colors.grey.shade600,
@@ -1101,7 +1108,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               // Get user's background preference
               String backgroundId = 'default';
               if (userSnapshot.hasData && userSnapshot.data != null) {
-                final userData = userSnapshot.data!.data() as Map<String, dynamic>?;
+                final userData = userSnapshot.data?.data() as Map<String, dynamic>?;
                 backgroundId = userData?['chatBackground'] ?? 'default';
               }
 
@@ -1143,7 +1150,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       return const Center(child: CircularProgressIndicator());
                     }
 
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                    if (!snapshot.hasData || snapshot.data?.docs.isEmpty == true) {
                       return Center(
                         child: Text(
                           localService.translate('no_messages_yet'),
@@ -1152,7 +1159,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       );
                     }
 
-                    final messages = snapshot.data!.docs;
+                    final messages = snapshot.data?.docs ?? [];
 
                     return ListView.builder(
                       reverse: true,

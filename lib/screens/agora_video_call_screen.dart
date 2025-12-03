@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/agora_video_call_service.dart';
 import '../services/call_history_service.dart';
+import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
 /// Agora Video Call Screen - LINE/WhatsApp-level video calling UI
@@ -149,10 +150,35 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
           _connectionStatus = '接続失敗';
         });
         
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(
-            content: Text('ビデオ通話開始エラー: $e'),
-            backgroundColor: Colors.red,
+        // Show user-friendly error message with details
+        final errorMessage = e.toString();
+        
+        showDialog(
+          context: context,
+          builder: (context) => AlertDialog(
+            title: const Text('⚠️ ビデオ通話エラー'),
+            content: SingleChildScrollView(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Text('ビデオ通話の開始に失敗しました。'),
+                  const SizedBox(height: 12),
+                  const Text('エラー詳細:', style: TextStyle(fontWeight: FontWeight.bold)),
+                  const SizedBox(height: 4),
+                  Text(errorMessage, style: const TextStyle(fontSize: 12)),
+                ],
+              ),
+            ),
+            actions: [
+              TextButton(
+                onPressed: () {
+                  Navigator.pop(context); // Close dialog
+                  Navigator.pop(context); // Close call screen
+                },
+                child: const Text('閉じる'),
+              ),
+            ],
           ),
         );
       }
@@ -269,12 +295,22 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
 
   /// Remote video view
   Widget _buildRemoteVideo() {
+    final engine = _callService.engine;
+    if (engine == null) {
+      return const Center(child: Text('エンジンが初期化されていません'));
+    }
+    
+    final channelName = _callService.currentChannelName;
+    if (channelName == null) {
+      return const Center(child: Text('チャンネル名が不明です'));
+    }
+    
     return SizedBox.expand(
       child: AgoraVideoView(
         controller: VideoViewController.remote(
-          rtcEngine: _callService.engine!,
+          rtcEngine: engine,
           canvas: VideoCanvas(uid: _remoteUid),
-          connection: RtcConnection(channelId: _callService.currentChannelName),
+          connection: RtcConnection(channelId: channelName),
         ),
       ),
     );
@@ -298,7 +334,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
               child: widget.friendPhotoUrl != null
                   ? ClipOval(
                       child: Image.network(
-                        widget.friendPhotoUrl!,
+                        ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Center(
@@ -366,12 +402,16 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         ),
         child: ClipRRect(
           borderRadius: BorderRadius.circular(10),
-          child: AgoraVideoView(
-            controller: VideoViewController(
-              rtcEngine: _callService.engine!,
-              canvas: const VideoCanvas(uid: 0),
-            ),
-          ),
+          child: _callService.engine != null
+              ? AgoraVideoView(
+                  controller: VideoViewController(
+                    rtcEngine: _callService.engine!,
+                    canvas: const VideoCanvas(uid: 0),
+                  ),
+                )
+              : const Center(
+                  child: Icon(Icons.videocam_off, color: Colors.white, size: 40),
+                ),
         ),
       ),
     );

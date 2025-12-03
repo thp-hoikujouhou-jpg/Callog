@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/voice_call_service.dart';
 import '../services/localization_service.dart';
+import '../utils/image_proxy.dart';
 
 /// Incoming Voice Call Screen
 /// Displays incoming call with slide-to-answer interface
@@ -85,7 +86,7 @@ class _IncomingVoiceCallScreenState extends State<IncomingVoiceCallScreen>
                   radius: 80,
                   backgroundColor: Colors.grey[300],
                   backgroundImage: widget.callerPhotoUrl != null
-                      ? NetworkImage(widget.callerPhotoUrl!)
+                      ? ImageProxy.getImageProvider(widget.callerPhotoUrl!)
                       : null,
                   child: widget.callerPhotoUrl == null
                       ? Icon(
@@ -246,7 +247,7 @@ class _ActionButton extends StatelessWidget {
         decoration: BoxDecoration(
           color: Colors.white.withValues(alpha: 0.9),
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Colors.grey[300]!),
+          border: Border.all(color: Colors.grey[300] ?? Colors.grey),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

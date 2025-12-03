@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import '../utils/image_proxy.dart';
 import 'agora_voice_call_screen.dart';
 import 'agora_video_call_screen.dart';
 
@@ -179,7 +180,7 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
                 child: widget.callerPhotoUrl != null
                     ? ClipOval(
                         child: Image.network(
-                          widget.callerPhotoUrl!,
+                          ImageProxy.getCorsProxyUrl(widget.callerPhotoUrl!),
                           fit: BoxFit.cover,
                           errorBuilder: (context, error, stackTrace) {
                             return Center(

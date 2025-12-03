@@ -32,8 +32,19 @@
   <title>Callog</title>
   <link rel="manifest" href="manifest.json">
 
-  <!-- Agora Web SDK for voice calls -->
+  <!-- Agora Web SDK for voice and video calls -->
   <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+  
+  <!-- Verify Agora SDK is loaded -->
+  <script>
+    console.log('[Callog] Checking Agora Web SDK...');
+    if (typeof AgoraRTC !== 'undefined') {
+      console.log('[Callog] ✅ Agora Web SDK loaded successfully');
+      console.log('[Callog] AgoraRTC version:', AgoraRTC.VERSION);
+    } else {
+      console.error('[Callog] ❌ Agora Web SDK not loaded!');
+    }
+  </script>
 </head>
 <body>
   <script>
