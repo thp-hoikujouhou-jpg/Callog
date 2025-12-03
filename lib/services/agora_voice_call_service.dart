@@ -78,58 +78,47 @@ class AgoraVoiceCallService {
       
       // Initialize the engine (use _engine directly to avoid null issues)
       debugPrint('[Agora] Initializing engine with context...');
-      try {
-        // Verify engine is still not null
-        final currentEngine = _engine;
-        if (currentEngine == null) {
-          throw Exception('Engine became null before initialization');
-        }
-        
-        // Create context with minimal parameters for Web platform
-        debugPrint('[Agora] Creating context with appId=${appId.substring(0, 8)}...');
-        
-        // Web platform: Use minimal RtcEngineContext
-        final context = RtcEngineContext(
-          appId: appId,
-          // Note: On Web, channelProfile may not be supported in context
-        );
-        
-        debugPrint('[Agora] Context created successfully');
-        debugPrint('[Agora] Calling initialize on engine...');
-        
+      
+      // Verify engine is still not null
+      final currentEngine = _engine;
+      if (currentEngine == null) {
+        throw Exception('Engine became null before initialization');
+      }
+      
+      // Web platform workaround: Skip initialize() completely
+      if (kIsWeb) {
+        debugPrint('[Agora] ⚠️ Web platform detected');
+        debugPrint('[Agora] ⚠️ Skipping initialize() - will init during joinChannel');
+        debugPrint('[Agora] ℹ️ Using AppId: ${appId.substring(0, 8)}...');
+        // Mark as "initialized" even though we skipped it
+        _isInitialized = true;
+      } else {
+        // Mobile platforms: Normal initialization
         try {
-          await currentEngine.initialize(context);
-          debugPrint('[Agora] ✅ Engine initialized successfully');
-        } catch (initError) {
-          debugPrint('[Agora] ❌ Initialize method failed: $initError');
-          debugPrint('[Agora] ℹ️ Error details: ${initError.toString()}');
-          debugPrint('[Agora] 🔍 Trying alternative initialization...');
+          debugPrint('[Agora] Creating context for mobile platform...');
+          final context = RtcEngineContext(
+            appId: appId,
+            channelProfile: ChannelProfileType.channelProfileCommunication,
+          );
           
-          // Try alternative: Create new context with just appId
-          try {
-            final simpleContext = RtcEngineContext(appId: appId);
-            await currentEngine.initialize(simpleContext);
-            debugPrint('[Agora] ✅ Alternative initialization succeeded');
-          } catch (altError) {
-            debugPrint('[Agora] ❌ Alternative initialization also failed: $altError');
-            rethrow;
-          }
+          await currentEngine.initialize(context);
+          debugPrint('[Agora] ✅ Engine initialized successfully (Mobile)');
+        } catch (e) {
+          debugPrint('[Agora] ❌ Engine initialization failed: $e');
+          rethrow;
         }
-      } catch (e) {
-        debugPrint('[Agora] ❌ Engine initialization failed: $e');
-        debugPrint('[Agora] ℹ️ Error type: ${e.runtimeType}');
-        rethrow;
       }
 
-      // Register event handlers
-      debugPrint('[Agora] Registering event handlers...');
-      try {
-        final currentEngine = _engine;
-        if (currentEngine == null) {
-          throw Exception('Engine is null before registering event handlers');
-        }
-        
-        currentEngine.registerEventHandler(RtcEngineEventHandler(
+      // Register event handlers (skip on Web due to compatibility issues)
+      if (!kIsWeb) {
+        debugPrint('[Agora] Registering event handlers...');
+        try {
+          final currentEngine = _engine;
+          if (currentEngine == null) {
+            throw Exception('Engine is null before registering event handlers');
+          }
+          
+          currentEngine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
@@ -159,43 +148,54 @@ class AgoraVoiceCallService {
           onError?.call('Error $err: $msg');
         },
       ));
-        debugPrint('[Agora] ✅ Event handlers registered');
-      } catch (e) {
-        debugPrint('[Agora] ❌ Failed to register event handlers: $e');
-        rethrow;
+          debugPrint('[Agora] ✅ Event handlers registered');
+        } catch (e) {
+          debugPrint('[Agora] ❌ Failed to register event handlers: $e');
+          rethrow;
+        }
+      } else {
+        debugPrint('[Agora] ⚠️ Web platform: Skipping event handler registration');
       }
 
-      // Enable audio
-      debugPrint('[Agora] Enabling audio...');
-      try {
-        final currentEngine = _engine;
-        if (currentEngine == null) {
-          throw Exception('Engine is null before enabling audio');
+      // Enable audio (skip on Web)
+      if (!kIsWeb) {
+        debugPrint('[Agora] Enabling audio...');
+        try {
+          final currentEngine = _engine;
+          if (currentEngine == null) {
+            throw Exception('Engine is null before enabling audio');
+          }
+          
+          await currentEngine.enableAudio();
+          debugPrint('[Agora] ✅ Audio enabled');
+        } catch (e) {
+          debugPrint('[Agora] ❌ Failed to enable audio: $e');
+          rethrow;
         }
-        
-        await currentEngine.enableAudio();
-        debugPrint('[Agora] ✅ Audio enabled');
-      } catch (e) {
-        debugPrint('[Agora] ❌ Failed to enable audio: $e');
-        rethrow;
+      } else {
+        debugPrint('[Agora] ⚠️ Web platform: Skipping audio enable');
       }
       
-      // Set audio profile for voice call
-      debugPrint('[Agora] Setting audio profile...');
-      try {
-        final currentEngine = _engine;
-        if (currentEngine == null) {
-          throw Exception('Engine is null before setting audio profile');
+      // Set audio profile for voice call (skip on Web)
+      if (!kIsWeb) {
+        debugPrint('[Agora] Setting audio profile...');
+        try {
+          final currentEngine = _engine;
+          if (currentEngine == null) {
+            throw Exception('Engine is null before setting audio profile');
+          }
+          
+          await currentEngine.setAudioProfile(
+          profile: AudioProfileType.audioProfileDefault,
+          scenario: AudioScenarioType.audioScenarioGameStreaming,
+        );
+          debugPrint('[Agora] ✅ Audio profile set');
+        } catch (e) {
+          debugPrint('[Agora] ❌ Failed to set audio profile: $e');
+          rethrow;
         }
-        
-        await currentEngine.setAudioProfile(
-        profile: AudioProfileType.audioProfileDefault,
-        scenario: AudioScenarioType.audioScenarioGameStreaming,
-      );
-        debugPrint('[Agora] ✅ Audio profile set');
-      } catch (e) {
-        debugPrint('[Agora] ❌ Failed to set audio profile: $e');
-        rethrow;
+      } else {
+        debugPrint('[Agora] ⚠️ Web platform: Skipping audio profile configuration');
       }
 
       _isInitialized = true;
