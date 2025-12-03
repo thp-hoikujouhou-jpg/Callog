@@ -86,15 +86,27 @@ class AgoraVoiceCallService {
         }
         
         // Create context with proper null safety
+        debugPrint('[Agora] Creating context with appId=${appId.substring(0, 8)}...');
+        debugPrint('[Agora] Channel profile: ${ChannelProfileType.channelProfileCommunication}');
+        
         final context = RtcEngineContext(
           appId: appId,
           channelProfile: ChannelProfileType.channelProfileCommunication,
+          // Web platform specific settings
+          areaCode: AreaCode.areaCodeGlob.value(),
         );
         
-        debugPrint('[Agora] Context created: appId=${appId.substring(0, 8)}...');
+        debugPrint('[Agora] Context created successfully');
+        debugPrint('[Agora] Calling initialize on engine...');
         
-        await currentEngine.initialize(context);
-        debugPrint('[Agora] ✅ Engine initialized successfully');
+        try {
+          await currentEngine.initialize(context);
+          debugPrint('[Agora] ✅ Engine initialized successfully');
+        } catch (initError) {
+          debugPrint('[Agora] ❌ Initialize method failed: $initError');
+          debugPrint('[Agora] ℹ️ Error details: ${initError.toString()}');
+          rethrow;
+        }
       } catch (e) {
         debugPrint('[Agora] ❌ Engine initialization failed: $e');
         debugPrint('[Agora] ℹ️ Error type: ${e.runtimeType}');

@@ -93,15 +93,26 @@ class AgoraVideoCallService {
       // Initialize the engine with proper error handling
       debugPrint('[AgoraVideo] Initializing engine with context...');
       try {
+        debugPrint('[AgoraVideo] Creating context with appId=${appId.substring(0, 8)}...');
+        
         final context = RtcEngineContext(
           appId: appId,
           channelProfile: ChannelProfileType.channelProfileCommunication,
+          // Web platform specific settings
+          areaCode: AreaCode.areaCodeGlob.value(),
         );
         
-        debugPrint('[AgoraVideo] Context created: appId=${appId.substring(0, 8)}...');
+        debugPrint('[AgoraVideo] Context created successfully');
+        debugPrint('[AgoraVideo] Calling initialize on engine...');
         
-        await localEngine.initialize(context);
-        debugPrint('[AgoraVideo] ✅ Engine initialized successfully');
+        try {
+          await localEngine.initialize(context);
+          debugPrint('[AgoraVideo] ✅ Engine initialized successfully');
+        } catch (initError) {
+          debugPrint('[AgoraVideo] ❌ Initialize method failed: $initError');
+          debugPrint('[AgoraVideo] ℹ️ Error details: ${initError.toString()}');
+          rethrow;
+        }
       } catch (e) {
         debugPrint('[AgoraVideo] ❌ Engine initialization failed: $e');
         debugPrint('[AgoraVideo] ℹ️ Error type: ${e.runtimeType}');
