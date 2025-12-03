@@ -515,7 +515,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       debugPrint('📞 [VOICE CALL] Button pressed');
     }
     
-    if (_selectedFriend == null || _selectedFriendId == null) {
+    // Store friend data early to prevent state changes during async operations
+    final friendId = _selectedFriendId;
+    final friendData = _selectedFriend;
+    
+    if (friendData == null || friendId == null) {
       if (kDebugMode) {
         debugPrint('❌ [VOICE CALL] No friend selected');
       }
@@ -526,7 +530,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
 
     if (kDebugMode) {
-      debugPrint('✅ [VOICE CALL] Friend selected: $_selectedFriendId');
+      debugPrint('✅ [VOICE CALL] Friend selected: $friendId');
       debugPrint('📱 [VOICE CALL] Requesting microphone permission...');
     }
 
@@ -582,12 +586,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return;
       }
       
-      // Extract friend data
-      final friendId = _selectedFriendId!;
-      final friendName = _selectedFriend?['username'] as String? ?? 
-                         _selectedFriend?['name'] as String? ?? 
+      // Extract friend data (already stored safely)
+      final friendName = friendData['username'] as String? ?? 
+                         friendData['name'] as String? ?? 
                          'Unknown';
-      final friendPhotoUrl = _selectedFriend?['photoUrl'] as String?;
+      final friendPhotoUrl = friendData['photoUrl'] as String?;
       
       if (kDebugMode) {
         debugPrint('🚀 [VOICE CALL] Navigating to OutgoingVoiceCallScreen...');
@@ -649,7 +652,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       debugPrint('📹 [VIDEO CALL] Button pressed');
     }
     
-    if (_selectedFriend == null || _selectedFriendId == null) {
+    // Store friend data early to prevent state changes during async operations
+    final friendId = _selectedFriendId;
+    final friendData = _selectedFriend;
+    
+    if (friendData == null || friendId == null) {
       if (kDebugMode) {
         debugPrint('❌ [VIDEO CALL] No friend selected');
       }
@@ -660,7 +667,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     }
 
     if (kDebugMode) {
-      debugPrint('✅ [VIDEO CALL] Friend selected: $_selectedFriendId');
+      debugPrint('✅ [VIDEO CALL] Friend selected: $friendId');
       debugPrint('📱 [VIDEO CALL] Requesting camera and microphone permissions...');
     }
 
@@ -710,9 +717,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     try {
       if (!mounted) return;
       
-      final friendId = _selectedFriendId!;
-      final friendName = _selectedFriend?['username'] as String? ?? 
-                         _selectedFriend?['name'] as String? ?? 
+      // Extract friend data (already stored safely)
+      final friendName = friendData['username'] as String? ?? 
+                         friendData['name'] as String? ?? 
                          'Unknown';
       final friendPhotoUrl = _selectedFriend?['photoUrl'] as String?;
       

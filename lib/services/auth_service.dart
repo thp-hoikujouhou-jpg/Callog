@@ -31,15 +31,16 @@ class AuthService {
       );
       
       // Check if user profile exists, if not create one
-      if (result.user != null) {
-        final profileExists = await userProfileExists(result.user!.uid);
+      final user = result.user;
+      if (user != null) {
+        final profileExists = await userProfileExists(user.uid);
         if (!profileExists) {
           final profile = UserProfile(
-            uid: result.user!.uid,
+            uid: user.uid,
             email: email,
-            displayName: result.user!.displayName ?? email.split('@')[0],
+            displayName: user.displayName ?? email.split('@')[0],
             username: email.split('@')[0],
-            photoUrl: result.user!.photoURL ?? '',
+            photoUrl: user.photoURL ?? '',
             location: null,
             language: 'en',
             isOnline: true,
@@ -68,11 +69,12 @@ class AuthService {
       );
       
       // Automatically create user profile in Firestore
-      if (result.user != null) {
+      final user = result.user;
+      if (user != null) {
         final profile = UserProfile(
-          uid: result.user!.uid,
+          uid: user.uid,
           email: email,
-          displayName: result.user!.displayName ?? email.split('@')[0],
+          displayName: user.displayName ?? email.split('@')[0],
           username: email.split('@')[0], // Use email prefix as default username
           photoUrl: '',
           location: null,
@@ -107,15 +109,16 @@ class AuthService {
       final result = await _auth.signInWithCredential(credential);
       
       // Check if user profile exists, if not create one
-      if (result.user != null) {
-        final profileExists = await userProfileExists(result.user!.uid);
+      final user = result.user;
+      if (user != null) {
+        final profileExists = await userProfileExists(user.uid);
         if (!profileExists) {
           final profile = UserProfile(
-            uid: result.user!.uid,
-            email: result.user!.email ?? '',
-            displayName: result.user!.displayName ?? 'User',
-            username: result.user!.email?.split('@')[0] ?? 'user',
-            photoUrl: result.user!.photoURL ?? '',
+            uid: user.uid,
+            email: user.email ?? '',
+            displayName: user.displayName ?? 'User',
+            username: user.email?.split('@')[0] ?? 'user',
+            photoUrl: user.photoURL ?? '',
             location: null,
             language: 'en',
             isOnline: true,
@@ -159,8 +162,11 @@ class AuthService {
   Future<UserProfile?> getUserProfile(String uid) async {
     try {
       final doc = await _firestore.collection('users').doc(uid).get();
-      if (doc.exists && doc.data() != null) {
-        return UserProfile.fromMap(doc.data()!);
+      if (doc.exists) {
+        final data = doc.data();
+        if (data != null) {
+          return UserProfile.fromMap(data);
+        }
       }
       return null;
     } catch (e) {
@@ -215,9 +221,13 @@ class AuthService {
       final user = _auth.currentUser;
       if (user == null) throw Exception('No user logged in');
       
+      // Get user email safely
+      final userEmail = user.email;
+      if (userEmail == null) throw Exception('User email not available');
+      
       // Re-authenticate user with current password
       final credential = EmailAuthProvider.credential(
-        email: user.email!,
+        email: userEmail,
         password: currentPassword,
       );
       await user.reauthenticateWithCredential(credential);
