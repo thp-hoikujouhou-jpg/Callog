@@ -17,7 +17,20 @@ class AgoraVoiceCallService {
   AgoraVoiceCallService._internal();
 
   // Agora Configuration
+  // IMPORTANT: Replace with your valid Agora App ID from https://console.agora.io/
+  // Error -17 (INVALID_APP_ID) means the App ID is invalid or expired
   static const String appId = 'd1a8161eb70448d89eea1722bc169c92';
+  
+  // Validate App ID format
+  static bool _isValidAppId(String appId) {
+    // App ID should be 32 characters hexadecimal string
+    if (appId.isEmpty || appId.length != 32) {
+      return false;
+    }
+    // Check if it's hexadecimal
+    final hexRegex = RegExp(r'^[a-f0-9]+$');
+    return hexRegex.hasMatch(appId);
+  }
   
   // Agora Engine
   RtcEngine? _engine;
@@ -53,7 +66,18 @@ class AgoraVoiceCallService {
     }
 
     try {
+      // Validate App ID before initialization
+      if (!_isValidAppId(appId)) {
+        throw Exception(
+          'Invalid Agora App ID format. '
+          'Please check your App ID at https://console.agora.io/\n'
+          'Expected: 32-character hexadecimal string\n'
+          'Current: $appId (${appId.length} characters)'
+        );
+      }
+      
       debugPrint('[Agora] Initializing with App ID: $appId');
+      debugPrint('[Agora] App ID validation: ✅ PASSED');
       debugPrint('[Agora] Platform: ${kIsWeb ? "Web" : "Mobile"}');
       
       // Request microphone permission
@@ -96,6 +120,8 @@ class AgoraVoiceCallService {
         // Mobile platforms: Normal initialization
         try {
           debugPrint('[Agora] Creating context for mobile platform...');
+          debugPrint('[Agora] Using App ID: ${appId.substring(0, 8)}...${appId.substring(appId.length - 4)}');
+          
           final context = RtcEngineContext(
             appId: appId,
             channelProfile: ChannelProfileType.channelProfileCommunication,
@@ -103,8 +129,33 @@ class AgoraVoiceCallService {
           
           await currentEngine.initialize(context);
           debugPrint('[Agora] ✅ Engine initialized successfully (Mobile)');
+          
+          // Verify initialization was successful
+          debugPrint('[Agora] Verifying engine state...');
+          _isInitialized = true;
         } catch (e) {
           debugPrint('[Agora] ❌ Engine initialization failed: $e');
+          
+          // Check for specific error codes
+          if (e.toString().contains('-17') || e.toString().contains('INVALID_APP_ID')) {
+            debugPrint('[Agora] 🚨 ERROR -17: INVALID_APP_ID detected!');
+            debugPrint('[Agora] 📋 Troubleshooting steps:');
+            debugPrint('[Agora]    1. Verify App ID at https://console.agora.io/');
+            debugPrint('[Agora]    2. Check if App ID is enabled (not disabled)');
+            debugPrint('[Agora]    3. Ensure App ID project status is "Active"');
+            debugPrint('[Agora]    4. Try creating a new App ID if needed');
+            debugPrint('[Agora]    5. Check internet connection');
+            
+            throw Exception(
+              'Agora App ID is invalid or expired (Error -17).\n\n'
+              'Solutions:\n'
+              '1. Go to https://console.agora.io/\n'
+              '2. Check if your App ID is Active\n'
+              '3. Generate a new App ID if needed\n'
+              '4. Update appId in agora_voice_call_service.dart\n\n'
+              'Current App ID: ${appId.substring(0, 8)}...${appId.substring(appId.length - 4)}'
+            );
+          }
           rethrow;
         }
       }

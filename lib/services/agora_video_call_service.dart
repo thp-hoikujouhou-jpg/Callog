@@ -19,7 +19,20 @@ class AgoraVideoCallService {
   AgoraVideoCallService._internal();
 
   // Agora Configuration
+  // IMPORTANT: Replace with your valid Agora App ID from https://console.agora.io/
+  // Error -17 (INVALID_APP_ID) means the App ID is invalid or expired
   static const String appId = 'd1a8161eb70448d89eea1722bc169c92';
+  
+  // Validate App ID format
+  static bool _isValidAppId(String appId) {
+    // App ID should be 32 characters hexadecimal string
+    if (appId.isEmpty || appId.length != 32) {
+      return false;
+    }
+    // Check if it's hexadecimal
+    final hexRegex = RegExp(r'^[a-f0-9]+$');
+    return hexRegex.hasMatch(appId);
+  }
   
   // Agora Engine (public for video view controllers)
   RtcEngine? engine;
@@ -59,7 +72,19 @@ class AgoraVideoCallService {
     }
 
     try {
+      // Validate App ID before initialization
+      if (!_isValidAppId(appId)) {
+        throw Exception(
+          'Invalid Agora App ID format. '
+          'Please check your App ID at https://console.agora.io/\n'
+          'Expected: 32-character hexadecimal string\n'
+          'Current: $appId (${appId.length} characters)'
+        );
+      }
+      
       debugPrint('[AgoraVideo] Initializing with App ID: $appId');
+      debugPrint('[AgoraVideo] App ID validation: ✅ PASSED');
+      debugPrint('[AgoraVideo] Platform: ${kIsWeb ? "Web" : "Mobile"}');
       
       // Request permissions
       await _requestPermissions();
@@ -110,6 +135,28 @@ class AgoraVideoCallService {
         } catch (initError) {
           debugPrint('[AgoraVideo] ❌ Initialize method failed: $initError');
           debugPrint('[AgoraVideo] ℹ️ Error details: ${initError.toString()}');
+          
+          // Check for specific error codes
+          if (initError.toString().contains('-17') || initError.toString().contains('INVALID_APP_ID')) {
+            debugPrint('[AgoraVideo] 🚨 ERROR -17: INVALID_APP_ID detected!');
+            debugPrint('[AgoraVideo] 📋 Troubleshooting steps:');
+            debugPrint('[AgoraVideo]    1. Verify App ID at https://console.agora.io/');
+            debugPrint('[AgoraVideo]    2. Check if App ID is enabled (not disabled)');
+            debugPrint('[AgoraVideo]    3. Ensure App ID project status is "Active"');
+            debugPrint('[AgoraVideo]    4. Try creating a new App ID if needed');
+            debugPrint('[AgoraVideo]    5. Check internet connection');
+            
+            throw Exception(
+              'Agora App ID is invalid or expired (Error -17).\n\n'
+              'Solutions:\n'
+              '1. Go to https://console.agora.io/\n'
+              '2. Check if your App ID is Active\n'
+              '3. Generate a new App ID if needed\n'
+              '4. Update appId in agora_video_call_service.dart\n\n'
+              'Current App ID: ${appId.substring(0, 8)}...${appId.substring(appId.length - 4)}'
+            );
+          }
+          
           debugPrint('[AgoraVideo] 🔍 Trying alternative initialization...');
           
           // Try alternative: Create new context with just appId
