@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../services/agora_voice_call_service.dart';
+import '../services/agora_token_service.dart';
 import '../services/call_history_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/auth_service.dart';
@@ -136,8 +137,24 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       final channelName = _generateChannelName(widget.friendId);
       debugPrint('📞 [Agora Screen] Joining channel: $channelName');
       
-      // Join the channel
-      await _callService.joinChannel(channelName);
+      // Generate Agora token using Cloud Functions
+      String? token;
+      try {
+        final tokenService = AgoraTokenService();
+        final tokenData = await tokenService.generateToken(
+          channelName: channelName,
+          uid: 0, // 0 means Agora will auto-assign UID
+          role: 'publisher',
+        );
+        token = tokenData['token'];
+        debugPrint('✅ [Agora Screen] Token generated: ${token != null ? "Yes" : "No (using null token)"}');
+      } catch (e) {
+        debugPrint('⚠️ [Agora Screen] Failed to generate token: $e');
+        debugPrint('⚠️ [Agora Screen] Continuing with null token...');
+      }
+      
+      // Join the channel with token
+      await _callService.joinChannel(channelName, token: token);
       debugPrint('✅ [Agora Screen] Join channel request sent');
       
       // Send push notification to peer
