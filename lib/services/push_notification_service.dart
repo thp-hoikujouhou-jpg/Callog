@@ -3,7 +3,8 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
-import 'package:cloud_functions/cloud_functions.dart';
+import 'package:http/http.dart' as http;
+import 'dart:convert';
 
 /// Push Notification Service for Callog
 /// 
@@ -20,7 +21,10 @@ class PushNotificationService {
   final FirebaseMessaging _messaging = FirebaseMessaging.instance;
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
   final FirebaseAuth _auth = FirebaseAuth.instance;
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  
+  // Vercel Functions endpoint (No Firebase Admin SDK required)
+  static const String _sendPushUrl = 
+      'https://callog-api-v2.vercel.app/api/sendPushNotification';
   
   final FlutterLocalNotificationsPlugin _localNotifications = 
       FlutterLocalNotificationsPlugin();
@@ -252,14 +256,14 @@ class PushNotificationService {
     // TODO: Navigate to appropriate screen based on payload
   }
 
-  /// Send call notification to peer using Cloud Functions
+  /// Send call notification to peer using Vercel API
   /// 
-  /// This method calls the Cloud Functions endpoint to send push notifications.
-  /// Advantages over direct FCM API:
-  /// - No CORS issues (server-side execution)
-  /// - Secure server key management
+  /// This method sends FCM token directly to avoid Firestore access issues.
+  /// Advantages:
+  /// - No Firebase Admin SDK required
+  /// - No Firestore authentication needed
+  /// - Simple and direct FCM notification
   /// - Better error handling
-  /// - Easier to maintain and update
   Future<void> sendCallNotification({
     required String peerId,
     required String channelId,
@@ -267,19 +271,54 @@ class PushNotificationService {
     required String callerName,
   }) async {
     try {
-      debugPrint('[Push] 📤 Sending notification via Cloud Functions');
+      debugPrint('[Push] 📤 Sending notification via Vercel API');
       debugPrint('[Push] Peer: $peerId, Channel: $channelId, Type: $callType');
 
-      // Call Cloud Function
-      final callable = _functions.httpsCallable('sendPushNotification');
-      final result = await callable.call({
-        'peerId': peerId,
-        'channelId': channelId,
-        'callType': callType,
-        'callerName': callerName,
-      });
+      // Get current user ID for callerId
+      final callerId = _auth.currentUser?.uid ?? 'unknown';
+      
+      // Get peer's FCM token from Firestore
+      debugPrint('[Push] 🔍 Fetching FCM token for peer: $peerId');
+      final peerDoc = await _firestore.collection('users').doc(peerId).get();
+      
+      if (!peerDoc.exists) {
+        debugPrint('[Push] ⚠️ Peer document not found');
+        return;
+      }
+      
+      final peerFcmToken = peerDoc.data()?['fcmToken'] as String?;
+      if (peerFcmToken == null || peerFcmToken.isEmpty) {
+        debugPrint('[Push] ⚠️ Peer has no FCM token registered');
+        return;
+      }
+      
+      debugPrint('[Push] ✅ Peer FCM token found: ${peerFcmToken.substring(0, 20)}...');
 
-      final data = result.data as Map<String, dynamic>;
+      // Call Vercel API using HTTP POST
+      final url = Uri.parse(_sendPushUrl);
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: json.encode({
+          'data': {
+            'fcmToken': peerFcmToken, // Send FCM token directly
+            'peerId': peerId,
+            'channelId': channelId,
+            'callType': callType,
+            'callerName': callerName,
+            'callerId': callerId,
+          }
+        }),
+      );
+
+      if (response.statusCode != 200) {
+        throw Exception('Failed to send notification: ${response.body}');
+      }
+
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+      final data = responseData['data'] as Map<String, dynamic>;
       
       if (data['success'] == true) {
         debugPrint('[Push] ✅ Notification sent successfully!');

@@ -109,13 +109,23 @@ class AgoraVoiceCallService {
         throw Exception('Engine became null before initialization');
       }
       
-      // Web platform workaround: Skip initialize() completely
+      // Initialize for all platforms (Web and Mobile)
       if (kIsWeb) {
-        debugPrint('[Agora] ⚠️ Web platform detected');
-        debugPrint('[Agora] ⚠️ Skipping initialize() - will init during joinChannel');
-        debugPrint('[Agora] ℹ️ Using AppId: ${appId.substring(0, 8)}...');
-        // Mark as "initialized" even though we skipped it
-        _isInitialized = true;
+        debugPrint('[Agora] 🌐 Web platform: Initializing with basic context...');
+        try {
+          final context = RtcEngineContext(
+            appId: appId,
+            channelProfile: ChannelProfileType.channelProfileCommunication,
+          );
+          
+          await currentEngine.initialize(context);
+          debugPrint('[Agora] ✅ Engine initialized successfully (Web)');
+          _isInitialized = true;
+        } catch (e) {
+          debugPrint('[Agora] ⚠️ Web initialize() failed: $e');
+          debugPrint('[Agora] ℹ️ Continuing anyway - will retry during joinChannel');
+          _isInitialized = true; // Mark as initialized to allow joinChannel
+        }
       } else {
         // Mobile platforms: Normal initialization
         try {

@@ -1,5 +1,7 @@
-import 'package:cloud_functions/cloud_functions.dart';
 import 'package:flutter/foundation.dart';
+import 'package:http/http.dart' as http;
+import 'package:firebase_auth/firebase_auth.dart';
+import 'dart:convert';
 
 /// Agora Token Service
 /// 
@@ -10,7 +12,9 @@ class AgoraTokenService {
   factory AgoraTokenService() => _instance;
   AgoraTokenService._internal();
 
-  final FirebaseFunctions _functions = FirebaseFunctions.instance;
+  // Vercel Functions endpoint
+  static const String _generateTokenUrl = 
+      'https://callog-api-v2.vercel.app/api/generateAgoraToken';
 
   /// Generate Agora RTC Token
   /// 
@@ -42,15 +46,33 @@ class AgoraTokenService {
       debugPrint('[AgoraToken] 🎫 Generating token for channel: $channelName');
       debugPrint('[AgoraToken] UID: $uid, Role: $role');
 
-      // Call Cloud Function
-      final callable = _functions.httpsCallable('generateAgoraToken');
-      final result = await callable.call({
-        'channelName': channelName,
-        'uid': uid,
-        'role': role,
-      });
+      // Get Firebase Auth token for authentication
+      final user = FirebaseAuth.instance.currentUser;
+      final idToken = await user?.getIdToken();
+      
+      // Call Cloud Function using HTTP POST (2nd Gen URL)
+      final url = Uri.parse(_generateTokenUrl);
+      final response = await http.post(
+        url,
+        headers: {
+          'Content-Type': 'application/json',
+          if (idToken != null) 'Authorization': 'Bearer $idToken',
+        },
+        body: json.encode({
+          'data': {
+            'channelName': channelName,
+            'uid': uid,
+            'role': role,
+          }
+        }),
+      );
 
-      final data = result.data as Map<String, dynamic>;
+      if (response.statusCode != 200) {
+        throw Exception('Failed to generate token: ${response.body}');
+      }
+
+      final responseData = json.decode(response.body) as Map<String, dynamic>;
+      final data = responseData['data'] as Map<String, dynamic>;
       
       debugPrint('[AgoraToken] ✅ Token generated successfully');
       debugPrint('[AgoraToken] Expires at: ${data['expiresAt'] ?? 'N/A'}');

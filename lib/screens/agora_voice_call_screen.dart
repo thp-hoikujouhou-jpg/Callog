@@ -343,10 +343,10 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                       ),
                     ],
                   ),
-                  child: widget.friendPhotoUrl != null
+                  child: widget.friendPhotoUrl != null && widget.friendPhotoUrl!.isNotEmpty
                       ? ClipOval(
                           child: Image.network(
-                            ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl ?? ''),
+                            ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
                             fit: BoxFit.cover,
                             errorBuilder: (context, error, stackTrace) {
                               return Center(

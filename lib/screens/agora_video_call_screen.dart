@@ -354,10 +354,10 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
                 shape: BoxShape.circle,
                 color: Colors.blue.shade700,
               ),
-              child: widget.friendPhotoUrl != null
+              child: widget.friendPhotoUrl != null && widget.friendPhotoUrl!.isNotEmpty
                   ? ClipOval(
                       child: Image.network(
-                        ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl ?? ''),
+                        ImageProxy.getCorsProxyUrl(widget.friendPhotoUrl!),
                         fit: BoxFit.cover,
                         errorBuilder: (context, error, stackTrace) {
                           return Center(

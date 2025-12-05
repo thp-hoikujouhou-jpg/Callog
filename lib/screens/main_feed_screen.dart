@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../services/push_notification_service.dart';
+import '../services/call_notification_listener.dart';
 import '../utils/image_proxy.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
@@ -58,10 +59,100 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       } else {
         debugPrint('⚠️ [Push] FCM Token not available yet');
       }
+      
+      // Initialize Call Notification Listener (Firestore-based)
+      _initializeCallListener();
     } catch (e, stackTrace) {
       debugPrint('❌ [Push] Push notification initialization error: $e');
       debugPrint('Stack trace: $stackTrace');
     }
+  }
+  
+  Future<void> _initializeCallListener() async {
+    try {
+      debugPrint('📞 [CallListener] Initializing call notification listener...');
+      
+      final CallNotificationListener callListener = CallNotificationListener();
+      
+      // Set up incoming call callback
+      callListener.onIncomingCall = (Map<String, dynamic> callData) {
+        debugPrint('📞 [CallListener] Incoming call received!');
+        _handleIncomingCall(callData);
+      };
+      
+      // Start listening
+      await callListener.startListening();
+      
+      debugPrint('✅ [CallListener] Call notification listener started');
+    } catch (e) {
+      debugPrint('❌ [CallListener] Failed to initialize: $e');
+    }
+  }
+  
+  void _handleIncomingCall(Map<String, dynamic> callData) {
+    final callType = callData['callType'] as String;
+    final callerName = callData['callerName'] as String;
+    final channelId = callData['channelId'] as String;
+    final callerId = callData['callerId'] as String;
+    final notificationId = callData['notificationId'] as String;
+    
+    debugPrint('📞 [CallListener] Showing incoming call dialog');
+    debugPrint('📞 From: $callerName, Type: $callType');
+    
+    // Show incoming call dialog
+    showDialog(
+      context: context,
+      barrierDismissible: false,
+      builder: (context) => AlertDialog(
+        title: Text('${callType == 'voice_call' ? '音声' : 'ビデオ'}通話着信'),
+        content: Text('$callerNameさんから${callType == 'voice_call' ? '音声' : 'ビデオ'}通話がかかってきています'),
+        actions: [
+          TextButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Reject call
+              CallNotificationListener().rejectCall(notificationId);
+              debugPrint('📞 [CallListener] Call rejected');
+            },
+            child: const Text('拒否', style: TextStyle(color: Colors.red)),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              Navigator.pop(context);
+              // Accept call
+              CallNotificationListener().acceptCall(notificationId);
+              debugPrint('📞 [CallListener] Call accepted - joining channel');
+              
+              // Navigate to appropriate call screen
+              if (callType == 'voice_call') {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AgoraVoiceCallScreen(
+                      friendId: callerId,
+                      friendName: callerName,
+                      friendPhotoUrl: null,
+                    ),
+                  ),
+                );
+              } else {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(
+                    builder: (context) => AgoraVideoCallScreen(
+                      friendId: callerId,
+                      friendName: callerName,
+                      friendPhotoUrl: null,
+                    ),
+                  ),
+                );
+              }
+            },
+            child: const Text('応答'),
+          ),
+        ],
+      ),
+    );
   }
 
   @override

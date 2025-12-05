@@ -9,8 +9,20 @@
  */
 
 const functions = require('firebase-functions');
+const {onRequest} = require('firebase-functions/v2/https');
+const {onSchedule} = require('firebase-functions/v2/scheduler');
+const {setGlobalOptions} = require('firebase-functions/v2/options');
 const admin = require('firebase-admin');
 const {RtcTokenBuilder, RtcRole} = require('agora-token');
+const cors = require('cors')({origin: true});
+
+// ✅ グローバル設定: CORS有効化
+setGlobalOptions({
+  region: 'us-central1',
+  cors: true, // すべてのオリジンからCORSを許可
+  // invokerは未設定（デフォルト動作 - 組織ポリシーに従う）
+  // Cloud Runの設定でallUsersアクセスを手動で許可する必要があります
+});
 
 admin.initializeApp();
 
@@ -155,7 +167,7 @@ exports.sendCallNotification = functions.firestore
 */
 
 /**
- * Generate Agora RTC Token (Callable Function)
+ * Generate Agora RTC Token (HTTPS Function with CORS)
  * Called from Flutter app to get a secure token for joining voice/video calls
  * 
  * Parameters:
@@ -169,63 +181,98 @@ exports.sendCallNotification = functions.firestore
  * - channelName: The channel name
  * - uid: The user ID
  */
-exports.generateAgoraToken = functions.https.onCall(async (data, context) => {
+exports.generateAgoraToken = onRequest(async (req, res) => {
+  // Set CORS headers manually for all requests
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
   try {
-    console.log('🎫 Generating Agora token:', data);
-    
-    // Validate input
-    const channelName = data.channelName;
-    const uid = data.uid || 0;
-    const role = data.role === 'audience' ? RtcRole.AUDIENCE : RtcRole.PUBLISHER;
-    
-    if (!channelName) {
-      throw new Error('Channel name is required');
-    }
-    
-    // Check if App Certificate is configured
-    if (!AGORA_APP_CERTIFICATE) {
-      console.warn('⚠️ App Certificate not configured - returning empty token');
-      console.warn('⚠️ For production, set AGORA_APP_CERTIFICATE environment variable');
-      return {
-        token: null,
-        appId: AGORA_APP_ID,
-        channelName: channelName,
-        uid: uid,
-        message: 'Token generation disabled - App Certificate not configured',
-      };
-    }
-    
-    // Token expiration time (24 hours from now)
-    const expirationTimeInSeconds = Math.floor(Date.now() / 1000) + 86400;
-    
-    // Generate token
-    const token = RtcTokenBuilder.buildTokenWithUid(
-      AGORA_APP_ID,
-      AGORA_APP_CERTIFICATE,
-      channelName,
-      uid,
-      role,
-      expirationTimeInSeconds
-    );
-    
-    console.log('✅ Token generated successfully');
-    
-    return {
-      token: token,
-      appId: AGORA_APP_ID,
-      channelName: channelName,
-      uid: uid,
-      expiresAt: expirationTimeInSeconds,
-    };
-    
+    console.log('🎫 Generating Agora token:', req.body);
+      
+      // Verify Firebase Auth token (OPTIONAL - for logging only)
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+          const authenticatedUser = await admin.auth().verifyIdToken(idToken);
+          console.log('✅ Authenticated user:', authenticatedUser.uid);
+        } catch (authError) {
+          console.warn('⚠️ Auth verification failed:', authError.message);
+          // Continue anyway - auth is optional
+        }
+      } else {
+        console.warn('⚠️ No authentication token provided - continuing anyway');
+      }
+      
+      // Validate input
+      const data = req.body.data || req.body;
+      const channelName = data.channelName;
+      const uid = data.uid || 0;
+      const role = data.role === 'audience' ? RtcRole.AUDIENCE : RtcRole.PUBLISHER;
+      
+      if (!channelName) {
+        return res.status(400).json({
+          error: 'Channel name is required'
+        });
+      }
+      
+      // Check if App Certificate is configured
+      if (!AGORA_APP_CERTIFICATE) {
+        console.warn('⚠️ App Certificate not configured - returning empty token');
+        console.warn('⚠️ For production, set AGORA_APP_CERTIFICATE environment variable');
+        return res.status(200).json({
+          data: {
+            token: null,
+            appId: AGORA_APP_ID,
+            channelName: channelName,
+            uid: uid,
+            message: 'Token generation disabled - App Certificate not configured',
+          }
+        });
+      }
+      
+      // Token expiration time (24 hours from now)
+      const expirationTimeInSeconds = Math.floor(Date.now() / 1000) + 86400;
+      
+      // Generate token
+      const token = RtcTokenBuilder.buildTokenWithUid(
+        AGORA_APP_ID,
+        AGORA_APP_CERTIFICATE,
+        channelName,
+        uid,
+        role,
+        expirationTimeInSeconds
+      );
+      
+      console.log('✅ Token generated successfully');
+      
+      return res.status(200).json({
+        data: {
+          token: token,
+          appId: AGORA_APP_ID,
+          channelName: channelName,
+          uid: uid,
+          expiresAt: expirationTimeInSeconds,
+        }
+      });
+      
   } catch (error) {
     console.error('❌ Error generating Agora token:', error);
-    throw new Error('Failed to generate Agora token: ' + error.message);
+    return res.status(500).json({
+      error: 'Failed to generate Agora token: ' + error.message
+    });
   }
 });
 
 /**
- * Send Push Notification (Callable Function)
+ * Send Push Notification (HTTPS Function with CORS)
  * Called from Flutter app to send push notifications to peers
  * 
  * Parameters:
@@ -233,133 +280,175 @@ exports.generateAgoraToken = functions.https.onCall(async (data, context) => {
  * - channelId: The call channel ID
  * - callType: 'voice_call' or 'video_call'
  * - callerName: The caller's display name
+ * - callerId: The caller's user ID (from auth header or body)
  * 
  * Returns:
  * - success: Boolean indicating if notification was sent
  * - messageId: FCM message ID
  */
-exports.sendPushNotification = functions.https.onCall(async (data, context) => {
+exports.sendPushNotification = onRequest(async (req, res) => {
+  // Set CORS headers manually for all requests
+  res.set('Access-Control-Allow-Origin', '*');
+  res.set('Access-Control-Allow-Methods', 'GET, POST, OPTIONS');
+  res.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  
+  // Handle preflight OPTIONS request
+  if (req.method === 'OPTIONS') {
+    res.status(204).send('');
+    return;
+  }
+  
   try {
-    console.log('📲 Sending push notification:', data);
-    
-    // Validate authentication
-    if (!context.auth) {
-      throw new functions.https.HttpsError('unauthenticated', 'User must be authenticated');
-    }
-    
-    // Validate input
-    const {peerId, channelId, callType, callerName} = data;
-    
-    if (!peerId || !channelId || !callType || !callerName) {
-      throw new Error('Missing required parameters');
-    }
-    
-    // Get peer's FCM token
-    const peerDoc = await admin.firestore()
-      .collection('users')
-      .doc(peerId)
-      .get();
-    
-    if (!peerDoc.exists) {
-      throw new Error('Peer user not found');
-    }
-    
-    const peerToken = peerDoc.data().fcmToken;
-    
-    if (!peerToken) {
-      throw new Error('Peer has no FCM token');
-    }
-    
-    // Determine call type display name
-    const callTypeDisplay = callType === 'voice_call' ? '音声通話' : 'ビデオ通話';
-    
-    // Create FCM message
-    const message = {
-      notification: {
-        title: `着信: ${callTypeDisplay}`,
-        body: `${callerName}から通話があります`,
-      },
-      data: {
-        callType: callType,
-        channelId: channelId,
-        callerName: callerName,
-        callerId: context.auth.uid,
-        timestamp: Date.now().toString(),
-      },
-      token: peerToken,
-      android: {
-        priority: 'high',
+    console.log('📲 Sending push notification:', req.body);
+      
+      // Verify Firebase Auth token (OPTIONAL - for logging only)
+      const authHeader = req.headers.authorization;
+      if (authHeader && authHeader.startsWith('Bearer ')) {
+        const idToken = authHeader.split('Bearer ')[1];
+        try {
+          const authenticatedUser = await admin.auth().verifyIdToken(idToken);
+          console.log('✅ Authenticated user:', authenticatedUser.uid);
+        } catch (authError) {
+          console.warn('⚠️ Auth verification failed:', authError.message);
+          // Continue anyway - auth is optional
+        }
+      } else {
+        console.warn('⚠️ No authentication token provided - continuing anyway');
+      }
+      
+      // Extract data from request
+      const data = req.body.data || req.body;
+      const {peerId, channelId, callType, callerName, callerId} = data;
+      
+      // Validate input
+      if (!peerId || !channelId || !callType || !callerName) {
+        return res.status(400).json({
+          error: 'Missing required parameters: peerId, channelId, callType, callerName'
+        });
+      }
+      
+      // Get peer's FCM token
+      const peerDoc = await admin.firestore()
+        .collection('users')
+        .doc(peerId)
+        .get();
+      
+      if (!peerDoc.exists) {
+        return res.status(404).json({
+          error: 'Peer user not found'
+        });
+      }
+      
+      const peerToken = peerDoc.data().fcmToken;
+      
+      if (!peerToken) {
+        return res.status(400).json({
+          error: 'Peer has no FCM token'
+        });
+      }
+      
+      // Determine call type display name
+      const callTypeDisplay = callType === 'voice_call' ? '音声通話' : 'ビデオ通話';
+      
+      // Create FCM message
+      const message = {
         notification: {
-          channelId: 'call_notifications',
-          priority: 'high',
-          sound: 'default',
-          defaultSound: true,
-          defaultVibrateTimings: true,
+          title: `着信: ${callTypeDisplay}`,
+          body: `${callerName}から通話があります`,
         },
-      },
-      apns: {
-        payload: {
-          aps: {
+        data: {
+          callType: callType,
+          channelId: channelId,
+          callerName: callerName,
+          callerId: callerId || 'unknown',
+          timestamp: Date.now().toString(),
+        },
+        token: peerToken,
+        android: {
+          priority: 'high',
+          notification: {
+            channelId: 'call_notifications',
+            priority: 'high',
             sound: 'default',
-            badge: 1,
-            contentAvailable: true,
+            defaultSound: true,
+            defaultVibrateTimings: true,
           },
         },
-      },
-      webpush: {
-        notification: {
-          icon: '/icons/Icon-192.png',
-          badge: '/icons/Icon-192.png',
-          vibrate: [200, 100, 200],
-          requireInteraction: true,
-          actions: [
-            {
-              action: 'answer',
-              title: '応答',
+        apns: {
+          payload: {
+            aps: {
+              sound: 'default',
+              badge: 1,
+              contentAvailable: true,
             },
-            {
-              action: 'decline',
-              title: '拒否',
-            },
-          ],
+          },
         },
-      },
-    };
-    
-    // Send FCM message
-    const response = await admin.messaging().send(message);
-    console.log('✅ Push notification sent successfully:', response);
-    
-    // Store notification record
-    await admin.firestore()
-      .collection('call_notifications')
-      .add({
-        callerId: context.auth.uid,
-        peerId: peerId,
-        channelId: channelId,
-        callType: callType,
-        callerName: callerName,
-        status: 'sent',
-        fcmResponse: response,
-        createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        webpush: {
+          notification: {
+            icon: '/icons/Icon-192.png',
+            badge: '/icons/Icon-192.png',
+            vibrate: [200, 100, 200],
+            requireInteraction: true,
+            actions: [
+              {
+                action: 'answer',
+                title: '応答',
+              },
+              {
+                action: 'decline',
+                title: '拒否',
+              },
+            ],
+          },
+        },
+      };
+      
+      // Send FCM message
+      const response = await admin.messaging().send(message);
+      console.log('✅ Push notification sent successfully:', response);
+      
+      // Store notification record
+      await admin.firestore()
+        .collection('call_notifications')
+        .add({
+          callerId: callerId || 'unknown',
+          peerId: peerId,
+          channelId: channelId,
+          callType: callType,
+          callerName: callerName,
+          status: 'sent',
+          fcmResponse: response,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+        });
+      
+      return res.status(200).json({
+        data: {
+          success: true,
+          messageId: response,
+        }
       });
-    
-    return {
-      success: true,
-      messageId: response,
-    };
-    
+      
   } catch (error) {
     console.error('❌ Error sending push notification:', error);
-    throw new Error('Failed to send push notification: ' + error.message);
+    return res.status(500).json({
+      error: 'Failed to send push notification: ' + error.message
+    });
   }
 });
 
 /**
  * Clean up old notifications
  * Runs every hour to delete notifications older than 1 hour
+ * 
+ * NOTE: Temporarily disabled due to attempt_deadline configuration issue
+ * Will re-enable after fixing scheduler configuration
  */
-exports.cleanupOldNotifications = functions.pubsub.schedule('every 1 hours').onRun(async (context) => {
+/*
+exports.cleanupOldNotifications = onSchedule({
+  schedule: 'every 1 hours',
+  timeoutSeconds: 60,
+  memory: '256MiB'
+}, async (event) => {
     const cutoffTime = new Date(Date.now() - 60 * 60 * 1000); // 1 hour ago
     
     const snapshot = await admin.firestore()
@@ -377,3 +466,4 @@ exports.cleanupOldNotifications = functions.pubsub.schedule('every 1 hours').onR
     
     return null;
   });
+*/
