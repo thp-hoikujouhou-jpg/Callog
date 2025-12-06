@@ -11,14 +11,28 @@ if (admin.apps.length === 0) {
     // Support both direct JSON and Base64 encoded JSON
     const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT || '{}';
     
+    console.log('🔍 FIREBASE_SERVICE_ACCOUNT exists:', !!process.env.FIREBASE_SERVICE_ACCOUNT);
+    console.log('🔍 FIREBASE_SERVICE_ACCOUNT length:', serviceAccountEnv.length);
+    console.log('🔍 First 50 chars:', serviceAccountEnv.substring(0, 50));
+    
     try {
       // Try direct JSON parse first
       serviceAccount = JSON.parse(serviceAccountEnv);
+      console.log('✅ Direct JSON parse successful');
     } catch (jsonError) {
       // If JSON parse fails, try Base64 decode
-      console.log('Trying Base64 decode for FIREBASE_SERVICE_ACCOUNT');
-      const decoded = Buffer.from(serviceAccountEnv, 'base64').toString('utf-8');
-      serviceAccount = JSON.parse(decoded);
+      console.log('⚠️ Direct JSON parse failed, trying Base64 decode');
+      console.log('JSON Error:', jsonError.message);
+      try {
+        const decoded = Buffer.from(serviceAccountEnv, 'base64').toString('utf-8');
+        console.log('🔍 Decoded length:', decoded.length);
+        console.log('🔍 Decoded first 50 chars:', decoded.substring(0, 50));
+        serviceAccount = JSON.parse(decoded);
+        console.log('✅ Base64 decode and parse successful');
+      } catch (base64Error) {
+        console.error('❌ Base64 decode failed:', base64Error.message);
+        throw base64Error;
+      }
     }
     
     admin.initializeApp({
@@ -27,8 +41,10 @@ if (admin.apps.length === 0) {
     });
     
     console.log('✅ Firebase Admin SDK initialized successfully');
+    console.log('Project ID:', serviceAccount.project_id);
   } catch (error) {
-    console.error('❌ Failed to initialize Firebase Admin SDK:', error);
+    console.error('❌ Failed to initialize Firebase Admin SDK:', error.message);
+    console.error('Error stack:', error.stack);
   }
 }
 
