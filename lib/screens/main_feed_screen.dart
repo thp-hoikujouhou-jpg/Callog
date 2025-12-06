@@ -309,15 +309,26 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           data['uid'] = doc.id;
           friends.add(data);
           
+          // Debug log to check friend data
+          if (kDebugMode) {
+            debugPrint('👤 Friend loaded: ${data['username']}, photoUrl: ${data['photoUrl']}');
+          }
+          
           // Check for unread messages
           _checkUnreadMessages(currentUser.uid, doc.id);
         }
       }
 
-      setState(() {
-        _friends = friends;
-        _isLoading = false;
-      });
+      if (mounted) {
+        setState(() {
+          _friends = friends;
+          _isLoading = false;
+        });
+        
+        if (kDebugMode) {
+          debugPrint('✅ Friends loaded: ${friends.length} friends');
+        }
+      }
     } catch (e) {
       setState(() => _isLoading = false);
     }
@@ -893,10 +904,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
   @override
   Widget build(BuildContext context) {
-    // Use listen: false to avoid rebuild issues during login
-    final localService = Provider.of<LocalizationService>(context, listen: false);
-
-    return Scaffold(
+    return Consumer<LocalizationService>(
+      builder: (context, localService, child) {
+        return Scaffold(
       appBar: AppBar(
         title: Text(localService.translate('app_name')),
         backgroundColor: Colors.blue.shade600,
@@ -923,11 +933,13 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               
               // Always reload friends list when returning from search screen
               if (mounted) {
-                await _loadFriends();
-                
                 if (kDebugMode) {
                   debugPrint('🔄 Reloading friends list after returning from search screen (changed: $result)');
                 }
+                setState(() {
+                  _isLoading = true;
+                });
+                await _loadFriends();
               }
             },
             tooltip: localService.translate('add_friend'),
@@ -1063,6 +1075,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   
                                   // Reload friends list when returning
                                   if (mounted) {
+                                    setState(() {
+                                      _isLoading = true;
+                                    });
                                     await _loadFriends();
                                   }
                                 },
@@ -1363,6 +1378,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         ),
       ),
       ],
+    );
+      },
     );
   }
 }
