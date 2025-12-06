@@ -79,15 +79,9 @@ class CallNavigationService {
         final userDoc = await firestore.collection('users').doc(callerId).get();
         if (userDoc.exists) {
           final userData = userDoc.data();
-          // Try multiple possible field names for photo URL
-          callerPhotoUrl = userData?['photoURL'] as String? ?? 
-                          userData?['photo_url'] as String? ?? 
-                          userData?['profilePhotoUrl'] as String? ??
-                          userData?['profile_photo_url'] as String?;
-          debugPrint('[CallNav] ✅ Caller photo fetched: ${callerPhotoUrl != null ? "Yes ($callerPhotoUrl)" : "No"}');
-          if (userData != null) {
-            debugPrint('[CallNav] Available fields: ${userData.keys.toList()}');
-          }
+          // Use 'photoUrl' field (correct field name from UserProfile model)
+          callerPhotoUrl = userData?['photoUrl'] as String?;
+          debugPrint('[CallNav] ✅ Caller photo URL: ${callerPhotoUrl ?? "No photo"}');
         } else {
           debugPrint('[CallNav] ⚠️ User document not found for: $callerId');
         }

@@ -176,16 +176,15 @@ class AgoraVoiceCallService {
         }
       }
 
-      // Register event handlers (skip on Web due to compatibility issues)
-      if (!kIsWeb) {
-        debugPrint('[Agora] Registering event handlers...');
-        try {
-          final currentEngine = _engine;
-          if (currentEngine == null) {
-            throw Exception('Engine is null before registering event handlers');
-          }
-          
-          currentEngine.registerEventHandler(RtcEngineEventHandler(
+      // Register event handlers (REQUIRED for Web too!)
+      debugPrint('[Agora] Registering event handlers...');
+      try {
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine is null before registering event handlers');
+        }
+        
+        currentEngine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
           debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
           _isInCall = true;
@@ -215,13 +214,14 @@ class AgoraVoiceCallService {
           onError?.call('Error $err: $msg');
         },
       ));
-          debugPrint('[Agora] ✅ Event handlers registered');
-        } catch (e) {
-          debugPrint('[Agora] ❌ Failed to register event handlers: $e');
-          rethrow;
+        debugPrint('[Agora] ✅ Event handlers registered');
+      } catch (e) {
+        debugPrint('[Agora] ❌ Failed to register event handlers: $e');
+        if (!kIsWeb) {
+          rethrow; // Only fail on mobile, continue on Web
+        } else {
+          debugPrint('[Agora] ⚠️ Web: Continuing despite handler error');
         }
-      } else {
-        debugPrint('[Agora] ⚠️ Web platform: Skipping event handler registration');
       }
 
       // Enable audio (skip on Web)
