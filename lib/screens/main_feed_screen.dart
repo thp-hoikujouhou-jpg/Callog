@@ -1160,6 +1160,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         ),
       ),
     );
+      },
+    );
   }
 
   Widget _buildChatArea(LocalizationService localService) {
@@ -1378,8 +1380,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         ),
       ),
       ],
-    );
-      },
     );
   }
 }
