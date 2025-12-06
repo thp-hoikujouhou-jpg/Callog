@@ -121,6 +121,27 @@ class AuthWrapper extends StatefulWidget {
 }
 
 class _AuthWrapperState extends State<AuthWrapper> {
+  Future<void> _loadLanguageSettings(BuildContext context) async {
+    try {
+      final localService = Provider.of<LocalizationService>(context, listen: false);
+      
+      if (kDebugMode) {
+        debugPrint('🌐 [AuthWrapper] Loading language settings...');
+      }
+      
+      // Force reload language from Firestore
+      await localService.loadLanguageFromFirestore(forceReload: true);
+      
+      if (kDebugMode) {
+        debugPrint('✅ [AuthWrapper] Language settings loaded: ${localService.currentLanguage}');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [AuthWrapper] Failed to load language: $e');
+      }
+    }
+  }
+  
   @override
   Widget build(BuildContext context) {
     final authService = Provider.of<AuthService>(context);
@@ -140,30 +161,31 @@ class _AuthWrapperState extends State<AuthWrapper> {
           );
         }
         
-        // User is authenticated - show home screen immediately and load language in background
+        // User is authenticated - load language first, then show home screen
         if (snapshot.hasData && snapshot.data != null) {
-          // Get LocalizationService before addPostFrameCallback
-          final localService = Provider.of<LocalizationService>(context, listen: false);
-          
-          // Load language immediately (blocking) to ensure it's loaded before UI renders
-          WidgetsBinding.instance.addPostFrameCallback((_) async {
-            if (mounted) {
-              try {
-                // Force reload language from Firestore on every app start
-                await localService.loadLanguageFromFirestore(forceReload: true);
-              } catch (e) {
-                // Ignore language loading errors - use default English
-                if (kDebugMode) {
-                  debugPrint('⚠️ Language loading failed (using default): $e');
-                }
+          return FutureBuilder(
+            future: _loadLanguageSettings(context),
+            builder: (context, languageSnapshot) {
+              // Show loading while language is being loaded
+              if (languageSnapshot.connectionState == ConnectionState.waiting) {
+                return const Scaffold(
+                  body: Center(
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        CircularProgressIndicator(),
+                        SizedBox(height: 16),
+                        Text('Loading...'),
+                      ],
+                    ),
+                  ),
+                );
               }
               
-              // URL handling is done in MainFeedScreen initState
-            }
-          });
-          
-          // Show home screen immediately without waiting
-          return const MainFeedScreen();
+              // Language loaded - show home screen
+              return const MainFeedScreen();
+            },
+          );
         }
         
         // User signed out - reset language cache and show login screen

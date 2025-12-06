@@ -39,12 +39,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   void initState() {
     super.initState();
     
-    // Add a post-frame callback to ensure everything is initialized
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        _loadFriends();
-      }
-    });
+    if (kDebugMode) {
+      debugPrint('🏠 [MainFeed] Initializing main feed screen...');
+    }
+    
+    // Load friends immediately
+    _loadFriends();
     
     _globalCleanupOldMessages(); // Clean up old messages on app start
     _initializePushNotifications(); // Initialize push notifications
@@ -258,14 +258,36 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   }
 
   Future<void> _loadFriends() async {
+    if (kDebugMode) {
+      debugPrint('🔄 [MainFeed] Starting to load friends...');
+    }
+    
     try {
       final currentUser = _auth.currentUser;
-      if (currentUser == null) return;
+      if (currentUser == null) {
+        if (kDebugMode) {
+          debugPrint('❌ [MainFeed] No current user found');
+        }
+        return;
+      }
+
+      if (kDebugMode) {
+        debugPrint('👤 [MainFeed] Current user: ${currentUser.uid}');
+      }
 
       final userDoc = await _firestore.collection('users').doc(currentUser.uid).get();
+      
       if (!userDoc.exists) {
+        if (kDebugMode) {
+          debugPrint('❌ [MainFeed] User document does not exist in Firestore');
+        }
         setState(() => _isLoading = false);
         return;
+      }
+
+      if (kDebugMode) {
+        debugPrint('✅ [MainFeed] User document found');
+        debugPrint('📄 [MainFeed] User data: ${userDoc.data()}');
       }
 
       // Load friend order from Firestore
@@ -273,11 +295,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       final friendIds = List<String>.from(userDoc.data()?['friends'] ?? []);
       
       if (kDebugMode) {
-        debugPrint('📋 Loading friends - friendIds: ${friendIds.length}, friendOrder: ${friendOrder.length}');
+        debugPrint('📋 [MainFeed] Loading friends - friendIds: ${friendIds.length}, friendOrder: ${friendOrder.length}');
+        debugPrint('   friendIds: $friendIds');
         debugPrint('   friendOrder: $friendOrder');
       }
       
       if (friendIds.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️ [MainFeed] No friends found for this user');
+        }
         setState(() {
           _friends = [];
           _isLoading = false;
