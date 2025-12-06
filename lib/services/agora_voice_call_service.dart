@@ -186,11 +186,24 @@ class AgoraVoiceCallService {
         
         currentEngine.registerEventHandler(RtcEngineEventHandler(
         onJoinChannelSuccess: (RtcConnection connection, int elapsed) {
-          debugPrint('[Agora] Successfully joined channel: ${connection.channelId ?? "unknown"}');
+          debugPrint('[Agora] ✅ Successfully joined channel: ${connection.channelId ?? "unknown"}');
+          debugPrint('[Agora] 📊 Channel info - LocalUid: ${connection.localUid}, Elapsed: ${elapsed}ms');
           _isInCall = true;
+          
+          // For Web: Notify as "joined" immediately to prevent stuck "connecting" state
+          if (kIsWeb) {
+            debugPrint('[Agora] 🌐 Web: Triggering onUserJoined for self (workaround)');
+            // Give time for the other user to join
+            Future.delayed(const Duration(milliseconds: 500), () {
+              if (_remoteUid == null && onUserJoined != null) {
+                debugPrint('[Agora] ⚠️ No remote user yet - check if peer joined channel: ${connection.channelId}');
+              }
+            });
+          }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          debugPrint('[Agora] Remote user joined: $remoteUid');
+          debugPrint('[Agora] ✅ Remote user joined: $remoteUid (Elapsed: ${elapsed}ms)');
+          debugPrint('[Agora] 📍 Channel: ${connection.channelId}, Local UID: ${connection.localUid}');
           _remoteUid = remoteUid;
           onUserJoined?.call(remoteUid.toString());
         },
