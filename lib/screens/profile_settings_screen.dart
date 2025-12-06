@@ -575,11 +575,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 ],
               ),
               const SizedBox(height: 16),
-              Text(
-                _userProfile?.displayName ?? 'User',
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
-                    ),
+              Row(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  const Icon(Icons.star, size: 20, color: Colors.amber),
+                  const SizedBox(width: 8),
+                  Text(
+                    _userProfile?.displayName ?? 'User',
+                    style: Theme.of(context).textTheme.headlineSmall?.copyWith(
+                          fontWeight: FontWeight.bold,
+                        ),
+                  ),
+                  const SizedBox(width: 8),
+                  const Icon(Icons.star, size: 20, color: Colors.amber),
+                ],
               ),
               const SizedBox(height: 8),
               Text(
@@ -593,8 +602,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                 child: Column(
                   children: [
                     ListTile(
-                      leading: const Icon(Icons.badge),
-                      title: Text(localService.translate('display_name')),
+                      leading: const Icon(Icons.badge, color: Colors.blue),
+                      title: Row(
+                        children: [
+                          Text(localService.translate('display_name')),
+                          const SizedBox(width: 8),
+                          const Icon(Icons.star, size: 16, color: Colors.amber),
+                        ],
+                      ),
                       subtitle: Text(_userProfile?.displayName ?? 'Not set'),
                       trailing: const Icon(Icons.edit),
                       onTap: () => _editDisplayName(),
