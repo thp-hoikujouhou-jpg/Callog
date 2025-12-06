@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/agora_video_call_service.dart';
 import '../services/call_history_service.dart';
 import '../services/push_notification_service.dart';
@@ -158,9 +159,31 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
           final pushService = PushNotificationService();
           final authService = AuthService();
           final currentUser = authService.currentUser;
-          final callerName = currentUser?.displayName ?? 
-                            currentUser?.email?.split('@')[0] ?? 
-                            '不明なユーザー';
+          
+          // Get caller name from Firestore
+          String callerName = '不明なユーザー';
+          if (currentUser != null) {
+            try {
+              final userDoc = await FirebaseFirestore.instance
+                  .collection('users')
+                  .doc(currentUser.uid)
+                  .get();
+              
+              if (userDoc.exists) {
+                final userData = userDoc.data();
+                callerName = userData?['username'] as String? ?? 
+                           userData?['displayName'] as String? ??
+                           currentUser.email?.split('@')[0] ?? 
+                           '不明なユーザー';
+                debugPrint('📝 [Agora Video] Caller name from Firestore: $callerName');
+              }
+            } catch (e) {
+              debugPrint('⚠️ [Agora Video] Failed to fetch caller name from Firestore: $e');
+              callerName = currentUser.displayName ?? 
+                          currentUser.email?.split('@')[0] ?? 
+                          '不明なユーザー';
+            }
+          }
           
           await pushService.sendCallNotification(
             peerId: widget.friendId,
