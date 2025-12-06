@@ -205,6 +205,18 @@ class AgoraVoiceCallService {
           debugPrint('[Agora] ✅ Remote user joined: $remoteUid (Elapsed: ${elapsed}ms)');
           debugPrint('[Agora] 📍 Channel: ${connection.channelId}, Local UID: ${connection.localUid}');
           _remoteUid = remoteUid;
+          
+          // For Web: Ensure remote audio is not muted
+          if (kIsWeb && currentEngine != null) {
+            debugPrint('[Agora] 🔊 Web: Ensuring remote audio is enabled...');
+            try {
+              currentEngine.muteRemoteAudioStream(uid: remoteUid, mute: false);
+              debugPrint('[Agora] ✅ Web: Remote audio enabled for user $remoteUid');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Web: Remote audio enable warning: $e');
+            }
+          }
+          
           onUserJoined?.call(remoteUid.toString());
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
@@ -237,23 +249,34 @@ class AgoraVoiceCallService {
         }
       }
 
-      // Enable audio (skip on Web)
-      if (!kIsWeb) {
-        debugPrint('[Agora] Enabling audio...');
-        try {
-          final currentEngine = _engine;
-          if (currentEngine == null) {
-            throw Exception('Engine is null before enabling audio');
+      // Enable audio (for both Web and Mobile)
+      debugPrint('[Agora] Enabling audio for ${kIsWeb ? "Web" : "Mobile"}...');
+      try {
+        final currentEngine = _engine;
+        if (currentEngine == null) {
+          throw Exception('Engine is null before enabling audio');
+        }
+        
+        await currentEngine.enableAudio();
+        debugPrint('[Agora] ✅ Audio enabled');
+        
+        // For Web: Also enable local audio explicitly
+        if (kIsWeb) {
+          try {
+            await currentEngine.enableLocalAudio(true);
+            debugPrint('[Agora] ✅ Local audio enabled for Web');
+          } catch (e) {
+            debugPrint('[Agora] ⚠️ Web: enableLocalAudio failed (may be expected): $e');
           }
-          
-          await currentEngine.enableAudio();
-          debugPrint('[Agora] ✅ Audio enabled');
-        } catch (e) {
+        }
+      } catch (e) {
+        if (kIsWeb) {
+          debugPrint('[Agora] ⚠️ Web: Audio enable error (continuing): $e');
+          // Don't fail on Web - audio may still work
+        } else {
           debugPrint('[Agora] ❌ Failed to enable audio: $e');
           rethrow;
         }
-      } else {
-        debugPrint('[Agora] ⚠️ Web platform: Skipping audio enable');
       }
       
       // Set audio profile for voice call (skip on Web)
@@ -343,10 +366,23 @@ class AgoraVoiceCallService {
             clientRoleType: ClientRoleType.clientRoleBroadcaster,
             autoSubscribeAudio: true,
             publishMicrophoneTrack: true,
+            publishCameraTrack: false, // Audio only
+            autoSubscribeVideo: false, // Audio only
           ),
         );
         _isInCall = true;
         debugPrint('[Agora] ✅ Successfully joined channel');
+        
+        // For Web: Ensure audio is enabled after joining
+        if (kIsWeb) {
+          debugPrint('[Agora] 🔊 Web: Verifying audio settings after join...');
+          try {
+            await engine.muteLocalAudioStream(false); // Ensure not muted
+            debugPrint('[Agora] ✅ Web: Audio unmuted');
+          } catch (e) {
+            debugPrint('[Agora] ⚠️ Web: Audio unmute warning: $e');
+          }
+        }
       } catch (joinError) {
         if (kIsWeb) {
           // Web SDK may throw errors on some methods, but still works

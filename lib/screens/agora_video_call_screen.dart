@@ -164,7 +164,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
             setState(() {
               _isConnecting = false;
               _isConnected = true;
-              _connectionStatus = '通話中';
+              _connectionStatus = 'ビデオ通話中';
               _callStartTime = DateTime.now();
             });
             _startCallTimer();
