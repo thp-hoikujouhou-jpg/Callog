@@ -50,19 +50,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     }
   }
 
-  Future<void> _editUsername() async {
-    final controller = TextEditingController(text: _userProfile?.username ?? '');
+  Future<void> _editDisplayName() async {
+    final controller = TextEditingController(text: _userProfile?.displayName ?? '');
     final localService = Provider.of<LocalizationService>(context, listen: false);
     
     final result = await showDialog<String>(
       context: context,
       builder: (context) => AlertDialog(
-        title: Text(localService.translate('username')),
+        title: Text(localService.translate('display_name')),
         content: TextField(
           controller: controller,
           decoration: InputDecoration(
-            labelText: localService.translate('username'),
+            labelText: localService.translate('display_name'),
             border: const OutlineInputBorder(),
+            helperText: 'This is your friendly name shown to others',
           ),
           autofocus: true,
         ),
@@ -84,11 +85,13 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         final authService = Provider.of<AuthService>(context, listen: false);
         final user = authService.currentUser;
         if (user != null) {
-          // Update both username and displayName together
+          // Update ONLY displayName, NOT username
           await authService.updateUserProfile(user.uid, {
-            'username': result,
             'displayName': result,
           });
+          if (kDebugMode) {
+            debugPrint('[Profile] ✅ Display name updated to: $result');
+          }
           await _loadUserProfile();
           if (mounted) {
             ScaffoldMessenger.of(context).showSnackBar(
@@ -100,6 +103,75 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           }
         }
       } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[Profile] ❌ Failed to update display name: $e');
+        }
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
+          );
+        }
+      }
+    }
+    controller.dispose();
+  }
+
+  Future<void> _editUsername() async {
+    final controller = TextEditingController(text: _userProfile?.username ?? '');
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Text(localService.translate('username')),
+        content: TextField(
+          controller: controller,
+          decoration: InputDecoration(
+            labelText: localService.translate('username'),
+            border: const OutlineInputBorder(),
+            helperText: 'Your unique username (ID)',
+          ),
+          autofocus: true,
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          TextButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+
+    if (result != null && result.isNotEmpty && mounted) {
+      try {
+        final authService = Provider.of<AuthService>(context, listen: false);
+        final user = authService.currentUser;
+        if (user != null) {
+          // Update ONLY username, do NOT change displayName
+          await authService.updateUserProfile(user.uid, {
+            'username': result,
+          });
+          if (kDebugMode) {
+            debugPrint('[Profile] ✅ Username updated to: $result');
+          }
+          await _loadUserProfile();
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(localService.translate('profile_updated')),
+                backgroundColor: Colors.green,
+              ),
+            );
+          }
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('[Profile] ❌ Failed to update username: $e');
+        }
         if (mounted) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(content: Text('Error: $e'), backgroundColor: Colors.red),
@@ -520,6 +592,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               Card(
                 child: Column(
                   children: [
+                    ListTile(
+                      leading: const Icon(Icons.badge),
+                      title: Text(localService.translate('display_name')),
+                      subtitle: Text(_userProfile?.displayName ?? 'Not set'),
+                      trailing: const Icon(Icons.edit),
+                      onTap: () => _editDisplayName(),
+                    ),
+                    const Divider(height: 1),
                     ListTile(
                       leading: const Icon(Icons.person),
                       title: Text(localService.translate('username')),
