@@ -300,8 +300,8 @@ class AgoraVoiceCallService {
 
     // Check if already in the same channel
     if (_isInCall && _currentChannelName == channelName) {
-      debugPrint('[Agora] Already in this channel: $channelName');
-      return; // Don't rejoin the same channel
+      debugPrint('[Agora] Already in this channel: $channelName - continuing anyway');
+      // Don't return - let event handlers get set up properly
     }
 
     if (_isInCall) {
@@ -333,17 +333,29 @@ class AgoraVoiceCallService {
           ),
         );
         _isInCall = true;
+        debugPrint('[Agora] ✅ Successfully joined channel');
       } catch (joinError) {
         if (kIsWeb) {
           // Web SDK may throw errors on some methods, but still works
           debugPrint('[Agora] ⚠️ Web join error (may be ignorable): $joinError');
           _isInCall = true; // Assume success for Web
+          debugPrint('[Agora] ✅ Marked as in call (Web)');
         } else {
           rethrow;
         }
       }
 
       debugPrint('[Agora] Join channel request sent');
+      
+      // For Web: Manually trigger connected state after a short delay if no event fires
+      if (kIsWeb) {
+        Future.delayed(const Duration(seconds: 2), () {
+          if (_isInCall && _remoteUid == null) {
+            debugPrint('[Agora] ⏰ No remote user joined yet after 2s - this is normal on Web');
+            debugPrint('[Agora] 💡 User should appear when they join the channel');
+          }
+        });
+      }
     } catch (e) {
       debugPrint('[Agora] Failed to join channel: $e');
       onError?.call('Failed to join channel: $e');
