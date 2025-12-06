@@ -20,12 +20,16 @@ class AgoraVideoCallScreen extends StatefulWidget {
   final String friendId;
   final String friendName;
   final String? friendPhotoUrl;
+  final String? channelName; // Optional: Use existing channel for incoming calls
+  final bool isIncoming; // true = incoming call (don't send notification)
 
   const AgoraVideoCallScreen({
     super.key,
     required this.friendId,
     required this.friendName,
     this.friendPhotoUrl,
+    this.channelName,
+    this.isIncoming = false, // Default: outgoing call
   });
 
   @override

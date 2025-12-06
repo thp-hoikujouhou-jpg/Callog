@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import '../screens/incoming_call_screen.dart';
 
 /// Call Navigation Service
@@ -52,7 +53,7 @@ class CallNavigationService {
   }
 
   /// Parse notification data and show incoming call screen
-  void handleCallNotification(Map<String, dynamic> data) {
+  Future<void> handleCallNotification(Map<String, dynamic> data) async {
     final callType = data['type'] as String?;
     
     if (callType != 'voice_call' && callType != 'video_call') {
@@ -63,11 +64,26 @@ class CallNavigationService {
     final channelId = data['channelId'] as String?;
     final callerName = data['callerName'] as String?;
     final callerId = data['callerId'] as String?;
-    final callerPhotoUrl = data['callerPhotoUrl'] as String?;
+    String? callerPhotoUrl = data['callerPhotoUrl'] as String?;
 
     if (channelId == null || channelId.isEmpty) {
       debugPrint('[CallNav] ❌ Invalid channelId, cannot show incoming call');
       return;
+    }
+
+    // Fetch caller's photo from Firestore if not provided
+    if (callerPhotoUrl == null && callerId != null) {
+      debugPrint('[CallNav] 📷 Fetching caller photo from Firestore: $callerId');
+      try {
+        final firestore = FirebaseFirestore.instance;
+        final userDoc = await firestore.collection('users').doc(callerId).get();
+        if (userDoc.exists) {
+          callerPhotoUrl = userDoc.data()?['photoURL'] as String?;
+          debugPrint('[CallNav] ✅ Caller photo fetched: ${callerPhotoUrl != null ? "Yes" : "No"}');
+        }
+      } catch (e) {
+        debugPrint('[CallNav] ⚠️ Failed to fetch caller photo: $e');
+      }
     }
 
     showIncomingCallScreen(

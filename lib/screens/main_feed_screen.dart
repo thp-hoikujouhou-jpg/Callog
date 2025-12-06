@@ -7,6 +7,7 @@ import '../services/localization_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/call_notification_listener.dart';
 import '../utils/image_proxy.dart';
+import '../utils/web_notification_listener.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
 import 'profile_settings_screen.dart';
@@ -41,6 +42,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     _globalCleanupOldMessages(); // Clean up old messages on app start
     _initializePushNotifications(); // Initialize push notifications
     _handleUrlParameters(); // Handle URL parameters for incoming calls (Web)
+    
+    // Initialize Web notification listener for background notifications
+    if (kIsWeb) {
+      WebNotificationListener.startListening();
+    }
   }
   
   /// Handle URL parameters for incoming calls (Web platform only)

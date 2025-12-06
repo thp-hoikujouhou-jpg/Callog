@@ -20,12 +20,16 @@ class AgoraVoiceCallScreen extends StatefulWidget {
   final String friendId;
   final String friendName;
   final String? friendPhotoUrl;
+  final String? channelName; // Optional: Use existing channel for incoming calls
+  final bool isIncoming; // true = incoming call (don't send notification)
 
   const AgoraVoiceCallScreen({
     super.key,
     required this.friendId,
     required this.friendName,
     this.friendPhotoUrl,
+    this.channelName,
+    this.isIncoming = false, // Default: outgoing call
   });
 
   @override
@@ -133,9 +137,10 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       await _callService.initialize();
       debugPrint('✅ [Agora Screen] Agora engine initialized');
       
-      // Generate channel name from friend IDs (ensure same channel for both users)
-      final channelName = _generateChannelName(widget.friendId);
+      // Use provided channel name or generate one
+      final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
       debugPrint('📞 [Agora Screen] Joining channel: $channelName');
+      debugPrint('📞 [Agora Screen] Call type: ${widget.isIncoming ? "Incoming" : "Outgoing"}');
       
       // Generate Agora token using Cloud Functions
       String? token;
@@ -157,24 +162,28 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       await _callService.joinChannel(channelName, token: token);
       debugPrint('✅ [Agora Screen] Join channel request sent');
       
-      // Send push notification to peer
-      try {
-        final pushService = PushNotificationService();
-        final authService = AuthService();
-        final currentUser = authService.currentUser;
-        final callerName = currentUser?.displayName ?? 
-                          currentUser?.email?.split('@')[0] ?? 
-                          '不明なユーザー';
-        
-        await pushService.sendCallNotification(
-          peerId: widget.friendId,
-          channelId: channelName,
-          callType: 'voice_call',
-          callerName: callerName,
-        );
-        debugPrint('📲 [Agora Screen] Push notification sent to peer');
-      } catch (e) {
-        debugPrint('⚠️ [Agora Screen] Failed to send push notification: $e');
+      // Send push notification to peer (only for outgoing calls)
+      if (!widget.isIncoming) {
+        try {
+          final pushService = PushNotificationService();
+          final authService = AuthService();
+          final currentUser = authService.currentUser;
+          final callerName = currentUser?.displayName ?? 
+                            currentUser?.email?.split('@')[0] ?? 
+                            '不明なユーザー';
+          
+          await pushService.sendCallNotification(
+            peerId: widget.friendId,
+            channelId: channelName,
+            callType: 'voice_call',
+            callerName: callerName,
+          );
+          debugPrint('📲 [Agora Screen] Push notification sent to peer');
+        } catch (e) {
+          debugPrint('⚠️ [Agora Screen] Failed to send push notification: $e');
+        }
+      } else {
+        debugPrint('📲 [Agora Screen] Incoming call - skipping notification');
       }
       
     } catch (e) {
@@ -222,9 +231,13 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
 
   /// Generate consistent channel name for both users
   String _generateChannelName(String friendId) {
-    // Use a simple channel name based on friend ID
-    // In production, you'd want to use a unique chat ID from Firestore
-    return 'call_${widget.friendId}';
+    // Generate channel name that's the same regardless of who calls
+    final authService = AuthService();
+    final currentUserId = authService.currentUser?.uid ?? '';
+    
+    // Sort user IDs to ensure same channel name for both users
+    final sortedIds = [currentUserId, friendId]..sort();
+    return 'call_${sortedIds[0]}_${sortedIds[1]}';
   }
 
   /// Start call duration timer

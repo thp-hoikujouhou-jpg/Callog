@@ -1,17 +1,21 @@
 import 'package:flutter/foundation.dart';
 import 'package:flutter/services.dart' show rootBundle;
 import 'package:audioplayers/audioplayers.dart';
+import 'ringtone_service_web.dart' if (dart.library.io) 'ringtone_service_stub.dart';
 
 /// Ringtone Service for Incoming Calls
 /// 
 /// Plays ringtone for incoming calls (LINE/WhatsApp style)
 /// Only plays when app is in foreground/background (not closed)
+/// 
+/// Uses Web Audio API on Web platform for better compatibility
 class RingtoneService {
   static final RingtoneService _instance = RingtoneService._internal();
   factory RingtoneService() => _instance;
   RingtoneService._internal();
 
   final AudioPlayer _audioPlayer = AudioPlayer();
+  final RingtoneServiceWeb _webRingtone = RingtoneServiceWeb();
   bool _isPlaying = false;
 
   /// Play ringtone (loops until stopped)
@@ -24,17 +28,11 @@ class RingtoneService {
     try {
       debugPrint('[Ringtone] 🔔 Starting ringtone playback');
       
-      // For Web platform, use network audio
+      // For Web platform, use Web Audio API directly
       if (kIsWeb) {
-        // Use a free ringtone audio file (you can replace with your own)
-        const ringtoneUrl = 'https://assets.mixkit.co/active_storage/sfx/2869/2869-preview.mp3';
-        
-        await _audioPlayer.setReleaseMode(ReleaseMode.loop); // Loop the ringtone
-        await _audioPlayer.setVolume(1.0); // Full volume
-        await _audioPlayer.play(UrlSource(ringtoneUrl));
-        
+        await _webRingtone.playRingtone();
         _isPlaying = true;
-        debugPrint('[Ringtone] ✅ Ringtone playing (Web)');
+        debugPrint('[Ringtone] ✅ Ringtone playing (Web Audio API)');
       } else {
         // For mobile platforms, use asset audio
         await _audioPlayer.setReleaseMode(ReleaseMode.loop);
@@ -58,7 +56,13 @@ class RingtoneService {
 
     try {
       debugPrint('[Ringtone] 🔕 Stopping ringtone');
-      await _audioPlayer.stop();
+      
+      if (kIsWeb) {
+        await _webRingtone.stopRingtone();
+      } else {
+        await _audioPlayer.stop();
+      }
+      
       _isPlaying = false;
       debugPrint('[Ringtone] ✅ Ringtone stopped');
     } catch (e) {
@@ -71,6 +75,10 @@ class RingtoneService {
 
   /// Dispose audio player
   void dispose() {
-    _audioPlayer.dispose();
+    if (kIsWeb) {
+      _webRingtone.dispose();
+    } else {
+      _audioPlayer.dispose();
+    }
   }
 }

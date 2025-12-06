@@ -21,15 +21,39 @@ const messaging = firebase.messaging();
 // Handle background messages
 messaging.onBackgroundMessage((payload) => {
   console.log('[firebase-messaging-sw.js] Received background message ', payload);
+  console.log('[firebase-messaging-sw.js] Payload data:', payload.data);
   
-  const notificationTitle = payload.notification?.title || 'Callog';
+  // Extract call data
+  const data = payload.data || {};
+  const callType = data.type || '';
+  const callerName = data.callerName || 'Unknown';
+  
+  // Prepare notification for incoming call
+  let notificationTitle = 'Callog';
+  let notificationBody = 'New notification';
+  
+  if (callType === 'voice_call') {
+    notificationTitle = '音声通話着信';
+    notificationBody = `${callerName} さんから音声通話がかかってきています`;
+  } else if (callType === 'video_call') {
+    notificationTitle = 'ビデオ通話着信';
+    notificationBody = `${callerName} さんからビデオ通話がかかってきています`;
+  } else if (payload.notification) {
+    notificationTitle = payload.notification.title || 'Callog';
+    notificationBody = payload.notification.body || 'New notification';
+  }
+  
   const notificationOptions = {
-    body: payload.notification?.body || 'New notification',
+    body: notificationBody,
     icon: '/icons/Icon-192.png',
     badge: '/icons/Icon-192.png',
-    data: payload.data,
+    data: data,
+    requireInteraction: true, // Keep notification visible until user interacts
+    tag: `call-${data.channelId || Date.now()}`, // Unique tag for call notifications
+    vibrate: [200, 100, 200], // Vibration pattern
   };
 
+  console.log('[firebase-messaging-sw.js] Showing notification:', notificationTitle, notificationOptions);
   return self.registration.showNotification(notificationTitle, notificationOptions);
 });
 

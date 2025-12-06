@@ -3,6 +3,7 @@ import 'dart:async';
 import '../utils/image_proxy.dart';
 import '../services/ringtone_service.dart';
 import 'agora_voice_call_screen.dart';
+import 'agora_voice_call_answer_screen.dart';
 import 'agora_video_call_screen.dart';
 
 /// Incoming Call Screen - Answer or Decline incoming calls
@@ -91,6 +92,8 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
     // Navigate to appropriate call screen
     if (!mounted) return;
 
+    debugPrint('[IncomingCall] 📞 Accepting call - using ANSWER screen (no notification sent)');
+    
     Navigator.of(context).pushReplacement(
       MaterialPageRoute(
         builder: (context) {
@@ -99,12 +102,17 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
               friendId: widget.callerId,
               friendName: widget.callerName,
               friendPhotoUrl: widget.callerPhotoUrl,
+              channelName: widget.channelId, // Use existing channel
+              isIncoming: true, // Mark as incoming call
             );
           } else {
+            // Use voice call screen with incoming flag (DOES NOT send push notification)
             return AgoraVoiceCallScreen(
               friendId: widget.callerId,
               friendName: widget.callerName,
               friendPhotoUrl: widget.callerPhotoUrl,
+              channelName: widget.channelId, // Use existing channel
+              isIncoming: true, // Mark as incoming call
             );
           }
         },

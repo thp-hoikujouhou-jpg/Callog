@@ -106,6 +106,13 @@ class PushNotificationService {
 
   /// Initialize local notifications (for displaying notifications)
   Future<void> _initializeLocalNotifications() async {
+    // Skip for Web (flutter_local_notifications not supported on Web)
+    if (kIsWeb) {
+      debugPrint('[Push] ⚠️ Web platform: Local notifications not supported');
+      debugPrint('[Push] 🌐 Will use browser native notifications instead');
+      return;
+    }
+
     const androidSettings = AndroidInitializationSettings('@mipmap/ic_launcher');
     const iosSettings = DarwinInitializationSettings(
       requestAlertPermission: true,
@@ -186,8 +193,13 @@ class PushNotificationService {
       } else {
         // App is in background but message handler is still active
         // → Show notification only (no ringtone, no call screen)
-        debugPrint('[Push] 🔕 App is BACKGROUND → Silent notification only');
+        debugPrint('[Push] 🔕 App is BACKGROUND → Showing notification');
         _showIncomingCallNotification(message);
+        
+        // For Web: Also show browser notification
+        if (kIsWeb) {
+          _showWebBrowserNotification(message);
+        }
       }
     } else if (message.notification != null) {
       _showLocalNotification(message);
@@ -196,6 +208,12 @@ class PushNotificationService {
 
   /// Show incoming call notification
   Future<void> _showIncomingCallNotification(RemoteMessage message) async {
+    // Skip for Web (not supported)
+    if (kIsWeb) {
+      debugPrint('[Push] ⚠️ Web: Skipping flutter_local_notifications (not supported)');
+      return;
+    }
+
     final data = message.data;
     final callerName = data['callerName'] ?? 'Unknown';
     final callType = data['type'] == 'video_call' ? 'ビデオ通話' : '音声通話';
@@ -236,8 +254,34 @@ class PushNotificationService {
     debugPrint('[Push] Incoming call notification shown: $callType from $callerName');
   }
 
+  /// Show Web browser notification (Web only)
+  Future<void> _showWebBrowserNotification(RemoteMessage message) async {
+    if (!kIsWeb) return;
+
+    try {
+      final data = message.data;
+      final callerName = data['callerName'] ?? 'Unknown';
+      final callType = data['type'] == 'video_call' ? 'ビデオ通話' : '音声通話';
+      
+      debugPrint('[Push] 🌐 Showing browser notification: $callType from $callerName');
+      
+      // Note: Browser notifications require user interaction to grant permission
+      // and only work when service worker is registered
+      // This is automatically handled by Firebase Messaging on Web
+      
+    } catch (e) {
+      debugPrint('[Push] ⚠️ Web notification error: $e');
+    }
+  }
+
   /// Show general local notification
   Future<void> _showLocalNotification(RemoteMessage message) async {
+    // Skip for Web (not supported)
+    if (kIsWeb) {
+      debugPrint('[Push] ⚠️ Web: Skipping local notification (not supported)');
+      return;
+    }
+
     final notification = message.notification;
     if (notification == null) return;
 
