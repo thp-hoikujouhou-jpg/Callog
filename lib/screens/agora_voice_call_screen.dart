@@ -173,7 +173,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           final authService = AuthService();
           final currentUser = authService.currentUser;
           
-          // Get caller name from Firestore
+          // Get caller name from Firestore (prioritize displayName)
           String callerName = '不明なユーザー';
           if (currentUser != null) {
             try {
@@ -184,11 +184,12 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
               
               if (userDoc.exists) {
                 final userData = userDoc.data();
-                callerName = userData?['username'] as String? ?? 
-                           userData?['displayName'] as String? ??
+                // Priority: displayName > username > email > fallback
+                callerName = userData?['displayName'] as String? ?? 
+                           userData?['username'] as String? ??
                            currentUser.email?.split('@')[0] ?? 
                            '不明なユーザー';
-                debugPrint('📝 [Agora Screen] Caller name from Firestore: $callerName');
+                debugPrint('📝 [Agora Screen] Caller display name from Firestore: $callerName');
               }
             } catch (e) {
               debugPrint('⚠️ [Agora Screen] Failed to fetch caller name from Firestore: $e');
