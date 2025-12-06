@@ -3,7 +3,6 @@ import 'dart:async';
 import '../utils/image_proxy.dart';
 import '../services/ringtone_service.dart';
 import 'agora_voice_call_screen.dart';
-import 'agora_voice_call_answer_screen.dart';
 import 'agora_video_call_screen.dart';
 
 /// Incoming Call Screen - Answer or Decline incoming calls

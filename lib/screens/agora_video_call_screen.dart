@@ -140,32 +140,37 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       await _callService.initialize();
       debugPrint('✅ [Agora Video] Agora engine initialized');
       
-      // Generate channel name
-      final channelName = _generateChannelName(widget.friendId);
+      // Use provided channel name or generate one
+      final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
       debugPrint('📞 [Agora Video] Joining channel: $channelName');
+      debugPrint('📞 [Agora Video] Call type: ${widget.isIncoming ? "Incoming" : "Outgoing"}');
       
       // Join the channel
       await _callService.joinChannel(channelName);
       debugPrint('✅ [Agora Video] Join channel request sent');
       
-      // Send push notification to peer
-      try {
-        final pushService = PushNotificationService();
-        final authService = AuthService();
-        final currentUser = authService.currentUser;
-        final callerName = currentUser?.displayName ?? 
-                          currentUser?.email?.split('@')[0] ?? 
-                          '不明なユーザー';
-        
-        await pushService.sendCallNotification(
-          peerId: widget.friendId,
-          channelId: channelName,
-          callType: 'video_call',
-          callerName: callerName,
-        );
-        debugPrint('📲 [Agora Video] Push notification sent to peer');
-      } catch (e) {
-        debugPrint('⚠️ [Agora Video] Failed to send push notification: $e');
+      // Send push notification to peer (only for outgoing calls)
+      if (!widget.isIncoming) {
+        try {
+          final pushService = PushNotificationService();
+          final authService = AuthService();
+          final currentUser = authService.currentUser;
+          final callerName = currentUser?.displayName ?? 
+                            currentUser?.email?.split('@')[0] ?? 
+                            '不明なユーザー';
+          
+          await pushService.sendCallNotification(
+            peerId: widget.friendId,
+            channelId: channelName,
+            callType: 'video_call',
+            callerName: callerName,
+          );
+          debugPrint('📲 [Agora Video] Push notification sent to peer');
+        } catch (e) {
+          debugPrint('⚠️ [Agora Video] Failed to send push notification: $e');
+        }
+      } else {
+        debugPrint('📲 [Agora Video] Incoming call - skipping notification');
       }
       
     } catch (e) {
@@ -211,9 +216,15 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     }
   }
 
-  /// Generate consistent channel name
+  /// Generate consistent channel name for both users
   String _generateChannelName(String friendId) {
-    return 'video_${widget.friendId}';
+    // Generate channel name that's the same regardless of who calls
+    final authService = AuthService();
+    final currentUserId = authService.currentUser?.uid ?? '';
+    
+    // Sort user IDs to ensure same channel name for both users
+    final sortedIds = [currentUserId, friendId]..sort();
+    return 'video_${sortedIds[0]}_${sortedIds[1]}';
   }
 
   /// Start call duration timer
