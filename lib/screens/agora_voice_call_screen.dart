@@ -71,23 +71,29 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
     try {
       debugPrint('🚀 [Agora Screen] Starting call initialization...');
       
-      // Set up event handlers
+      // Initialize Agora engine FIRST
+      await _callService.initialize();
+      debugPrint('✅ [Agora Screen] Agora engine initialized');
+      
+      // Set up event handlers AFTER initialization
       _callService.onUserJoined = (userId) {
         debugPrint('✅ [Agora Screen] User joined: $userId');
-        setState(() {
-          _isConnecting = false;
-          _isConnected = true;
-          _connectionStatus = '通話中';
-          _callStartTime = DateTime.now();
-        });
-        _startCallTimer();
-        
-        // Log call start
-        _historyService.logCallStart(
-          friendId: widget.friendId,
-          callType: 'voice',
-          direction: 'outgoing',
-        );
+        if (mounted) {
+          setState(() {
+            _isConnecting = false;
+            _isConnected = true;
+            _connectionStatus = '通話中';
+            _callStartTime = DateTime.now();
+          });
+          _startCallTimer();
+          
+          // Log call start
+          _historyService.logCallStart(
+            friendId: widget.friendId,
+            callType: 'voice',
+            direction: 'outgoing',
+          );
+        }
       };
       
       _callService.onUserLeft = (userId) {
@@ -133,10 +139,6 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           );
         }
       };
-
-      // Initialize Agora engine
-      await _callService.initialize();
-      debugPrint('✅ [Agora Screen] Agora engine initialized');
       
       // Use provided channel name or generate one
       final channelName = widget.channelName ?? _generateChannelName(widget.friendId);

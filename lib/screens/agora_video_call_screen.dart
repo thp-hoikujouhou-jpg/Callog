@@ -73,24 +73,30 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     try {
       debugPrint('🚀 [Agora Video] Starting call initialization...');
       
-      // Set up event handlers
+      // Initialize Agora engine FIRST
+      await _callService.initialize();
+      debugPrint('✅ [Agora Video] Agora engine initialized');
+      
+      // Set up event handlers AFTER initialization
       _callService.onUserJoined = (userId) {
         debugPrint('✅ [Agora Video] User joined: $userId');
-        setState(() {
-          _isConnecting = false;
-          _isConnected = true;
-          _connectionStatus = 'ビデオ通話中';
-          _remoteUid = userId;
-          _callStartTime = DateTime.now();
-        });
-        _startCallTimer();
-        
-        // Log call start
-        _historyService.logCallStart(
-          friendId: widget.friendId,
-          callType: 'video',
-          direction: 'outgoing',
-        );
+        if (mounted) {
+          setState(() {
+            _isConnecting = false;
+            _isConnected = true;
+            _connectionStatus = 'ビデオ通話中';
+            _remoteUid = userId;
+            _callStartTime = DateTime.now();
+          });
+          _startCallTimer();
+          
+          // Log call start
+          _historyService.logCallStart(
+            friendId: widget.friendId,
+            callType: 'video',
+            direction: 'outgoing',
+          );
+        }
       };
       
       _callService.onUserLeft = (userId) {
@@ -136,10 +142,6 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
           );
         }
       };
-
-      // Initialize Agora engine
-      await _callService.initialize();
-      debugPrint('✅ [Agora Video] Agora engine initialized');
       
       // Use provided channel name or generate one
       final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
