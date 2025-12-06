@@ -124,10 +124,16 @@ class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _loadLanguageSettings(BuildContext context) async {
     try {
       final localService = Provider.of<LocalizationService>(context, listen: false);
+      final user = FirebaseAuth.instance.currentUser;
       
       if (kDebugMode) {
         debugPrint('🌐 [AuthWrapper] Loading language settings...');
+        debugPrint('🌐 [AuthWrapper] Current user: ${user?.uid}');
+        debugPrint('🌐 [AuthWrapper] Current cached language: ${localService.currentLanguage}');
       }
+      
+      // CRITICAL: Reset cache to force fresh load from Firestore
+      localService.resetCache();
       
       // Force reload language from Firestore
       await localService.loadLanguageFromFirestore(forceReload: true);

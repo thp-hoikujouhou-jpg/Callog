@@ -43,8 +43,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       debugPrint('🏠 [MainFeed] Initializing main feed screen...');
     }
     
-    // Load friends immediately
-    _loadFriends();
+    // Load friends immediately with post-frame callback to ensure build context is ready
+    WidgetsBinding.instance.addPostFrameCallback((_) async {
+      if (mounted) {
+        if (kDebugMode) {
+          debugPrint('🏠 [MainFeed] Post-frame: Loading friends...');
+        }
+        await _loadFriends();
+      }
+    });
     
     _globalCleanupOldMessages(); // Clean up old messages on app start
     _initializePushNotifications(); // Initialize push notifications
