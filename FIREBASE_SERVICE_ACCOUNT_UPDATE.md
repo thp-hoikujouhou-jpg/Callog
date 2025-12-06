@@ -1,0 +1,90 @@
+# Firebase Service Account Key Update
+
+## 更新日時
+2025-01-05
+
+## 更新内容
+新しいFirebase Service Account Keyに更新しました。
+
+### Service Account情報
+- **Client Email:** `firebase-adminsdk-fbsvc@callog-30758.iam.gserviceaccount.com`
+- **Project ID:** `callog-30758`
+- **Private Key ID:** `b65ab4aea5ba033b91fcce76f76dffb9995452ec`
+
+### Vercel環境変数設定
+
+以下のBase64エンコードされた値を `FIREBASE_SERVICE_ACCOUNT` 環境変数に設定してください:
+
+```
+ewogICJ0eXBlIjogInNlcnZpY2VfYWNjb3VudCIsCiAgInByb2plY3RfaWQiOiAiY2FsbG9nLTMwNzU4IiwKICAicHJpdmF0ZV9rZXlfaWQiOiAiYjY1YWI0YWVhNWJhMDMzYjkxZmNjZTc2Zjc2ZGZmYjk5OTU0NTJlYyIsCiAgInByaXZhdGVfa2V5IjogIi0tLS0tQkVHSU4gUFJJVkFURSBLRVktLS0tLVxuTUlJRXV3SUJBREFOQmdrcWhraUc5dzBCQVFFRkFBU0NCS1V3Z2dTaEFnRUFBb0lCQVFDVkRVM2FLT2RSMklST1xuQVJjNU8xaGE3YzM3L1JuYm1Ocnoxblp2MUZIb1UyOGpDWis0ZkNFR3I2REthN0ErQ0hzWlZLR01QSkxuZGVidlxuZm9mL2ZpRUx6MFVBM0Y4bldmMmdxTWhvQ3RxcnlUSk1NMmM2TXNyQVRFcm1lVE91WTVGcW92UnVrVS85eHhuUVxuTzBXZkpKdUtuRTM1emszS2g2TndEOGg5YnRVekZOTmpaa2ZzVVZHUVpRY2tnNVphc25qd3k2U2J0NE5UR0J1cFxuSmpZTzZzU3prajA4cWFTeXFDUWFJUUM2T3E4NTJkZjFnb3VycktpRFlrclZ4MzVLTXhBaGJXalJSRzNWV2dsRlxuR3E2Z05LTVlzRGU5S3VUKzk4T3dsaDhLWVF4SWtoUFRvei9pVTJ3eUVXaER1MG1aSGRWQ3VSMWtiL29wZ0UvaFxuRlJhWFRzTExBZ01CQUFFQ2dnRUFLUHJUN1VleXRhOThUTUFEQlJLNmE2R1hNUkY0NHdYbktRUk5ZdGl5dmxmMlxuSmVGMi91OXQyeHM5YjNubEptRUppMERYKzZrSjBNWjdQRnlEQXExSVk2bFVkUFNoMnIxa3ZKKzdIZFBpSkRuNFxuY0xmdlNUSit5UmtRdk1ZVS9melZGY2NBd2tlRWdTY1ZBMG5RamYwd0lJOXg1dDBnU1M4NnNjdzlHTE40dllhd1xuVXo1VERrMXcxVzl3VzJlZC9BZUdsV3NlNGNCaE15V3JYOERDcU9yQUZ4QUp4ZzFCQkY4OFRxcnkwa0ZEM3FSaFxuOFFQN2p6MDRmKzNTSS9zWmRsMEN2QmNEZFJiWnZhanQrUHdkUEo1Zkh1Z3c4enNvdGFkb2ptOWlnM0s2akVRUFxucWRqOENhVDRBbUU0aWxlMzl0bThjTFlVMGNJdzV1akxCUjBWZVJ1MjFRS0JnUURKWktydUVJTStiQ3JoeFdSalxuTnBUU3E4ZFpyQVFzSGJmQVNtUTVZYXhHRldnQXdadVBYZzQyVUR2YjRwWUxuaTAzR01XZE9sWitKbWEyUW11elxuMVZDdDB5bDFhZXhSWWl4WWVsK1hzUDlDaGNGdUV1a3QvWGNVL1RRMmZLcHBDcWdYanF0Ym92ZmRvWUlLSUI0TFxudm1DSDZRWUgvdTJsTTBuRFR1V3VOQUJkdHdLQmdRQzlkM2RRUmhYSys1Ym5RK0xnTTdjMEx1WlRGK1BqaDVrR1xuRVpaUVpJSnRvTkFaTEdpSkFBRnFKR2lBS0xCemNoSWlMblJIbVhnWTFERys5Yk5HYXlqYU4zT2FQRFpya0owL1xuTjZqTzd4bTBXaktDcWVEdTgzYS9rVC9lSUtiODcwUWtFUFdRTEF5bFJVY1diTjF5MXozVm1Ga0ZZd1hLN3UzTVxuekVPenZnNERqUUtCZ1FERHowVUNRcnZZcllMa0VQQVNKcmQ4UGRpTnIxby9Lb1hHU0k0NTNHV0xuclNJUjdYZ1xuSnlyYVZCaGZLbWVJMURwU0g1dkR5enpkV3FqeS9KR0xRQlE1YmQ0WmN1dDZGV0hZaE9MOHNmTDkwdDdIRDB2NFxuazBCOC85TU1SeG5KRjd0bmJDZmY2UXZtU1dvT1BqdjRYeG1zQ3p6NStUdEdMQi9EN2FvVFBpdzg4UUtCZ0F4SFxuNmh2eDd3ZXhOeDdXYjZaSXM5OVdDdWZuN0lXYkRIZ3dPNllLWGNudFdvL0hLUjk0T0o5QXJPVmh2YzQ5M3A4SVxuazlEd1NiQ1NVSWNvTmU2aWs0dFJmTlRLZ2x5R2l5ckYyTk5RL0VHTWR5bXhDVHR6M0lhZVM1MkNVRkNrMGEza1xueTRZRTFPMEJpSklUakdjZFBJelR5ekZtTWNIdHFzeFRrUy9kYWRzaEFuOEs0WXkwRlYvbVJ6cWNiQ2VvY2VNbVxuK1Q2OVc0S0I3SkliL2c0SnZjRGx4K1AvdGlXTHRZWjNUL2l3S3Q2cVNmTitjYzBucUhSMkg5Zi9PRDI3UkV6RlxuVHpsRVZFa2lycXlUbk16b2w3amdwN2VYSmJNYXFZZ2pxc2dDd2FZcjFvdTdPRitVNGQ2ZUpkcmpQODJVSzd1T1xud2ZjbXhnbEI3dENzZlJ6SHNCQUZcbi0tLS0tRU5EIFBSSVZBVEUgS0VZLS0tLS1cbiIsCiAgImNsaWVudF9lbWFpbCI6ICJmaXJlYmFzZS1hZG1pbnNkay1mYnN2Y0BjYWxsb2ctMzA3NTguaWFtLmdzZXJ2aWNlYWNjb3VudC5jb20iLAogICJjbGllbnRfaWQiOiAiMTA3OTk2MTY5MTQ3NDAyMjY2MjE4IiwKICAiYXV0aF91cmkiOiAiaHR0cHM6Ly9hY2NvdW50cy5nb29nbGUuY29tL28vb2F1dGgyL2F1dGgiLAogICJ0b2tlbl91cmkiOiAiaHR0cHM6Ly9vYXV0aDIuZ29vZ2xlYXBpcy5jb20vdG9rZW4iLAogICJhdXRoX3Byb3ZpZGVyX3g1MDlfY2VydF91cmwiOiAiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vb2F1dGgyL3YxL2NlcnRzIiwKICAiY2xpZW50X3g1MDlfY2VydF91cmwiOiAiaHR0cHM6Ly93d3cuZ29vZ2xlYXBpcy5jb20vcm9ib3QvdjEvbWV0YWRhdGEveDUwOS9maXJlYmFzZS1hZG1pbnNkay1mYnN2YyU0MGNhbGxvZy0zMDc1OC5pYW0uZ3NlcnZpY2VhY2NvdW50LmNvbSIsCiAgInVuaXZlcnNlX2RvbWFpbiI6ICJnb29nbGVhcGlzLmNvbSIKfQo=
+```
+
+### 設定手順
+
+#### Vercel CLIで設定:
+
+```bash
+cd vercel-api
+vercel env rm FIREBASE_SERVICE_ACCOUNT production
+vercel env rm FIREBASE_SERVICE_ACCOUNT preview
+vercel env rm FIREBASE_SERVICE_ACCOUNT development
+vercel env add FIREBASE_SERVICE_ACCOUNT
+# 上記のBase64値を貼り付け
+# Environment: a (All Environments)
+```
+
+#### Vercelダッシュボードで設定:
+
+1. https://vercel.com/thp-hoikujouhou-tachanhao164s-projects/callog-api-v2/settings/environment-variables
+2. `FIREBASE_SERVICE_ACCOUNT` を編集または新規追加
+3. 上記のBase64値を貼り付け
+4. Environment: Production, Preview, Development すべてチェック
+5. Save
+
+### 再デプロイ
+
+環境変数を更新した後は必ず再デプロイが必要です:
+
+```bash
+vercel --prod
+```
+
+### 確認
+
+```bash
+vercel env ls
+```
+
+期待される出力:
+```
+Name                        Environments
+FIREBASE_SERVICE_ACCOUNT    Production, Preview, Development
+FIREBASE_PROJECT_ID         Production, Preview, Development
+AGORA_APP_ID               Production, Preview, Development
+```
+
+## トラブルシューティング
+
+### APIが500エラーを返す場合
+
+1. Vercelログを確認:
+   ```bash
+   vercel logs https://callog-api-v2.vercel.app/api/sendPushNotification --since 5m
+   ```
+
+2. 環境変数が All Environments に設定されているか確認
+
+3. 再デプロイを実行
+
+### 成功レスポンス例
+
+```json
+{
+  "error": "Failed to send notification",
+  "message": "The registration token is not a valid FCM registration token",
+  "code": "messaging/invalid-registration-token"
+}
+```
+
+このエラーは正常です。Firebase Admin SDKが初期化され、テストトークンが無効だと検出しています。
+
