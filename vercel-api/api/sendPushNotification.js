@@ -6,9 +6,20 @@ const admin = require('firebase-admin');
 // Initialize Firebase Admin SDK
 if (admin.apps.length === 0) {
   try {
-    const serviceAccount = JSON.parse(
-      process.env.FIREBASE_SERVICE_ACCOUNT || '{}'
-    );
+    let serviceAccount;
+    
+    // Support both direct JSON and Base64 encoded JSON
+    const serviceAccountEnv = process.env.FIREBASE_SERVICE_ACCOUNT || '{}';
+    
+    try {
+      // Try direct JSON parse first
+      serviceAccount = JSON.parse(serviceAccountEnv);
+    } catch (jsonError) {
+      // If JSON parse fails, try Base64 decode
+      console.log('Trying Base64 decode for FIREBASE_SERVICE_ACCOUNT');
+      const decoded = Buffer.from(serviceAccountEnv, 'base64').toString('utf-8');
+      serviceAccount = JSON.parse(decoded);
+    }
     
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
