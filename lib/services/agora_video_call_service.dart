@@ -257,8 +257,14 @@ class AgoraVideoCallService {
       await initialize();
     }
 
+    // Check if already in the same channel
+    if (_isInCall && _currentChannelName == channelName) {
+      debugPrint('[AgoraVideo] Already in this channel: $channelName');
+      return; // Don't rejoin the same channel
+    }
+
     if (_isInCall) {
-      debugPrint('[AgoraVideo] Already in a call, leaving current channel first');
+      debugPrint('[AgoraVideo] Already in a different call, leaving current channel first');
       await leaveChannel();
     }
 

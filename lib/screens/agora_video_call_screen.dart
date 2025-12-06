@@ -63,7 +63,8 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
   void dispose() {
     debugPrint('🧹 [Agora Video] Disposing video call screen');
     _callTimer?.cancel();
-    _endCall();
+    // Don't auto-end call on dispose - let user explicitly end it
+    // _endCall();
     super.dispose();
   }
 

@@ -61,7 +61,8 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   void dispose() {
     debugPrint('🧹 [Agora Screen] Disposing voice call screen');
     _callTimer?.cancel();
-    _endCall();
+    // Don't auto-end call on dispose - let user explicitly end it
+    // _endCall();
     super.dispose();
   }
 

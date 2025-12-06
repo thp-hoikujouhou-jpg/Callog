@@ -298,8 +298,14 @@ class AgoraVoiceCallService {
       await initialize();
     }
 
+    // Check if already in the same channel
+    if (_isInCall && _currentChannelName == channelName) {
+      debugPrint('[Agora] Already in this channel: $channelName');
+      return; // Don't rejoin the same channel
+    }
+
     if (_isInCall) {
-      debugPrint('[Agora] Already in a call, leaving current channel first');
+      debugPrint('[Agora] Already in a different call, leaving current channel first');
       await leaveChannel();
     }
 
