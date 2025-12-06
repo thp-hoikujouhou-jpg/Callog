@@ -62,7 +62,7 @@ class CallNavigationService {
     }
 
     final channelId = data['channelId'] as String?;
-    final callerName = data['callerName'] as String?;
+    String? callerName = data['callerName'] as String?;
     final callerId = data['callerId'] as String?;
     String? callerPhotoUrl = data['callerPhotoUrl'] as String?;
 
@@ -71,22 +71,39 @@ class CallNavigationService {
       return;
     }
 
-    // Fetch caller's photo from Firestore if not provided
-    if (callerPhotoUrl == null && callerId != null) {
-      debugPrint('[CallNav] 📷 Fetching caller photo from Firestore: $callerId');
+    // Fetch caller's info from Firestore (name and photo)
+    if (callerId != null) {
+      debugPrint('[CallNav] 📋 Fetching caller info from Firestore: $callerId');
       try {
         final firestore = FirebaseFirestore.instance;
         final userDoc = await firestore.collection('users').doc(callerId).get();
         if (userDoc.exists) {
           final userData = userDoc.data();
-          // Use 'photoUrl' field (correct field name from UserProfile model)
-          callerPhotoUrl = userData?['photoUrl'] as String?;
-          debugPrint('[CallNav] ✅ Caller photo URL: ${callerPhotoUrl ?? "No photo"}');
+          
+          // Get caller's display name (priority: displayName > username > notification data)
+          final firestoreDisplayName = userData?['displayName'] as String?;
+          final firestoreUsername = userData?['username'] as String?;
+          
+          if (firestoreDisplayName != null && firestoreDisplayName.isNotEmpty) {
+            callerName = firestoreDisplayName;
+            debugPrint('[CallNav] ✅ Caller display name: $callerName');
+          } else if (firestoreUsername != null && firestoreUsername.isNotEmpty) {
+            callerName = firestoreUsername;
+            debugPrint('[CallNav] ✅ Caller username: $callerName');
+          } else {
+            debugPrint('[CallNav] ⚠️ No display name or username, using notification data');
+          }
+          
+          // Get caller's photo URL
+          if (callerPhotoUrl == null || callerPhotoUrl.isEmpty) {
+            callerPhotoUrl = userData?['photoUrl'] as String?;
+            debugPrint('[CallNav] ✅ Caller photo URL: ${callerPhotoUrl ?? "No photo"}');
+          }
         } else {
           debugPrint('[CallNav] ⚠️ User document not found for: $callerId');
         }
       } catch (e) {
-        debugPrint('[CallNav] ⚠️ Failed to fetch caller photo: $e');
+        debugPrint('[CallNav] ⚠️ Failed to fetch caller info from Firestore: $e');
       }
     }
 
