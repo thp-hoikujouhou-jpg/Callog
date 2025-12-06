@@ -592,7 +592,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
               ),
               const SizedBox(height: 8),
               Text(
-                _userProfile?.email ?? 'No email',
+                _userProfile?.username ?? 'No username',
                 style: Theme.of(context).textTheme.bodyMedium?.copyWith(
                       color: Colors.grey.shade600,
                     ),
