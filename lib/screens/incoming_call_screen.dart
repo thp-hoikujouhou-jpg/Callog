@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'dart:async';
 import '../utils/image_proxy.dart';
+import '../services/ringtone_service.dart';
 import 'agora_voice_call_screen.dart';
 import 'agora_video_call_screen.dart';
 
@@ -61,6 +62,10 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
   void dispose() {
     _animationController.dispose();
     _timeoutTimer?.cancel();
+    
+    // Stop ringtone when screen is closed
+    RingtoneService().stopRingtone();
+    
     super.dispose();
   }
 
@@ -79,6 +84,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
 
   void _acceptCall() async {
     _timeoutTimer?.cancel();
+    
+    // Stop ringtone
+    RingtoneService().stopRingtone();
     
     // Navigate to appropriate call screen
     if (!mounted) return;
@@ -106,6 +114,9 @@ class _IncomingCallScreenState extends State<IncomingCallScreen>
 
   void _declineCall() {
     _timeoutTimer?.cancel();
+    
+    // Stop ringtone
+    RingtoneService().stopRingtone();
     
     if (!mounted) return;
     

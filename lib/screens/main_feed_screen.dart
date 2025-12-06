@@ -40,6 +40,25 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     _loadFriends();
     _globalCleanupOldMessages(); // Clean up old messages on app start
     _initializePushNotifications(); // Initialize push notifications
+    _handleUrlParameters(); // Handle URL parameters for incoming calls (Web)
+  }
+  
+  /// Handle URL parameters for incoming calls (Web platform only)
+  void _handleUrlParameters() {
+    if (kIsWeb) {
+      // Add a small delay to ensure navigation is ready
+      Future.delayed(const Duration(milliseconds: 500), () {
+        try {
+          // Import and use url_handler for web
+          if (mounted) {
+            // URL handling will be done by UrlHandler
+            // This is a placeholder for future web-specific handling
+          }
+        } catch (e) {
+          debugPrint('URL handler error: $e');
+        }
+      });
+    }
   }
   
   Future<void> _initializePushNotifications() async {

@@ -1,164 +1,237 @@
-# Cloud Functions デプロイメントガイド
+# 🔥 Cloud Functions デプロイガイド
 
-## 📋 概要
+## 📋 前提条件
 
-Callog アプリは以下の Cloud Functions を使用します:
+✅ Service Account Keyが作成済み  
+✅ 組織ポリシー `iam.disableServiceAccountKeyCreation` が削除済み  
+✅ Firebase CLI がインストール済み (v14.20.0)
 
-1. **sendPushNotification** - プッシュ通知の送信
-2. **generateAgoraToken** - Agora RTCトークンの生成
-3. **cleanupOldNotifications** - 古い通知の自動削除
+---
 
 ## 🚀 デプロイ手順
 
-### 1. Firebase CLI にログイン
+### **Step 1: Firebase ログイン**
+
+```bash
+# Firebase CLIでログイン
+firebase login --no-localhost
+```
+
+このコマンドを実行すると、ブラウザでGoogleアカウント認証画面が開きます。  
+`thp-hoikujouhou@tachanhao164.com` でログインしてください。
+
+---
+
+### **Step 2: Firebase プロジェクト設定**
 
 ```bash
 cd /home/user/Callog
-firebase login
-```
 
-### 2. プロジェクトを確認
-
-```bash
+# 現在のプロジェクト確認
 firebase projects:list
+
+# callog-30758 プロジェクトを使用
+firebase use callog-30758
 ```
 
-### 3. 環境変数の設定 (オプション - Agoraトークン生成用)
+---
 
-Agora App Certificate を設定する場合:
+### **Step 3: Agora App Certificate 設定**
+
+Cloud Functionsで**Agora Token生成**を使用する場合、App Certificateが必要です。
+
+**Agora Console から取得:**
+1. https://console.agora.io/ を開く
+2. プロジェクト `callog` を選択
+3. **App Certificate** をコピー
+
+**環境変数に設定:**
 
 ```bash
-firebase functions:config:set agora.app_certificate="YOUR_AGORA_APP_CERTIFICATE"
+# Firebase環境変数に追加
+firebase functions:config:set agora.app_certificate="YOUR_APP_CERTIFICATE_HERE"
 ```
 
-**重要**: App Certificate を設定しない場合、Agoraトークン生成は無効化され、null トークンが返されます。これはテスト環境では問題ありませんが、本番環境では設定を推奨します。
+---
 
-### 4. Cloud Functions をデプロイ
+### **Step 4: Cloud Functions デプロイ**
 
 ```bash
+cd /home/user/Callog
+
+# functions/index.js を確認
+cat functions/index.js | head -50
+
+# デプロイ実行
 firebase deploy --only functions
 ```
 
-または、特定の関数のみデプロイ:
+**デプロイされる関数:**
+- `generateAgoraToken` - Agora RTC Token生成
+- `sendPushNotification` - FCM Push通知送信
+
+---
+
+### **Step 5: Cloud Functions URL確認**
+
+デプロイ完了後、以下のようなURLが表示されます:
+
+```
+✔ functions[us-central1-generateAgoraToken] Successful create operation.
+Function URL: https://us-central1-callog-30758.cloudfunctions.net/generateAgoraToken
+
+✔ functions[us-central1-sendPushNotification] Successful create operation.
+Function URL: https://us-central1-callog-30758.cloudfunctions.net/sendPushNotification
+```
+
+---
+
+### **Step 6: Flutter アプリ設定更新**
+
+Cloud Functions URLを Flutter アプリに設定します。
+
+**lib/services/agora_token_service.dart:**
+```dart
+class AgoraTokenService {
+  // Cloud Functions URL (Vercel APIから変更)
+  static const String _tokenUrl = 
+    'https://us-central1-callog-30758.cloudfunctions.net/generateAgoraToken';
+  
+  // ... 残りのコードは同じ
+}
+```
+
+**lib/services/push_notification_service.dart:**
+```dart
+class PushNotificationService {
+  // Cloud Functions URL (Vercel APIから変更)
+  static const String _sendPushUrl = 
+    'https://us-central1-callog-30758.cloudfunctions.net/sendPushNotification';
+  
+  // ... 残りのコードは同じ
+}
+```
+
+---
+
+### **Step 7: Flutter アプリ再ビルド & 再起動**
 
 ```bash
-# プッシュ通知関数のみ
-firebase deploy --only functions:sendPushNotification
+cd /home/user/Callog
 
-# Agoraトークン生成関数のみ
-firebase deploy --only functions:generateAgoraToken
+# 変更をコミット
+git add .
+git commit -m "Update to use Cloud Functions URLs"
 
-# 全ての関数
+# Flutter Webアプリ再ビルド & 再起動
+lsof -ti:5060 | xargs -r kill -9
+sleep 2
+flutter build web --release
+cd build/web
+python3 -m http.server 5060 --bind 0.0.0.0 &
+```
+
+---
+
+## 🧪 動作テスト
+
+### **1. Agora Token生成テスト:**
+
+```bash
+curl -X POST https://us-central1-callog-30758.cloudfunctions.net/generateAgoraToken \
+  -H "Content-Type: application/json" \
+  -d '{
+    "channelName": "test-channel-123",
+    "uid": "12345",
+    "role": "publisher"
+  }'
+```
+
+**期待される応答:**
+```json
+{
+  "token": "007eJxT...",
+  "appId": "d1a8161eb70448d89eea1722bc169c92",
+  "channelName": "test-channel-123",
+  "uid": "12345"
+}
+```
+
+---
+
+### **2. Push通知送信テスト:**
+
+```bash
+curl -X POST https://us-central1-callog-30758.cloudfunctions.net/sendPushNotification \
+  -H "Content-Type: application/json" \
+  -d '{
+    "peerId": "test-user-456",
+    "channelId": "test-channel-789",
+    "callType": "voice_call",
+    "callerName": "Test User",
+    "fcmToken": "YOUR_FCM_TOKEN_HERE"
+  }'
+```
+
+**期待される応答:**
+```json
+{
+  "success": true,
+  "notificationId": "abc123"
+}
+```
+
+---
+
+## 🔧 トラブルシューティング
+
+### **エラー: "Failed to list Firebase projects"**
+
+```bash
+# 再ログイン
+firebase logout
+firebase login --no-localhost
+```
+
+### **エラー: "Permission denied on project"**
+
+`thp-hoikujouhou@tachanhao164.com` アカウントに Firebase プロジェクト `callog-30758` への **Editor** または **Owner** 権限が必要です。
+
+Firebase Console で確認:
+https://console.firebase.com/project/callog-30758/settings/iam
+
+### **エラー: "AGORA_APP_CERTIFICATE is not set"**
+
+```bash
+# App Certificate を設定
+firebase functions:config:set agora.app_certificate="YOUR_CERTIFICATE"
+
+# 再デプロイ
 firebase deploy --only functions
 ```
 
-## 🔧 デプロイ後の確認
+---
 
-### 1. Firebase Console で確認
+## 📝 まとめ
 
-https://console.firebase.google.com/ にアクセスし、以下を確認:
+**Cloud Functions を使用するメリット:**
+- ✅ Firebase ネイティブ統合 (認証不要)
+- ✅ 自動スケーリング
+- ✅ Firebase Admin SDK が標準で利用可能
+- ✅ Firestoreとの直接連携
 
-1. **Functions** セクションで3つの関数がデプロイされていることを確認
-2. **ログ** で関数の実行状況を確認
+**次のステップ:**
+1. `firebase login` でログイン
+2. `firebase use callog-30758` でプロジェクト設定
+3. `firebase deploy --only functions` でデプロイ
+4. Flutter アプリの URL を Cloud Functions に更新
+5. 動作テスト実行
 
-### 2. Flutter アプリでテスト
+デプロイ完了後、Vercel API は不要になります (削除可能)。
 
-1. Web版アプリにアクセス: https://5060-i9jon7di5fl8a64rlbe9u-18e660f9.sandbox.novita.ai
-2. 音声通話を開始
-3. ブラウザの開発者ツールで以下を確認:
-   - `[Push] 📤 Sending notification via Cloud Functions` のログ
-   - `[AgoraToken] 🎫 Generating token for channel` のログ
-   - エラーがないことを確認
+---
 
-## 📊 Cloud Functions の詳細
-
-### sendPushNotification
-
-**説明**: FCM を使用してプッシュ通知を送信
-
-**パラメータ**:
-- `peerId`: 送信先ユーザーID
-- `channelId`: 通話チャンネルID
-- `callType`: 'voice_call' または 'video_call'
-- `callerName`: 発信者名
-
-**利点**:
-- ✅ CORS エラーなし (サーバーサイド実行)
-- ✅ FCM Server Key をクライアントに露出しない
-- ✅ より安全で管理しやすい
-
-### generateAgoraToken
-
-**説明**: Agora RTC トークンを安全に生成
-
-**パラメータ**:
-- `channelName`: チャンネル名
-- `uid`: ユーザーID (0で自動割り当て)
-- `role`: 'publisher' または 'audience'
-
-**戻り値**:
-- `token`: RTCトークン (App Certificate未設定の場合は null)
-- `appId`: Agora App ID
-- `channelName`: チャンネル名
-- `uid`: ユーザーID
-- `expiresAt`: トークン有効期限 (Unix timestamp)
-
-**利点**:
-- ✅ App Certificate をクライアントに露出しない
-- ✅ トークン改ざん防止
-- ✅ 本番環境でのセキュリティ強化
-
-### cleanupOldNotifications
-
-**説明**: 1時間ごとに古い通知を自動削除
-
-**実行**: 自動 (Pub/Sub スケジュール)
-
-**対象**: 1時間以上経過した通知レコード
-
-## 🔍 トラブルシューティング
-
-### エラー: "Failed to authenticate"
-
-```bash
-firebase login --reauth
-```
-
-### エラー: "Permission denied"
-
-Firebase Console でプロジェクトの権限を確認してください。
-
-### 関数が呼び出されない
-
-1. Firebase Console の Functions ログを確認
-2. Flutter アプリのブラウザコンソールでエラーを確認
-3. 関数がデプロイされているか確認: `firebase functions:list`
-
-### Agora エラー -17 (INVALID_TOKEN)
-
-1. App Certificate が正しく設定されているか確認
-2. トークンの有効期限が切れていないか確認
-3. チャンネル名とUIDが一致しているか確認
-
-## 📝 本番環境への移行
-
-### 1. Agora App Certificate の設定
-
-```bash
-firebase functions:config:set agora.app_certificate="YOUR_APP_CERTIFICATE"
-firebase deploy --only functions:generateAgoraToken
-```
-
-### 2. セキュリティルールの強化
-
-Firestore セキュリティルールで、call_notifications コレクションへのアクセスを制限してください。
-
-### 3. 監視とアラートの設定
-
-Firebase Console で、関数のエラー率と実行時間を監視するアラートを設定してください。
-
-## 🎉 完了!
-
-これで Cloud Functions が正常にデプロイされ、Callog アプリで使用できるようになりました。
-
-プッシュ通知と Agora トークン生成が Cloud Functions 経由で動作します!
+**📚 参考リンク:**
+- Firebase Console: https://console.firebase.google.com/project/callog-30758
+- Cloud Functions ログ: https://console.firebase.google.com/project/callog-30758/functions/logs
+- Agora Console: https://console.agora.io/

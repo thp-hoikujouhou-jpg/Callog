@@ -48,6 +48,9 @@ dependencies:
   # Local Notifications for incoming calls
   flutter_local_notifications: 18.0.1
   
+  # Audio Player for ringtones (LINE/WhatsApp style)
+  audioplayers: 6.1.0
+  
   # WebSocket for signaling (legacy - will be replaced by Agora)
   web_socket_channel: 3.0.1
   

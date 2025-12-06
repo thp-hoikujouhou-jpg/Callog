@@ -36,11 +36,42 @@ messaging.onBackgroundMessage((payload) => {
 // Handle notification clicks
 self.addEventListener('notificationclick', (event) => {
   console.log('[firebase-messaging-sw.js] Notification click received.');
+  console.log('[firebase-messaging-sw.js] Notification data:', event.notification.data);
   
   event.notification.close();
   
-  // Open the app when notification is clicked
+  // Get call data from notification
+  const data = event.notification.data || {};
+  const channelId = data.channelId || '';
+  const callType = data.type || '';
+  
+  // Build URL with call parameters
+  let targetUrl = '/';
+  if (channelId && callType) {
+    targetUrl = `/?call=incoming&channelId=${channelId}&type=${callType}&callerName=${encodeURIComponent(data.callerName || 'Unknown')}&callerId=${data.callerId || 'unknown'}`;
+  }
+  
+  console.log('[firebase-messaging-sw.js] Opening URL:', targetUrl);
+  
+  // Open the app with call parameters when notification is clicked
   event.waitUntil(
-    clients.openWindow('/')
+    clients.matchAll({type: 'window', includeUncontrolled: true}).then((clientList) => {
+      // Check if there's already a window open
+      for (const client of clientList) {
+        if (client.url.includes(self.registration.scope) && 'focus' in client) {
+          // Focus existing window and navigate to call screen
+          client.focus();
+          client.postMessage({
+            type: 'incoming_call',
+            data: data
+          });
+          return;
+        }
+      }
+      // No window found, open a new one
+      if (clients.openWindow) {
+        return clients.openWindow(targetUrl);
+      }
+    })
   );
 });

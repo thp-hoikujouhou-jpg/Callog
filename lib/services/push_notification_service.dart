@@ -5,6 +5,9 @@ import 'package:flutter/foundation.dart';
 import 'package:flutter_local_notifications/flutter_local_notifications.dart';
 import 'package:http/http.dart' as http;
 import 'dart:convert';
+import 'call_navigation_service.dart';
+import 'app_lifecycle_service.dart';
+import 'ringtone_service.dart';
 
 /// Push Notification Service for Callog
 /// 
@@ -155,7 +158,7 @@ class PushNotificationService {
     }
   }
 
-  /// Handle foreground messages
+  /// Handle foreground messages (LINE/WhatsApp style)
   void _handleForegroundMessage(RemoteMessage message) {
     debugPrint('[Push] Foreground message received: ${message.messageId}');
     debugPrint('[Push] Data: ${message.data}');
@@ -164,7 +167,28 @@ class PushNotificationService {
     final type = data['type'] as String?;
 
     if (type == 'voice_call' || type == 'video_call') {
-      _showIncomingCallNotification(message);
+      // Check app lifecycle state
+      final isAppVisible = AppLifecycleService().isAppInForeground;
+      
+      debugPrint('[Push] 📱 Incoming call detected');
+      debugPrint('[Push]    App visible: $isAppVisible');
+      
+      if (isAppVisible) {
+        // LINE/WhatsApp behavior: App is visible
+        // → Show incoming call screen + Play ringtone
+        debugPrint('[Push] 🔔 App is VISIBLE → Showing call screen + ringtone');
+        
+        // Play ringtone
+        RingtoneService().playRingtone();
+        
+        // Show incoming call screen
+        CallNavigationService().handleCallNotification(data);
+      } else {
+        // App is in background but message handler is still active
+        // → Show notification only (no ringtone, no call screen)
+        debugPrint('[Push] 🔕 App is BACKGROUND → Silent notification only');
+        _showIncomingCallNotification(message);
+      }
     } else if (message.notification != null) {
       _showLocalNotification(message);
     }
@@ -246,14 +270,27 @@ class PushNotificationService {
     debugPrint('[Push] Notification tapped: ${message.messageId}');
     debugPrint('[Push] Data: ${message.data}');
     
-    // TODO: Navigate to appropriate screen based on notification type
+    final data = message.data;
+    final type = data['type'] as String?;
+    
+    if (type == 'voice_call' || type == 'video_call') {
+      debugPrint('[Push] 🔔 Call notification tapped, showing call screen');
+      CallNavigationService().handleCallNotification(data);
+    }
   }
 
   /// Handle local notification tap
   void _onNotificationTap(NotificationResponse response) {
     debugPrint('[Push] Local notification tapped: ${response.payload}');
     
-    // TODO: Navigate to appropriate screen based on payload
+    final payload = response.payload;
+    if (payload != null && payload.isNotEmpty) {
+      // Payload is channelId for call notifications
+      debugPrint('[Push] 📱 Opening call with channel: $payload');
+      // Note: We need full call data to show incoming call screen
+      // This is a limitation of local notifications
+      // Background FCM notifications have full data via _handleNotificationTap
+    }
   }
 
   /// Send call notification to peer using Vercel API

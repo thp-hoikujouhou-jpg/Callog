@@ -10,6 +10,8 @@ import 'services/auth_service.dart';
 import 'services/theme_service.dart';
 import 'services/voice_call_service.dart';
 import 'services/push_notification_service.dart';
+import 'services/call_navigation_service.dart';
+import 'services/app_lifecycle_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
 
@@ -31,6 +33,9 @@ void main() async {
         options: DefaultFirebaseOptions.currentPlatform,
       );
     }
+    
+    // Initialize App Lifecycle Service (LINE/WhatsApp style)
+    AppLifecycleService().initialize();
     
     // Set up background message handler for push notifications
     // FirebaseMessaging.onBackgroundMessage(firebaseMessagingBackgroundHandler);
@@ -86,6 +91,7 @@ class CallogApp extends StatelessWidget {
           return MaterialApp(
             title: 'Callog',
             debugShowCheckedModeBanner: false,
+            navigatorKey: CallNavigationService.navigatorKey, // Enable global navigation
             themeMode: themeService.themeMode,
             theme: ThemeData(
               colorScheme: ColorScheme.fromSeed(
@@ -152,6 +158,8 @@ class _AuthWrapperState extends State<AuthWrapper> {
                   debugPrint('⚠️ Language loading failed (using default): $e');
                 }
               }
+              
+              // URL handling is done in MainFeedScreen initState
             }
           });
           
