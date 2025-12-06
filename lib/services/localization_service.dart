@@ -15,32 +15,55 @@ class LocalizationService extends ChangeNotifier {
   
   String get currentLanguage => _currentLanguage;
 
-  // Load language from Firestore with caching
-  Future<void> loadLanguageFromFirestore() async {
+  // Load language from Firestore - always reload on app start
+  Future<void> loadLanguageFromFirestore({bool forceReload = false}) async {
     // Prevent duplicate loading
     if (_isLoading) return;
     
     try {
       final user = _auth.currentUser;
       if (user != null) {
-        // Skip if already loaded for this user
-        if (_cachedUserId == user.uid) return;
+        // Skip if already loaded for this user (unless force reload)
+        if (!forceReload && _cachedUserId == user.uid) {
+          if (kDebugMode) {
+            debugPrint('🌐 [Localization] Using cached language: $_currentLanguage');
+          }
+          return;
+        }
         
         _isLoading = true;
+        
+        if (kDebugMode) {
+          debugPrint('🌐 [Localization] Loading language from Firestore for user: ${user.uid}');
+        }
+        
         final doc = await _firestore.collection('users').doc(user.uid).get();
         if (doc.exists) {
           final language = doc.data()?['language'] as String?;
+          if (kDebugMode) {
+            debugPrint('🌐 [Localization] Language from Firestore: $language');
+          }
+          
           if (language != null && supportedLanguages.containsKey(language)) {
             _currentLanguage = language;
             _cachedUserId = user.uid;
+            
+            if (kDebugMode) {
+              debugPrint('✅ [Localization] Language set to: $_currentLanguage');
+            }
+            
             notifyListeners(); // Notify all listeners when language is loaded
+          } else {
+            if (kDebugMode) {
+              debugPrint('⚠️ [Localization] No valid language found, using default: en');
+            }
           }
         }
       }
     } catch (e) {
       // If error, keep default language
       if (kDebugMode) {
-        debugPrint('Error loading language: $e');
+        debugPrint('❌ [Localization] Error loading language: $e');
       }
     } finally {
       _isLoading = false;

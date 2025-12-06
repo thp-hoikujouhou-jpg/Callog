@@ -38,7 +38,14 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   @override
   void initState() {
     super.initState();
-    _loadFriends();
+    
+    // Add a post-frame callback to ensure everything is initialized
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        _loadFriends();
+      }
+    });
+    
     _globalCleanupOldMessages(); // Clean up old messages on app start
     _initializePushNotifications(); // Initialize push notifications
     _handleUrlParameters(); // Handle URL parameters for incoming calls (Web)
@@ -117,7 +124,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
   void _handleIncomingCall(Map<String, dynamic> callData) {
     final callType = callData['callType'] as String;
     final callerName = callData['callerName'] as String;
-    final channelId = callData['channelId'] as String;
     final callerId = callData['callerId'] as String;
     final notificationId = callData['notificationId'] as String;
     

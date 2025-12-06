@@ -2,14 +2,12 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:firebase_messaging/firebase_messaging.dart';
 import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
 import 'services/theme_service.dart';
 import 'services/voice_call_service.dart';
-import 'services/push_notification_service.dart';
 import 'services/call_navigation_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'screens/login_screen.dart';
@@ -147,11 +145,12 @@ class _AuthWrapperState extends State<AuthWrapper> {
           // Get LocalizationService before addPostFrameCallback
           final localService = Provider.of<LocalizationService>(context, listen: false);
           
-          // Load language in background (non-blocking) with error handling
+          // Load language immediately (blocking) to ensure it's loaded before UI renders
           WidgetsBinding.instance.addPostFrameCallback((_) async {
             if (mounted) {
               try {
-                await localService.loadLanguageFromFirestore();
+                // Force reload language from Firestore on every app start
+                await localService.loadLanguageFromFirestore(forceReload: true);
               } catch (e) {
                 // Ignore language loading errors - use default English
                 if (kDebugMode) {
