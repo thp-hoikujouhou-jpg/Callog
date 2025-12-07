@@ -415,6 +415,22 @@ class AgoraVoiceCallService {
             } catch (e) {
               debugPrint('[Agora] ⚠️ Web: Volume adjustment: $e');
             }
+            
+            // CRITICAL: Force enable audio publishing
+            try {
+              await engine.enableLocalAudio(true);
+              debugPrint('[Agora] ✅ Web: Local audio explicitly enabled');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Web: Enable local audio: $e');
+            }
+            
+            // CRITICAL: Ensure microphone track is published
+            try {
+              await engine.muteLocalAudioStream(false);
+              debugPrint('[Agora] ✅ Web: Microphone track publish confirmed');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Web: Microphone publish: $e');
+            }
           } catch (e) {
             debugPrint('[Agora] ⚠️ Web: Audio unmute warning: $e');
           }
