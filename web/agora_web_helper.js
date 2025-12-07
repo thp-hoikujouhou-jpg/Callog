@@ -158,6 +158,7 @@ window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0
         // Play video in a div with id 'remote-video-container'
         const remoteContainer = document.getElementById('remote-video-container');
         if (remoteContainer) {
+          remoteContainer.style.display = 'block'; // Show remote video container
           remoteVideoTrack.play(remoteContainer);
           console.log('[AgoraWebHelper] 📹 Playing remote video from user:', user.uid);
         } else {
@@ -201,6 +202,7 @@ window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0
     // Play local video in a div with id 'local-video-container'
     const localContainer = document.getElementById('local-video-container');
     if (localContainer) {
+      localContainer.style.display = 'block'; // Show local video container
       videoTrack.play(localContainer);
       console.log('[AgoraWebHelper] 📹 Playing local video');
     } else {
@@ -275,6 +277,18 @@ window.agoraLeaveChannel = async function(channelName) {
       delete window.agoraClients[channelName];
       delete window.agoraAudioTracks[channelName];
       delete window.agoraVideoTracks[channelName];
+    }
+    
+    // Hide video containers
+    const localContainer = document.getElementById('local-video-container');
+    const remoteContainer = document.getElementById('remote-video-container');
+    if (localContainer) {
+      localContainer.style.display = 'none';
+      console.log('[AgoraWebHelper] 🙈 Local video container hidden');
+    }
+    if (remoteContainer) {
+      remoteContainer.style.display = 'none';
+      console.log('[AgoraWebHelper] 🙈 Remote video container hidden');
     }
     
   } catch (error) {
