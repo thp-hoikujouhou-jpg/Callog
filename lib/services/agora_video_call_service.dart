@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js' as js;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -296,7 +297,37 @@ class AgoraVideoCallService {
       
       _currentChannelName = channelName;
 
-      // Enable local video preview
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[AgoraVideo] 🌐 Web: Using Native Agora Web SDK Helper...');
+        try {
+          // Call JavaScript function: window.agoraJoinVideoChannel()
+          final result = await js.context.callMethod('agoraJoinVideoChannel', [
+            'd1a8161eb70448d89eea1722bc169c92', // App ID
+            channelName,
+            token ?? '',
+            uid
+          ]);
+          
+          debugPrint('[AgoraVideo] ✅ Native Web SDK joined successfully!');
+          debugPrint('[AgoraVideo] Result: $result');
+          
+          _isInCall = true;
+          
+          // Simulate remote user joined callback (since we're bypassing Flutter SDK)
+          Future.delayed(const Duration(seconds: 1), () {
+            debugPrint('[AgoraVideo] 🌐 Web: Waiting for remote user...');
+          });
+          
+          return; // Skip Flutter SDK joinChannel for Web
+        } catch (e) {
+          debugPrint('[AgoraVideo] ❌ Native Web SDK join failed: $e');
+          debugPrint('[AgoraVideo] 🔄 Falling back to Flutter SDK wrapper...');
+          // Continue to Flutter SDK below
+        }
+      }
+
+      // Enable local video preview (Mobile or Web fallback)
       try {
         await localEngine.startPreview();
         debugPrint('[AgoraVideo] ✅ Video preview started');
@@ -305,7 +336,7 @@ class AgoraVideoCallService {
         // Continue anyway
       }
 
-      // Join the channel
+      // Join the channel (Mobile or Web fallback)
       try {
         await localEngine.joinChannel(
           token: token ?? '',
@@ -361,6 +392,19 @@ class AgoraVideoCallService {
     try {
       debugPrint('[AgoraVideo] Leaving channel: $_currentChannelName');
       
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[AgoraVideo] 🌐 Web: Using Native Agora Web SDK Helper to leave...');
+        try {
+          // Call JavaScript function: window.agoraLeaveChannel()
+          await js.context.callMethod('agoraLeaveChannel', [_currentChannelName]);
+          debugPrint('[AgoraVideo] ✅ Native Web SDK left successfully!');
+        } catch (e) {
+          debugPrint('[AgoraVideo] ⚠️ Native Web SDK leave warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await engine?.stopPreview();
       await engine?.leaveChannel();
       
@@ -400,6 +444,21 @@ class AgoraVideoCallService {
     }
 
     try {
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[AgoraVideo] 🌐 Web: Using Native Agora Web SDK Helper to switch camera...');
+        try {
+          // Call JavaScript function: window.agoraSwitchCamera()
+          await js.context.callMethod('agoraSwitchCamera', [_currentChannelName]);
+          _isFrontCamera = !_isFrontCamera;
+          debugPrint('[AgoraVideo] ✅ Native Web SDK camera switched');
+          return;
+        } catch (e) {
+          debugPrint('[AgoraVideo] ⚠️ Native Web SDK switch camera warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await engine?.switchCamera();
       _isFrontCamera = !_isFrontCamera;
       debugPrint('[AgoraVideo] Switched to ${_isFrontCamera ? "front" : "back"} camera');
@@ -417,6 +476,19 @@ class AgoraVideoCallService {
     }
 
     try {
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[AgoraVideo] 🌐 Web: Using Native Agora Web SDK Helper to mute/unmute...');
+        try {
+          // Call JavaScript function: window.agoraMuteMicrophone()
+          await js.context.callMethod('agoraMuteMicrophone', [_currentChannelName, muted]);
+          debugPrint('[AgoraVideo] ✅ Native Web SDK mute: ${muted ? "muted" : "unmuted"}');
+        } catch (e) {
+          debugPrint('[AgoraVideo] ⚠️ Native Web SDK mute warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await engine?.muteLocalAudioStream(muted);
       debugPrint('[AgoraVideo] Local audio ${muted ? "muted" : "unmuted"}');
     } catch (e) {
@@ -433,6 +505,19 @@ class AgoraVideoCallService {
     }
 
     try {
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[AgoraVideo] 🌐 Web: Using Native Agora Web SDK Helper to toggle video...');
+        try {
+          // Call JavaScript function: window.agoraToggleVideo()
+          await js.context.callMethod('agoraToggleVideo', [_currentChannelName, !muted]);
+          debugPrint('[AgoraVideo] ✅ Native Web SDK video: ${muted ? "disabled" : "enabled"}');
+        } catch (e) {
+          debugPrint('[AgoraVideo] ⚠️ Native Web SDK toggle video warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await engine?.muteLocalVideoStream(muted);
       debugPrint('[AgoraVideo] Local video ${muted ? "disabled" : "enabled"}');
     } catch (e) {
