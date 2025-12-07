@@ -182,8 +182,26 @@ class AgoraVideoCallService {
           _isInCall = true;
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          debugPrint('[AgoraVideo] Remote user joined: $remoteUid');
+          debugPrint('[AgoraVideo] ═══════════════════════════════════════');
+          debugPrint('[AgoraVideo] 🎉 REMOTE USER JOINED!');
+          debugPrint('[AgoraVideo] Remote UID: $remoteUid');
+          debugPrint('[AgoraVideo] Channel: ${connection.channelId}');
+          debugPrint('[AgoraVideo] Platform: ${kIsWeb ? "Web" : "Mobile"}');
+          debugPrint('[AgoraVideo] ═══════════════════════════════════════');
           _remoteUid = remoteUid;
+          
+          // For Web: Ensure remote audio/video are not muted
+          if (kIsWeb && _engine != null) {
+            debugPrint('[AgoraVideo] 🌐 Web: Processing remote user...');
+            try {
+              _engine!.muteRemoteAudioStream(uid: remoteUid, mute: false);
+              _engine!.adjustUserPlaybackSignalVolume(uid: remoteUid, volume: 400);
+              debugPrint('[AgoraVideo] ✅ Web: Remote audio enabled for user $remoteUid');
+            } catch (e) {
+              debugPrint('[AgoraVideo] ⚠️ Web: Remote audio setup warning: $e');
+            }
+          }
+          
           onUserJoined?.call(remoteUid);
         },
         onUserOffline: (RtcConnection connection, int remoteUid, UserOfflineReasonType reason) {
