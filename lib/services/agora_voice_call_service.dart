@@ -1,4 +1,5 @@
 import 'dart:async';
+import 'dart:js' as js;
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 import 'package:flutter/foundation.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -392,9 +393,39 @@ class AgoraVoiceCallService {
       
       _currentChannelName = channelName;
 
-      // Join the channel (with Web SDK compatibility)
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[Agora] 🌐 Web: Using Native Agora Web SDK Helper...');
+        try {
+          // Call JavaScript function: window.agoraJoinAudioChannel()
+          final result = await js.context.callMethod('agoraJoinAudioChannel', [
+            appId,
+            channelName,
+            token ?? '',
+            uid
+          ]);
+          
+          debugPrint('[Agora] ✅ Native Web SDK joined successfully!');
+          debugPrint('[Agora] Result: $result');
+          
+          _isInCall = true;
+          
+          // Simulate remote user joined callback (since we're bypassing Flutter SDK)
+          Future.delayed(const Duration(seconds: 1), () {
+            debugPrint('[Agora] 🌐 Web: Waiting for remote user...');
+          });
+          
+          return; // Skip Flutter SDK joinChannel for Web
+        } catch (e) {
+          debugPrint('[Agora] ❌ Native Web SDK join failed: $e');
+          debugPrint('[Agora] 🔄 Falling back to Flutter SDK wrapper...');
+          // Continue to Flutter SDK below
+        }
+      }
+
+      // Join the channel (Mobile or Web fallback with Flutter SDK)
       try {
-        // CRITICAL: For Web, use Agora official documentation settings
+        // CRITICAL: For Mobile, use Agora official documentation settings
         // Reference: https://docs.agora.io/en/voice-calling/get-started/get-started-sdk?platform=web
         final mediaOptions = const ChannelMediaOptions(
           channelProfile: ChannelProfileType.channelProfileCommunication,
@@ -572,6 +603,19 @@ class AgoraVoiceCallService {
     try {
       debugPrint('[Agora] Leaving channel: $_currentChannelName');
       
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[Agora] 🌐 Web: Using Native Agora Web SDK Helper to leave...');
+        try {
+          // Call JavaScript function: window.agoraLeaveChannel()
+          await js.context.callMethod('agoraLeaveChannel', [_currentChannelName]);
+          debugPrint('[Agora] ✅ Native Web SDK left successfully!');
+        } catch (e) {
+          debugPrint('[Agora] ⚠️ Native Web SDK leave warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await _engine?.leaveChannel();
       
       _isInCall = false;
@@ -593,6 +637,19 @@ class AgoraVoiceCallService {
     }
 
     try {
+      // 🔥 CRITICAL FIX: For Web platform, use Native Agora Web SDK directly
+      if (kIsWeb) {
+        debugPrint('[Agora] 🌐 Web: Using Native Agora Web SDK Helper to mute/unmute...');
+        try {
+          // Call JavaScript function: window.agoraMuteMicrophone()
+          await js.context.callMethod('agoraMuteMicrophone', [_currentChannelName, muted]);
+          debugPrint('[Agora] ✅ Native Web SDK mute: ${muted ? "muted" : "unmuted"}');
+        } catch (e) {
+          debugPrint('[Agora] ⚠️ Native Web SDK mute warning: $e');
+          // Continue to Flutter SDK below
+        }
+      }
+      
       await _engine?.muteLocalAudioStream(muted);
       debugPrint('[Agora] Local audio ${muted ? "muted" : "unmuted"}');
     } catch (e) {

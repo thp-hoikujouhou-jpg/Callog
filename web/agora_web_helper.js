@@ -11,7 +11,7 @@ window.agoraAudioTracks = {};
 window.agoraVideoTracks = {};
 
 /**
- * Create and join Agora channel with audio
+ * Create and join Agora channel with audio only
  * 
  * @param {string} appId - Agora App ID
  * @param {string} channelName - Channel name to join
@@ -21,7 +21,7 @@ window.agoraVideoTracks = {};
  */
 window.agoraJoinAudioChannel = async function(appId, channelName, token, uid = 0) {
   try {
-    console.log('[AgoraWebHelper] 🚀 Creating audio client...');
+    console.log('[AgoraWebHelper] 🚀 Creating AUDIO-ONLY client...');
     console.log('[AgoraWebHelper] App ID:', appId);
     console.log('[AgoraWebHelper] Channel:', channelName);
     console.log('[AgoraWebHelper] Token:', token ? 'YES' : 'NO');
@@ -107,7 +107,135 @@ window.agoraJoinAudioChannel = async function(appId, channelName, token, uid = 0
     };
     
   } catch (error) {
-    console.error('[AgoraWebHelper] ❌ Error:', error);
+    console.error('[AgoraWebHelper] ❌ Error in agoraJoinAudioChannel:', error);
+    throw error;
+  }
+};
+
+/**
+ * Create and join Agora channel with audio + video
+ * 
+ * @param {string} appId - Agora App ID
+ * @param {string} channelName - Channel name to join
+ * @param {string} token - Agora token (optional)
+ * @param {number} uid - User ID (0 for auto-assign)
+ * @returns {Promise<object>} Client and tracks
+ */
+window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0) {
+  try {
+    console.log('[AgoraWebHelper] 🚀 Creating AUDIO+VIDEO client...');
+    console.log('[AgoraWebHelper] App ID:', appId);
+    console.log('[AgoraWebHelper] Channel:', channelName);
+    console.log('[AgoraWebHelper] Token:', token ? 'YES' : 'NO');
+    console.log('[AgoraWebHelper] UID:', uid);
+    
+    // Create client
+    const client = AgoraRTC.createClient({ 
+      mode: 'rtc', 
+      codec: 'vp8'
+    });
+    
+    // Store client globally
+    window.agoraClients[channelName] = client;
+    
+    // Set up event handlers
+    client.on('user-published', async (user, mediaType) => {
+      console.log('[AgoraWebHelper] ✅ User published:', user.uid, 'MediaType:', mediaType);
+      
+      // Subscribe to the remote user
+      await client.subscribe(user, mediaType);
+      console.log('[AgoraWebHelper] ✅ Subscribed to user:', user.uid);
+      
+      if (mediaType === 'audio') {
+        const remoteAudioTrack = user.audioTrack;
+        remoteAudioTrack.play();
+        remoteAudioTrack.setVolume(100);
+        console.log('[AgoraWebHelper] 🔊 Playing remote audio from user:', user.uid);
+      }
+      
+      if (mediaType === 'video') {
+        const remoteVideoTrack = user.videoTrack;
+        // Play video in a div with id 'remote-video-container'
+        const remoteContainer = document.getElementById('remote-video-container');
+        if (remoteContainer) {
+          remoteVideoTrack.play(remoteContainer);
+          console.log('[AgoraWebHelper] 📹 Playing remote video from user:', user.uid);
+        } else {
+          console.warn('[AgoraWebHelper] ⚠️ remote-video-container not found, cannot play video');
+        }
+      }
+    });
+    
+    client.on('user-unpublished', (user, mediaType) => {
+      console.log('[AgoraWebHelper] 👋 User unpublished:', user.uid, 'MediaType:', mediaType);
+    });
+    
+    client.on('user-joined', (user) => {
+      console.log('[AgoraWebHelper] 🎉 User joined channel:', user.uid);
+    });
+    
+    client.on('user-left', (user, reason) => {
+      console.log('[AgoraWebHelper] 👋 User left channel:', user.uid, 'Reason:', reason);
+    });
+    
+    // Join channel
+    console.log('[AgoraWebHelper] 📡 Joining channel...');
+    const assignedUid = await client.join(appId, channelName, token || null, uid);
+    console.log('[AgoraWebHelper] ✅ Joined channel successfully!');
+    console.log('[AgoraWebHelper] Assigned UID:', assignedUid);
+    
+    // Create local audio track
+    console.log('[AgoraWebHelper] 🎤 Creating microphone audio track...');
+    const audioTrack = await AgoraRTC.createMicrophoneAudioTrack({
+      encoderConfig: 'high_quality_stereo',
+    });
+    console.log('[AgoraWebHelper] ✅ Microphone audio track created');
+    
+    // Create local video track
+    console.log('[AgoraWebHelper] 📹 Creating camera video track...');
+    const videoTrack = await AgoraRTC.createCameraVideoTrack({
+      encoderConfig: '720p_2',
+    });
+    console.log('[AgoraWebHelper] ✅ Camera video track created');
+    
+    // Play local video in a div with id 'local-video-container'
+    const localContainer = document.getElementById('local-video-container');
+    if (localContainer) {
+      videoTrack.play(localContainer);
+      console.log('[AgoraWebHelper] 📹 Playing local video');
+    } else {
+      console.warn('[AgoraWebHelper] ⚠️ local-video-container not found, cannot play local video');
+    }
+    
+    // Store tracks globally
+    window.agoraAudioTracks[channelName] = audioTrack;
+    window.agoraVideoTracks[channelName] = videoTrack;
+    
+    // Set audio volume to maximum
+    audioTrack.setVolume(100);
+    console.log('[AgoraWebHelper] 🔊 Local audio volume set to 100');
+    
+    // Publish audio and video tracks
+    console.log('[AgoraWebHelper] 📤 Publishing audio and video tracks...');
+    await client.publish([audioTrack, videoTrack]);
+    console.log('[AgoraWebHelper] ✅ Audio and video tracks published successfully!');
+    
+    // Log current remote users
+    const remoteUsers = client.remoteUsers;
+    console.log('[AgoraWebHelper] 👥 Current remote users:', remoteUsers.length);
+    remoteUsers.forEach(user => {
+      console.log('[AgoraWebHelper]   - User:', user.uid, 'Audio:', user.hasAudio, 'Video:', user.hasVideo);
+    });
+    
+    return {
+      client: client,
+      audioTrack: audioTrack,
+      videoTrack: videoTrack,
+      uid: assignedUid
+    };
+    
+  } catch (error) {
+    console.error('[AgoraWebHelper] ❌ Error in agoraJoinVideoChannel:', error);
     throw error;
   }
 };
@@ -123,6 +251,13 @@ window.agoraLeaveChannel = async function(channelName) {
     
     const client = window.agoraClients[channelName];
     const audioTrack = window.agoraAudioTracks[channelName];
+    const videoTrack = window.agoraVideoTracks[channelName];
+    
+    if (videoTrack) {
+      // Close and release video track
+      videoTrack.close();
+      console.log('[AgoraWebHelper] ✅ Video track closed');
+    }
     
     if (audioTrack) {
       // Close and release audio track
@@ -139,6 +274,7 @@ window.agoraLeaveChannel = async function(channelName) {
       // Clean up
       delete window.agoraClients[channelName];
       delete window.agoraAudioTracks[channelName];
+      delete window.agoraVideoTracks[channelName];
     }
     
   } catch (error) {
@@ -161,6 +297,50 @@ window.agoraMuteMicrophone = async function(channelName, muted) {
     }
   } catch (error) {
     console.error('[AgoraWebHelper] ❌ Mute error:', error);
+  }
+};
+
+/**
+ * Toggle video camera
+ * 
+ * @param {string} channelName - Channel name
+ * @param {boolean} enabled - True to enable, false to disable
+ */
+window.agoraToggleVideo = async function(channelName, enabled) {
+  try {
+    const videoTrack = window.agoraVideoTracks[channelName];
+    if (videoTrack) {
+      await videoTrack.setEnabled(enabled);
+      console.log('[AgoraWebHelper]', enabled ? '📹 Video enabled' : '🔲 Video disabled');
+    }
+  } catch (error) {
+    console.error('[AgoraWebHelper] ❌ Toggle video error:', error);
+  }
+};
+
+/**
+ * Switch camera (front/back)
+ * 
+ * @param {string} channelName - Channel name
+ */
+window.agoraSwitchCamera = async function(channelName) {
+  try {
+    const videoTrack = window.agoraVideoTracks[channelName];
+    if (videoTrack) {
+      const devices = await AgoraRTC.getCameras();
+      if (devices.length > 1) {
+        const currentDevice = videoTrack.getMediaStreamTrack().getSettings().deviceId;
+        const nextDevice = devices.find(d => d.deviceId !== currentDevice);
+        if (nextDevice) {
+          await videoTrack.setDevice(nextDevice.deviceId);
+          console.log('[AgoraWebHelper] 🔄 Switched to camera:', nextDevice.label);
+        }
+      } else {
+        console.warn('[AgoraWebHelper] ⚠️ Only one camera available');
+      }
+    }
+  } catch (error) {
+    console.error('[AgoraWebHelper] ❌ Switch camera error:', error);
   }
 };
 
