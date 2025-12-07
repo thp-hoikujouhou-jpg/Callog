@@ -265,6 +265,21 @@ class AgoraVoiceCallService {
           try {
             await currentEngine.enableLocalAudio(true);
             debugPrint('[Agora] ✅ Local audio enabled for Web');
+            
+            // Set audio recording/playback volume to maximum
+            try {
+              await currentEngine.adjustRecordingSignalVolume(100);
+              debugPrint('[Agora] ✅ Recording volume set to 100');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Recording volume adjustment warning: $e');
+            }
+            
+            try {
+              await currentEngine.adjustPlaybackSignalVolume(100);
+              debugPrint('[Agora] ✅ Playback volume set to 100');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Playback volume adjustment warning: $e');
+            }
           } catch (e) {
             debugPrint('[Agora] ⚠️ Web: enableLocalAudio failed (may be expected): $e');
           }
@@ -379,6 +394,15 @@ class AgoraVoiceCallService {
           try {
             await engine.muteLocalAudioStream(false); // Ensure not muted
             debugPrint('[Agora] ✅ Web: Audio unmuted');
+            
+            // CRITICAL: Set maximum volumes for both recording and playback
+            try {
+              await engine.adjustRecordingSignalVolume(400); // Max volume (0-400)
+              await engine.adjustPlaybackSignalVolume(400);  // Max volume (0-400)
+              debugPrint('[Agora] ✅ Web: Audio volumes maximized (400/400)');
+            } catch (e) {
+              debugPrint('[Agora] ⚠️ Web: Volume adjustment: $e');
+            }
           } catch (e) {
             debugPrint('[Agora] ⚠️ Web: Audio unmute warning: $e');
           }

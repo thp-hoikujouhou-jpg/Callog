@@ -144,8 +144,13 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       
       // Use provided channel name or generate one
       final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
-      debugPrint('📞 [Agora Screen] Joining channel: $channelName');
-      debugPrint('📞 [Agora Screen] Call type: ${widget.isIncoming ? "Incoming" : "Outgoing"}');
+      debugPrint('📞 [Agora Screen] ═══════════════════════════════════════');
+      debugPrint('📞 [Agora Screen] VOICE CALL SETUP');
+      debugPrint('📞 [Agora Screen] Channel: $channelName');
+      debugPrint('📞 [Agora Screen] Call type: ${widget.isIncoming ? "Incoming (ANSWERED)" : "Outgoing (CALLING)"}');
+      debugPrint('📞 [Agora Screen] Friend ID: ${widget.friendId}');
+      debugPrint('📞 [Agora Screen] Friend Name: ${widget.friendName}');
+      debugPrint('📞 [Agora Screen] ═══════════════════════════════════════');
       
       // Generate Agora token using Cloud Functions
       String? token;
@@ -168,8 +173,11 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       debugPrint('✅ [Agora Screen] Join channel request sent');
       
       // Web SDK workaround: Force connection after timeout if onUserJoined doesn't fire
+      // For incoming calls: User has already answered, so timeout is appropriate
+      // For outgoing calls: Timeout helps if peer doesn't respond to notification
       if (kIsWeb) {
         debugPrint('🌐 [Agora Screen] Web: Setting up connection timeout (5 seconds)');
+        debugPrint('📞 [Agora Screen] Call type: ${widget.isIncoming ? "Incoming (answered)" : "Outgoing"}');
         Future.delayed(const Duration(seconds: 5), () {
           if (mounted && _isConnecting && !_isConnected) {
             debugPrint('⏰ [Agora Screen] Timeout: Force-connecting to call (Web workaround)');

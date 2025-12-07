@@ -155,8 +155,11 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       debugPrint('✅ [Agora Video] Join channel request sent');
       
       // Web SDK workaround: Force connection after timeout if onUserJoined doesn't fire
+      // For incoming calls: User has already answered, so timeout is appropriate
+      // For outgoing calls: Timeout helps if peer doesn't respond to notification
       if (kIsWeb) {
         debugPrint('🌐 [Agora Video] Web: Setting up connection timeout (5 seconds)');
+        debugPrint('📞 [Agora Video] Call type: ${widget.isIncoming ? "Incoming (answered)" : "Outgoing"}');
         Future.delayed(const Duration(seconds: 5), () {
           if (mounted && _isConnecting && !_isConnected) {
             debugPrint('⏰ [Agora Video] Timeout: Force-connecting to call (Web workaround)');
