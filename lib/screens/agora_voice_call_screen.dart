@@ -155,6 +155,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       // Generate Agora token using Cloud Functions
       String? token;
       try {
+        debugPrint('🔑 [Agora Screen] Attempting to generate token...');
         final tokenService = AgoraTokenService();
         final tokenData = await tokenService.generateToken(
           channelName: channelName,
@@ -162,10 +163,24 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           role: 'publisher',
         );
         token = tokenData['token'];
-        debugPrint('✅ [Agora Screen] Token generated: ${token != null ? "Yes" : "No (using null token)"}');
+        if (token != null && token.isNotEmpty) {
+          debugPrint('✅ [Agora Screen] Token generated successfully');
+          debugPrint('🔑 [Agora Screen] Token length: ${token.length}');
+        } else {
+          debugPrint('⚠️ [Agora Screen] Token is null or empty');
+        }
       } catch (e) {
-        debugPrint('⚠️ [Agora Screen] Failed to generate token: $e');
-        debugPrint('⚠️ [Agora Screen] Continuing with null token...');
+        debugPrint('❌ [Agora Screen] Token generation FAILED: $e');
+        debugPrint('⚠️ [Agora Screen] Continuing WITHOUT token (testing mode)');
+        debugPrint('💡 [Agora Screen] Note: Agora project must have "Testing Mode" enabled');
+      }
+      
+      // CRITICAL: Log token status
+      if (token == null || token.isEmpty) {
+        debugPrint('⚠️ [Agora Screen] ═══════════════════════════════════════');
+        debugPrint('⚠️ [Agora Screen] JOINING CHANNEL WITHOUT TOKEN');
+        debugPrint('⚠️ [Agora Screen] This requires Agora project in Testing Mode');
+        debugPrint('⚠️ [Agora Screen] ═══════════════════════════════════════');
       }
       
       // Join the channel with token

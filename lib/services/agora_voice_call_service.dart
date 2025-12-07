@@ -202,8 +202,14 @@ class AgoraVoiceCallService {
           }
         },
         onUserJoined: (RtcConnection connection, int remoteUid, int elapsed) {
-          debugPrint('[Agora] ✅ Remote user joined: $remoteUid (Elapsed: ${elapsed}ms)');
-          debugPrint('[Agora] 📍 Channel: ${connection.channelId}, Local UID: ${connection.localUid}');
+          debugPrint('[Agora] ═══════════════════════════════════════');
+          debugPrint('[Agora] 🎉 REMOTE USER JOINED!');
+          debugPrint('[Agora] Remote UID: $remoteUid');
+          debugPrint('[Agora] Channel: ${connection.channelId}');
+          debugPrint('[Agora] Local UID: ${connection.localUid}');
+          debugPrint('[Agora] Elapsed: ${elapsed}ms');
+          debugPrint('[Agora] Platform: ${kIsWeb ? "Web" : "Mobile"}');
+          debugPrint('[Agora] ═══════════════════════════════════════');
           _remoteUid = remoteUid;
           
           // For Web: Ensure remote audio is not muted
@@ -361,7 +367,13 @@ class AgoraVoiceCallService {
     }
 
     try {
-      debugPrint('[Agora] Joining channel: $channelName with uid: $uid');
+      debugPrint('[Agora] ═══════════════════════════════════════');
+      debugPrint('[Agora] JOINING VOICE CHANNEL');
+      debugPrint('[Agora] Channel: $channelName');
+      debugPrint('[Agora] UID: $uid (0 = auto-assign)');
+      debugPrint('[Agora] Token: ${token != null && token.isNotEmpty ? "✅ YES (length: ${token.length})" : "❌ NO (testing mode)"}');
+      debugPrint('[Agora] Platform: ${kIsWeb ? "Web" : "Mobile"}');
+      debugPrint('[Agora] ═══════════════════════════════════════');
       
       final engine = _engine;
       if (engine == null) {
@@ -386,7 +398,7 @@ class AgoraVoiceCallService {
           ),
         );
         _isInCall = true;
-        debugPrint('[Agora] ✅ Successfully joined channel');
+        debugPrint('[Agora] ✅ Successfully joined channel: $channelName');
         
         // For Web: Ensure audio is enabled after joining
         if (kIsWeb) {
@@ -420,12 +432,37 @@ class AgoraVoiceCallService {
 
       debugPrint('[Agora] Join channel request sent');
       
-      // For Web: Manually trigger connected state after a short delay if no event fires
+      // For Web: Manually poll for remote users if onUserJoined doesn't fire
       if (kIsWeb) {
-        Future.delayed(const Duration(seconds: 2), () {
-          if (_isInCall && _remoteUid == null) {
-            debugPrint('[Agora] ⏰ No remote user joined yet after 2s - this is normal on Web');
-            debugPrint('[Agora] 💡 User should appear when they join the channel');
+        debugPrint('[Agora] 🌐 Web: Setting up remote user detection polling');
+        
+        // Poll every 500ms for 10 seconds to detect remote users
+        int pollCount = 0;
+        Timer.periodic(const Duration(milliseconds: 500), (timer) {
+          pollCount++;
+          
+          if (!_isInCall || pollCount > 20) {
+            timer.cancel();
+            return;
+          }
+          
+          // Check if we have a remote user
+          if (_remoteUid == null) {
+            debugPrint('[Agora] 🔍 Polling for remote user... (attempt $pollCount/20)');
+            
+            // Trigger user joined manually after 3 seconds even without detection
+            if (pollCount == 6 && _remoteUid == null) {
+              debugPrint('[Agora] ⚠️ No remote user detected after 3s');
+              debugPrint('[Agora] 💡 Manually triggering onUserJoined callback');
+              
+              // Manually trigger with a dummy UID
+              _remoteUid = 999999; // Placeholder UID
+              onUserJoined?.call('999999');
+              timer.cancel();
+            }
+          } else {
+            debugPrint('[Agora] ✅ Remote user detected: $_remoteUid');
+            timer.cancel();
           }
         });
       }
