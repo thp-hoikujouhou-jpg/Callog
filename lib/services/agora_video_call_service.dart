@@ -191,11 +191,11 @@ class AgoraVideoCallService {
           _remoteUid = remoteUid;
           
           // For Web: Ensure remote audio/video are not muted
-          if (kIsWeb && _engine != null) {
+          if (kIsWeb && engine != null) {
             debugPrint('[AgoraVideo] 🌐 Web: Processing remote user...');
             try {
-              _engine!.muteRemoteAudioStream(uid: remoteUid, mute: false);
-              _engine!.adjustUserPlaybackSignalVolume(uid: remoteUid, volume: 400);
+              engine!.muteRemoteAudioStream(uid: remoteUid, mute: false);
+              engine!.adjustUserPlaybackSignalVolume(uid: remoteUid, volume: 400);
               debugPrint('[AgoraVideo] ✅ Web: Remote audio enabled for user $remoteUid');
             } catch (e) {
               debugPrint('[AgoraVideo] ⚠️ Web: Remote audio setup warning: $e');
