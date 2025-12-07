@@ -394,7 +394,8 @@ class AgoraVoiceCallService {
 
       // Join the channel (with Web SDK compatibility)
       try {
-        // CRITICAL: For Web, use more aggressive audio settings
+        // CRITICAL: For Web, use Agora official documentation settings
+        // Reference: https://docs.agora.io/en/voice-calling/get-started/get-started-sdk?platform=web
         final mediaOptions = const ChannelMediaOptions(
           channelProfile: ChannelProfileType.channelProfileCommunication,
           clientRoleType: ClientRoleType.clientRoleBroadcaster,
@@ -404,7 +405,11 @@ class AgoraVoiceCallService {
           autoSubscribeVideo: false, // Audio only
         );
         
-        debugPrint('[Agora] 📤 Channel options: autoSubscribeAudio=true, publishMicrophoneTrack=true');
+        debugPrint('[Agora] 📤 Channel options based on official docs:');
+        debugPrint('[Agora]    channelProfile: COMMUNICATION');
+        debugPrint('[Agora]    clientRole: BROADCASTER');
+        debugPrint('[Agora]    autoSubscribeAudio: true');
+        debugPrint('[Agora]    publishMicrophoneTrack: true');
         
         await engine.joinChannel(
           token: token ?? '', // Use empty string if no token provided

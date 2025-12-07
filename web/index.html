@@ -33,7 +33,9 @@
   <link rel="manifest" href="manifest.json">
 
   <!-- Agora Web SDK for voice and video calls -->
-  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.21.0.js"></script>
+  <!-- Using v4.24.1 - Fixes Chrome 136/137 audio transmission bug -->
+  <!-- Reference: https://agoraio.zendesk.com/hc/en-us/articles/38207815495572 -->
+  <script src="https://download.agora.io/sdk/release/AgoraRTC_N-4.24.1.js"></script>
   
   <!-- Verify Agora SDK is loaded -->
   <script>
