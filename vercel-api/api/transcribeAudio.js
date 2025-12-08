@@ -1,11 +1,11 @@
 /**
- * Vercel API Endpoint: Audio Transcription with Gemini AI
+ * Vercel API Endpoint: Audio Transcription with Google Cloud Speech-to-Text
  * 
- * This endpoint downloads audio from Firebase Storage and transcribes it using Gemini AI.
- * It bypasses CORS issues by running server-side.
+ * This endpoint downloads audio from Firebase Storage and transcribes it using 
+ * Google Cloud Speech-to-Text API (専用の文字起こしAPI).
  */
 
-import { GoogleGenerativeAI } from '@google/generative-ai';
+import { SpeechClient } from '@google-cloud/speech';
 import fetch from 'node-fetch';
 
 export default async function handler(req, res) {
@@ -25,12 +25,12 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { audioUrl, audioFormat } = req.body;
+    const { audioUrl, audioFormat, languageCode = 'ja-JP' } = req.body;
     
-    // Get Gemini API Key from environment variable (priority) or request body (fallback)
-    const apiKey = process.env.GEMINI_API_KEY || req.body.apiKey;
+    // Get Google Cloud credentials from environment variable
+    const credentialsJson = process.env.GOOGLE_CLOUD_CREDENTIALS;
 
-    console.log('[TranscribeAudio] 🔑 API Key check:', apiKey ? '✅ Available' : '❌ Missing');
+    console.log('[TranscribeAudio] 🔑 Credentials check:', credentialsJson ? '✅ Available' : '❌ Missing');
 
     // Validate required parameters
     if (!audioUrl || !audioFormat) {
@@ -40,16 +40,16 @@ export default async function handler(req, res) {
       });
     }
     
-    if (!apiKey) {
+    if (!credentialsJson) {
       return res.status(500).json({
-        error: 'GEMINI_API_KEY not configured in environment variables or request body'
+        error: 'GOOGLE_CLOUD_CREDENTIALS not configured in environment variables'
       });
     }
 
     console.log('[TranscribeAudio] 🎙️ Starting transcription...');
     console.log('[TranscribeAudio]    Audio URL:', audioUrl);
     console.log('[TranscribeAudio]    Format:', audioFormat);
-    console.log('[TranscribeAudio]    API Key source:', process.env.GEMINI_API_KEY ? 'Environment Variable' : 'Request Body');
+    console.log('[TranscribeAudio]    Language:', languageCode);
 
     // Download audio file from Firebase Storage
     console.log('[TranscribeAudio] 📥 Downloading audio file...');
@@ -68,45 +68,64 @@ export default async function handler(req, res) {
     
     console.log('[TranscribeAudio] ✅ Audio downloaded:', audioBytes.length, 'bytes');
 
-    // Initialize Gemini AI
-    const genAI = new GoogleGenerativeAI(apiKey);
-    // Use gemini-1.5-flash-002 (stable model for audio transcription)
-    const model = genAI.getGenerativeModel({ model: 'gemini-1.5-flash-002' });
+    // Initialize Speech-to-Text client with credentials
+    const credentials = JSON.parse(credentialsJson);
+    const client = new SpeechClient({ credentials });
 
-    console.log('[TranscribeAudio] 🤖 Sending to Gemini AI...');
+    console.log('[TranscribeAudio] 🤖 Sending to Google Cloud Speech-to-Text...');
 
-    // Determine MIME type
-    const mimeType = audioFormat === 'webm' ? 'audio/webm' : 'audio/m4a';
-
-    // Create prompt and audio part
-    const prompt = `音声ファイルの内容を正確に文字起こししてください。
-会話の内容をそのまま文字に起こし、話者が複数いる場合は区別してください。
-句読点や改行を適切に挿入して、読みやすい形式にしてください。`;
-
-    const audioPart = {
-      inlineData: {
-        data: audioBytes.toString('base64'),
-        mimeType: mimeType,
-      },
+    // Configure audio recognition request
+    const audio = {
+      content: audioBytes.toString('base64'),
     };
 
-    // Generate transcription
-    const result = await model.generateContent([prompt, audioPart]);
-    const transcription = result.response.text();
+    const config = {
+      encoding: audioFormat === 'webm' ? 'WEBM_OPUS' : 'LINEAR16',
+      sampleRateHertz: 48000, // Web Audio standard sample rate
+      languageCode: languageCode,
+      enableAutomaticPunctuation: true, // 句読点の自動挿入
+      enableSpeakerDiarization: true,   // 話者分離
+      diarizationSpeakerCount: 2,       // 最大2名の話者を想定
+      model: 'default',                 // 最新の汎用モデル
+    };
 
-    if (!transcription || transcription.trim().length === 0) {
+    const request = {
+      audio: audio,
+      config: config,
+    };
+
+    // Perform transcription
+    const [response] = await client.recognize(request);
+    
+    if (!response.results || response.results.length === 0) {
       console.warn('[TranscribeAudio] ⚠️ Empty transcription result');
       return res.status(500).json({ error: 'Empty transcription result' });
     }
 
+    // Extract transcription text with speaker labels
+    const transcription = response.results
+      .map(result => {
+        const alternative = result.alternatives[0];
+        if (result.words && result.words[0].speakerTag) {
+          // 話者タグがある場合
+          const speakerTag = result.words[0].speakerTag;
+          return `[話者${speakerTag}]: ${alternative.transcript}`;
+        }
+        return alternative.transcript;
+      })
+      .join('\n');
+
     console.log('[TranscribeAudio] ✅ Transcription completed');
     console.log('[TranscribeAudio]    Length:', transcription.length, 'characters');
+    console.log('[TranscribeAudio]    Results count:', response.results.length);
 
     // Return transcription
     return res.status(200).json({ 
       transcription: transcription,
       audioFormat: audioFormat,
       audioSize: audioBytes.length,
+      languageCode: languageCode,
+      resultsCount: response.results.length,
     });
 
   } catch (error) {
