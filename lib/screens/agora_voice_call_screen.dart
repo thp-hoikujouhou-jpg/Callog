@@ -9,6 +9,7 @@ import '../services/push_notification_service.dart';
 import '../services/auth_service.dart';
 import '../services/call_recording_service.dart';
 import '../services/gemini_transcription_service.dart';
+import '../services/localization_service.dart';
 import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
@@ -417,11 +418,11 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
         if (recording != null) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: Text('✅ 録音を保存しました (${recording.formattedDuration})'),
+              content: Text('✅ ${LocalizationService().translate('recording_saved')} (${recording.formattedDuration})'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
               action: SnackBarAction(
-                label: '文字起こし',
+                label: LocalizationService().translate('transcribe'),
                 textColor: Colors.white,
                 onPressed: () => _startTranscription(recording),
               ),
@@ -432,8 +433,8 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           _startTranscription(recording);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('⚠️ 録音の保存に失敗しました'),
+            SnackBar(
+              content: Text('⚠️ ${LocalizationService().translate('recording_save_failed')}'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -454,10 +455,10 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
+          SnackBar(
             content: Row(
               children: [
-                SizedBox(
+                const SizedBox(
                   width: 20,
                   height: 20,
                   child: CircularProgressIndicator(
@@ -465,12 +466,12 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                     valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
                   ),
                 ),
-                SizedBox(width: 16),
-                Text('🤖 Gemini AIで文字起こし中...'),
+                const SizedBox(width: 16),
+                Text('🤖 ${LocalizationService().translate('transcribing_with_ai')}'),
               ],
             ),
             backgroundColor: Colors.blue,
-            duration: Duration(seconds: 5),
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -489,10 +490,10 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
         if (transcription != null && transcription.isNotEmpty) {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
-              content: const Text('✅ 文字起こしが完了しました'),
+              content: Text('✅ ${LocalizationService().translate('transcription_completed')}'),
               backgroundColor: Colors.green,
               action: SnackBarAction(
-                label: '確認',
+                label: LocalizationService().translate('confirm_button'),
                 textColor: Colors.white,
                 onPressed: () => _showTranscriptionDialog(transcription),
               ),
@@ -500,8 +501,8 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
           );
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('⚠️ 文字起こしに失敗しました'),
+            SnackBar(
+              content: Text('⚠️ ${LocalizationService().translate('transcription_failed')}'),
               backgroundColor: Colors.orange,
             ),
           );
@@ -520,7 +521,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('❌ 文字起こしエラー: $e'),
+            content: Text('❌ ${LocalizationService().translate('transcription_error')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -533,11 +534,11 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
     showDialog(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Row(
+        title: Row(
           children: [
-            Icon(Icons.text_snippet, color: Colors.blue),
-            SizedBox(width: 8),
-            Text('文字起こし結果'),
+            const Icon(Icons.text_snippet, color: Colors.blue),
+            const SizedBox(width: 8),
+            Text(LocalizationService().translate('transcription_result')),
           ],
         ),
         content: SingleChildScrollView(
@@ -549,7 +550,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context),
-            child: const Text('閉じる'),
+            child: Text(LocalizationService().translate('close')),
           ),
         ],
       ),
