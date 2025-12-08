@@ -28,12 +28,17 @@ class WebAudioRecorder {
       }
 
       // マイク権限をリクエスト (高品質設定)
-      final audioConstraints = js.JSObject();
-      audioConstraints.setProperty('echoCancellation'.toJS, true.toJS); // エコーキャンセル
-      audioConstraints.setProperty('noiseSuppression'.toJS, true.toJS); // ノイズ除去
-      audioConstraints.setProperty('autoGainControl'.toJS, true.toJS);  // 自動ゲイン調整
-      audioConstraints.setProperty('sampleRate'.toJS, 48000.toJS);      // 48kHz (高品質)
-      audioConstraints.setProperty('channelCount'.toJS, 1.toJS);        // モノラル (音声認識最適)
+      // Create audio constraints map
+      final audioConstraintsMap = <String, dynamic>{
+        'echoCancellation': true,  // エコーキャンセル
+        'noiseSuppression': true,  // ノイズ除去
+        'autoGainControl': true,   // 自動ゲイン調整
+        'sampleRate': 48000,       // 48kHz (高品質)
+        'channelCount': 1,         // モノラル (音声認識最適)
+      };
+      
+      // Convert to JS object
+      final audioConstraints = audioConstraintsMap.jsify() as js.JSObject;
       
       final streamPromise = web.window.navigator.mediaDevices.getUserMedia(
         web.MediaStreamConstraints(
