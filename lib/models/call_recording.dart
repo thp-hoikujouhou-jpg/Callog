@@ -9,6 +9,11 @@ class CallRecording {
   final DateTime timestamp;
   final String? callPartner;
   final String callType; // 'audio' or 'video'
+  
+  // Transcription fields
+  final String? transcription;
+  final String? transcriptionStatus; // 'processing', 'completed', 'failed', null
+  final DateTime? transcriptionTimestamp;
 
   CallRecording({
     required this.id,
@@ -19,6 +24,9 @@ class CallRecording {
     required this.timestamp,
     this.callPartner,
     this.callType = 'audio',
+    this.transcription,
+    this.transcriptionStatus,
+    this.transcriptionTimestamp,
   });
 
   // Convert to Map for Firestore
@@ -32,6 +40,11 @@ class CallRecording {
       'timestamp': Timestamp.fromDate(timestamp),
       'callPartner': callPartner,
       'callType': callType,
+      'transcription': transcription,
+      'transcriptionStatus': transcriptionStatus,
+      'transcriptionTimestamp': transcriptionTimestamp != null 
+          ? Timestamp.fromDate(transcriptionTimestamp!) 
+          : null,
     };
   }
 
@@ -46,6 +59,11 @@ class CallRecording {
       timestamp: (map['timestamp'] as Timestamp).toDate(),
       callPartner: map['callPartner'],
       callType: map['callType'] ?? 'audio',
+      transcription: map['transcription'] as String?,
+      transcriptionStatus: map['transcriptionStatus'] as String?,
+      transcriptionTimestamp: map['transcriptionTimestamp'] != null
+          ? (map['transcriptionTimestamp'] as Timestamp).toDate()
+          : null,
     );
   }
 
@@ -59,6 +77,9 @@ class CallRecording {
     DateTime? timestamp,
     String? callPartner,
     String? callType,
+    String? transcription,
+    String? transcriptionStatus,
+    DateTime? transcriptionTimestamp,
   }) {
     return CallRecording(
       id: id ?? this.id,
@@ -69,6 +90,9 @@ class CallRecording {
       timestamp: timestamp ?? this.timestamp,
       callPartner: callPartner ?? this.callPartner,
       callType: callType ?? this.callType,
+      transcription: transcription ?? this.transcription,
+      transcriptionStatus: transcriptionStatus ?? this.transcriptionStatus,
+      transcriptionTimestamp: transcriptionTimestamp ?? this.transcriptionTimestamp,
     );
   }
 

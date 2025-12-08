@@ -8,6 +8,7 @@ import '../services/call_history_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/auth_service.dart';
 import '../services/call_recording_service.dart';
+import '../services/gemini_transcription_service.dart';
 import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
@@ -43,6 +44,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   final AgoraVoiceCallService _callService = AgoraVoiceCallService();
   final CallHistoryService _historyService = CallHistoryService();
   final CallRecordingService _recordingService = CallRecordingService();
+  final GeminiTranscriptionService _transcriptionService = GeminiTranscriptionService();
   
   // Call State
   bool _isConnecting = true;
@@ -418,8 +420,16 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
               content: Text('✅ 録音を保存しました (${recording.formattedDuration})'),
               backgroundColor: Colors.green,
               duration: const Duration(seconds: 3),
+              action: SnackBarAction(
+                label: '文字起こし',
+                textColor: Colors.white,
+                onPressed: () => _startTranscription(recording),
+              ),
             ),
           );
+          
+          // Automatically start transcription
+          _startTranscription(recording);
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             const SnackBar(
@@ -430,6 +440,120 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
         }
       }
     }
+  }
+
+  /// Start transcription for a recording
+  Future<void> _startTranscription(dynamic recording) async {
+    try {
+      debugPrint('🤖 [Transcription] Starting transcription...');
+      debugPrint('🤖 [Transcription] Recording ID: ${recording.id}');
+      debugPrint('🤖 [Transcription] Recording URL: ${recording.recordingUrl}');
+      
+      // Update status to processing
+      await _transcriptionService.updateTranscriptionStatus(recording.id, 'processing');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(
+            content: Row(
+              children: [
+                SizedBox(
+                  width: 20,
+                  height: 20,
+                  child: CircularProgressIndicator(
+                    strokeWidth: 2,
+                    valueColor: AlwaysStoppedAnimation<Color>(Colors.white),
+                  ),
+                ),
+                SizedBox(width: 16),
+                Text('🤖 Gemini AIで文字起こし中...'),
+              ],
+            ),
+            backgroundColor: Colors.blue,
+            duration: Duration(seconds: 5),
+          ),
+        );
+      }
+      
+      // Determine audio format from URL
+      final String audioFormat = recording.recordingUrl.contains('.webm') ? 'webm' : 'm4a';
+      
+      // Start transcription in background
+      final transcription = await _transcriptionService.transcribeAudio(
+        recordingId: recording.id,
+        audioUrl: recording.recordingUrl,
+        audioFormat: audioFormat,
+      );
+      
+      if (mounted) {
+        if (transcription != null && transcription.isNotEmpty) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: const Text('✅ 文字起こしが完了しました'),
+              backgroundColor: Colors.green,
+              action: SnackBarAction(
+                label: '確認',
+                textColor: Colors.white,
+                onPressed: () => _showTranscriptionDialog(transcription),
+              ),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ 文字起こしに失敗しました'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+          
+          await _transcriptionService.updateTranscriptionStatus(
+            recording.id,
+            'failed',
+            errorMessage: 'Transcription result was empty',
+          );
+        }
+      }
+      
+    } catch (e) {
+      debugPrint('❌ [Transcription] Error: $e');
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('❌ 文字起こしエラー: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  /// Show transcription result dialog
+  void _showTranscriptionDialog(String transcription) {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.text_snippet, color: Colors.blue),
+            SizedBox(width: 8),
+            Text('文字起こし結果'),
+          ],
+        ),
+        content: SingleChildScrollView(
+          child: SelectableText(
+            transcription,
+            style: const TextStyle(fontSize: 16),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
+          ),
+        ],
+      ),
+    );
   }
 
   /// Setup recording notification listener

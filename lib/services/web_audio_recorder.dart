@@ -1,0 +1,165 @@
+import 'dart:async';
+import 'dart:js_interop' as js;
+import 'package:flutter/foundation.dart';
+import 'package:web/web.dart' as web;
+
+/// Web Audio APIを使用した録音サービス (Web Platform専用)
+class WebAudioRecorder {
+  web.MediaRecorder? _mediaRecorder;
+  StreamController<Uint8List>? _audioStreamController;
+  final List<web.Blob> _recordedChunks = [];
+  bool _isRecording = false;
+
+  /// 録音中かどうか
+  bool get isRecording => _isRecording;
+
+  /// 録音を開始
+  Future<void> start() async {
+    if (_isRecording) {
+      if (kDebugMode) {
+        debugPrint('⚠️ WebAudioRecorder: 既に録音中です');
+      }
+      return;
+    }
+
+    try {
+      if (kDebugMode) {
+        debugPrint('🎤 WebAudioRecorder: 録音開始リクエスト');
+      }
+
+      // マイク権限をリクエスト
+      final streamPromise = web.window.navigator.mediaDevices.getUserMedia(
+        web.MediaStreamConstraints(
+          audio: true.toJS,
+          video: false.toJS,
+        ),
+      );
+      final stream = await streamPromise.toDart;
+
+      if (kDebugMode) {
+        debugPrint('✅ WebAudioRecorder: マイク権限取得成功');
+      }
+
+      // MediaRecorderを作成
+      _mediaRecorder = web.MediaRecorder(
+        stream,
+        web.MediaRecorderOptions(
+          mimeType: 'audio/webm;codecs=opus',
+        ),
+      );
+
+      _recordedChunks.clear();
+
+      // データが利用可能になったときのハンドラー
+      _mediaRecorder!.ondataavailable = (web.BlobEvent event) {
+        if (event.data.size > 0) {
+          _recordedChunks.add(event.data);
+          if (kDebugMode) {
+            debugPrint('📦 WebAudioRecorder: データチャンク追加 (size: ${event.data.size})');
+          }
+        }
+      }.toJS;
+
+      // 録音開始
+      _mediaRecorder!.start();
+      _isRecording = true;
+
+      if (kDebugMode) {
+        debugPrint('✅ WebAudioRecorder: 録音開始成功');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ WebAudioRecorder: 録音開始エラー: $e');
+      }
+      rethrow;
+    }
+  }
+
+  /// 録音を停止してBlobを返す
+  Future<web.Blob?> stop() async {
+    if (!_isRecording || _mediaRecorder == null) {
+      if (kDebugMode) {
+        debugPrint('⚠️ WebAudioRecorder: 録音中ではありません');
+      }
+      return null;
+    }
+
+    try {
+      if (kDebugMode) {
+        debugPrint('🛑 WebAudioRecorder: 録音停止リクエスト');
+      }
+
+      // MediaRecorderの停止を待つ
+      final completer = Completer<void>();
+      
+      _mediaRecorder!.onstop = ((web.Event event) {
+        if (kDebugMode) {
+          debugPrint('✅ WebAudioRecorder: MediaRecorder停止完了');
+        }
+        completer.complete();
+      }).toJS;
+
+      _mediaRecorder!.stop();
+
+      // すべてのトラックを停止
+      final stream = _mediaRecorder!.stream;
+      for (var track in stream.getTracks().toDart) {
+        track.stop();
+      }
+
+      // 停止完了を待つ
+      await completer.future.timeout(
+        const Duration(seconds: 5),
+        onTimeout: () {
+          if (kDebugMode) {
+            debugPrint('⚠️ WebAudioRecorder: 停止タイムアウト');
+          }
+        },
+      );
+
+      _isRecording = false;
+
+      // 録音データをBlobに結合
+      if (_recordedChunks.isEmpty) {
+        if (kDebugMode) {
+          debugPrint('⚠️ WebAudioRecorder: 録音データがありません');
+        }
+        return null;
+      }
+
+      final blob = web.Blob(
+        _recordedChunks.toJS,
+        web.BlobPropertyBag(type: 'audio/webm;codecs=opus'),
+      );
+
+      if (kDebugMode) {
+        debugPrint('✅ WebAudioRecorder: Blob作成成功 (size: ${blob.size} bytes)');
+      }
+
+      return blob;
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ WebAudioRecorder: 録音停止エラー: $e');
+      }
+      _isRecording = false;
+      return null;
+    }
+  }
+
+  /// リソースをクリーンアップ
+  void dispose() {
+    if (_mediaRecorder != null) {
+      final stream = _mediaRecorder!.stream;
+      for (var track in stream.getTracks().toDart) {
+        track.stop();
+      }
+    }
+    _audioStreamController?.close();
+    _recordedChunks.clear();
+    _isRecording = false;
+    
+    if (kDebugMode) {
+      debugPrint('🧹 WebAudioRecorder: リソースクリーンアップ完了');
+    }
+  }
+}

@@ -5,13 +5,16 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:path_provider/path_provider.dart';
-import 'package:record/record.dart';
 import '../models/call_recording.dart';
+
+// Conditional imports for platform-specific recording
+import 'web_audio_recorder.dart' if (dart.library.io) 'web_audio_recorder_stub.dart';
+import 'package:record/record.dart' if (dart.library.html) 'record_stub.dart';
 
 /// Call Recording Service - Handles recording of voice/video calls
 /// 
 /// Features:
-/// - Records audio during voice/video calls
+/// - Records audio during voice/video calls (Web & Mobile)
 /// - Uploads recordings to Firebase Storage
 /// - Saves recording metadata to Firestore
 /// - Notifies remote user about recording
@@ -22,8 +25,9 @@ class CallRecordingService {
   factory CallRecordingService() => _instance;
   CallRecordingService._internal();
 
-  // Audio recorder instance
-  final AudioRecorder _audioRecorder = AudioRecorder();
+  // Platform-specific recorder instances
+  AudioRecorder? _mobileRecorder; // For mobile
+  WebAudioRecorder? _webRecorder; // For web
   
   // Recording state
   bool _isRecording = false;
@@ -41,6 +45,17 @@ class CallRecordingService {
   bool get isRecording => _isRecording;
   String? get recordingPath => _recordingPath;
   
+  /// Initialize platform-specific recorder
+  void _initRecorder() {
+    if (kIsWeb) {
+      _webRecorder ??= WebAudioRecorder();
+      debugPrint('[CallRecording] 🌐 Web Audio Recorder initialized');
+    } else {
+      _mobileRecorder ??= AudioRecorder();
+      debugPrint('[CallRecording] 📱 Mobile Audio Recorder initialized');
+    }
+  }
+  
   /// Start recording the call
   /// 
   /// [callId] - The unique ID of the call
@@ -52,31 +67,37 @@ class CallRecordingService {
     }
     
     try {
-      // Check microphone permission
-      final hasPermission = await _audioRecorder.hasPermission();
-      if (!hasPermission) {
-        debugPrint('[CallRecording] ❌ Microphone permission denied');
-        return false;
-      }
-      
-      // Get temporary directory for recording
-      final String recordingDirectory = await _getRecordingDirectory();
-      final String fileName = 'call_${callId}_${DateTime.now().millisecondsSinceEpoch}.m4a';
-      _recordingPath = '$recordingDirectory/$fileName';
+      _initRecorder();
       
       debugPrint('[CallRecording] 🎙️ Starting recording...');
-      debugPrint('[CallRecording] Path: $_recordingPath');
+      debugPrint('[CallRecording] Platform: ${kIsWeb ? "Web" : "Mobile"}');
       
-      // Configure audio recording settings
-      const config = RecordConfig(
-        encoder: AudioEncoder.aacLc, // AAC-LC for good quality and compression
-        bitRate: 128000, // 128 kbps
-        sampleRate: 44100, // 44.1 kHz
-        numChannels: 1, // Mono for voice calls
-      );
-      
-      // Start recording
-      await _audioRecorder.start(config, path: _recordingPath!);
+      if (kIsWeb) {
+        // Web platform recording
+        await _webRecorder!.start();
+      } else {
+        // Mobile platform recording
+        final hasPermission = await _mobileRecorder!.hasPermission();
+        if (!hasPermission) {
+          debugPrint('[CallRecording] ❌ Microphone permission denied');
+          return false;
+        }
+        
+        final String recordingDirectory = await _getRecordingDirectory();
+        final String fileName = 'call_${callId}_${DateTime.now().millisecondsSinceEpoch}.m4a';
+        _recordingPath = '$recordingDirectory/$fileName';
+        
+        debugPrint('[CallRecording] Path: $_recordingPath');
+        
+        const config = RecordConfig(
+          encoder: AudioEncoder.aacLc,
+          bitRate: 128000,
+          sampleRate: 44100,
+          numChannels: 1,
+        );
+        
+        await _mobileRecorder!.start(config, path: _recordingPath!);
+      }
       
       _isRecording = true;
       _recordingStartTime = DateTime.now();
@@ -104,53 +125,101 @@ class CallRecordingService {
     try {
       debugPrint('[CallRecording] 🛑 Stopping recording...');
       
-      // Stop recording
-      final path = await _audioRecorder.stop();
-      _isRecording = false;
+      String? uploadUrl;
       
-      if (path == null || _recordingPath == null) {
-        debugPrint('[CallRecording] ❌ Recording path is null');
-        return null;
+      if (kIsWeb) {
+        // Web platform - get Blob and upload directly
+        final blob = await _webRecorder!.stop();
+        _isRecording = false;
+        
+        if (blob == null) {
+          debugPrint('[CallRecording] ❌ Web recording blob is null');
+          return null;
+        }
+        
+        final duration = DateTime.now().difference(_recordingStartTime!).inSeconds;
+        
+        debugPrint('[CallRecording] 📊 Web recording stopped');
+        debugPrint('[CallRecording]    Duration: ${duration}s');
+        debugPrint('[CallRecording]    Blob size: ${blob.size} bytes');
+        
+        // Notify remote user that recording stopped
+        if (_currentCallId != null && _remoteUserId != null) {
+          await _notifyRemoteUserRecording(_currentCallId!, _remoteUserId!, isRecording: false);
+        }
+        
+        // Upload blob to Firebase Storage
+        uploadUrl = await _uploadWebBlob(blob);
+        
+        if (uploadUrl == null) {
+          debugPrint('[CallRecording] ❌ Failed to upload web recording');
+          return null;
+        }
+        
+        // Save metadata to Firestore
+        final recording = await _saveRecordingMetadata(
+          callId: _currentCallId!,
+          recordingUrl: uploadUrl,
+          duration: duration,
+        );
+        
+        // Reset state
+        _recordingPath = null;
+        _recordingStartTime = null;
+        _currentCallId = null;
+        _remoteUserId = null;
+        
+        debugPrint('[CallRecording] ✅ Web recording saved successfully');
+        return recording;
+        
+      } else {
+        // Mobile platform - stop recorder and get file path
+        final path = await _mobileRecorder!.stop();
+        _isRecording = false;
+        
+        if (path == null || _recordingPath == null) {
+          debugPrint('[CallRecording] ❌ Recording path is null');
+          return null;
+        }
+        
+        final duration = DateTime.now().difference(_recordingStartTime!).inSeconds;
+        
+        debugPrint('[CallRecording] 📊 Mobile recording stopped');
+        debugPrint('[CallRecording]    Duration: ${duration}s');
+        debugPrint('[CallRecording]    Path: $path');
+        
+        // Notify remote user that recording stopped
+        if (_currentCallId != null && _remoteUserId != null) {
+          await _notifyRemoteUserRecording(_currentCallId!, _remoteUserId!, isRecording: false);
+        }
+        
+        // Upload to Firebase Storage
+        uploadUrl = await _uploadMobileFile(path);
+        
+        if (uploadUrl == null) {
+          debugPrint('[CallRecording] ❌ Failed to upload mobile recording');
+          return null;
+        }
+        
+        // Save metadata to Firestore
+        final recording = await _saveRecordingMetadata(
+          callId: _currentCallId!,
+          recordingUrl: uploadUrl,
+          duration: duration,
+        );
+        
+        // Clean up local file
+        await _deleteLocalFile(path);
+        
+        // Reset state
+        _recordingPath = null;
+        _recordingStartTime = null;
+        _currentCallId = null;
+        _remoteUserId = null;
+        
+        debugPrint('[CallRecording] ✅ Mobile recording saved successfully');
+        return recording;
       }
-      
-      // Calculate recording duration
-      final duration = DateTime.now().difference(_recordingStartTime!).inSeconds;
-      
-      debugPrint('[CallRecording] 📊 Recording stopped');
-      debugPrint('[CallRecording]    Duration: ${duration}s');
-      debugPrint('[CallRecording]    Path: $path');
-      
-      // Notify remote user that recording stopped
-      if (_currentCallId != null && _remoteUserId != null) {
-        await _notifyRemoteUserRecording(_currentCallId!, _remoteUserId!, isRecording: false);
-      }
-      
-      // Upload to Firebase Storage
-      final recordingUrl = await _uploadRecording(path);
-      
-      if (recordingUrl == null) {
-        debugPrint('[CallRecording] ❌ Failed to upload recording');
-        return null;
-      }
-      
-      // Save metadata to Firestore
-      final recording = await _saveRecordingMetadata(
-        callId: _currentCallId!,
-        recordingUrl: recordingUrl,
-        duration: duration,
-      );
-      
-      // Clean up local file
-      await _deleteLocalFile(path);
-      
-      // Reset state
-      _recordingPath = null;
-      _recordingStartTime = null;
-      _currentCallId = null;
-      _remoteUserId = null;
-      
-      debugPrint('[CallRecording] ✅ Recording saved successfully');
-      return recording;
     } catch (e) {
       debugPrint('[CallRecording] ❌ Failed to stop recording: $e');
       _isRecording = false;
@@ -167,17 +236,20 @@ class CallRecordingService {
     try {
       debugPrint('[CallRecording] 🗑️ Canceling recording...');
       
-      final path = await _audioRecorder.stop();
+      if (kIsWeb) {
+        await _webRecorder!.stop();
+      } else {
+        final path = await _mobileRecorder!.stop();
+        if (path != null) {
+          await _deleteLocalFile(path);
+        }
+      }
+      
       _isRecording = false;
       
       // Notify remote user that recording stopped
       if (_currentCallId != null && _remoteUserId != null) {
         await _notifyRemoteUserRecording(_currentCallId!, _remoteUserId!, isRecording: false);
-      }
-      
-      // Delete local file
-      if (path != null) {
-        await _deleteLocalFile(path);
       }
       
       // Reset state
@@ -192,27 +264,61 @@ class CallRecordingService {
     }
   }
   
-  /// Get recording directory based on platform
+  /// Get recording directory based on platform (Mobile only)
   Future<String> _getRecordingDirectory() async {
-    if (kIsWeb) {
-      // Web platform - use temporary directory simulation
-      return '/tmp/call_recordings';
-    } else {
-      // Mobile platform - use temporary directory
-      final directory = await getTemporaryDirectory();
-      final recordingDir = Directory('${directory.path}/call_recordings');
-      
-      // Create directory if it doesn't exist
-      if (!await recordingDir.exists()) {
-        await recordingDir.create(recursive: true);
+    final directory = await getTemporaryDirectory();
+    final recordingDir = Directory('${directory.path}/call_recordings');
+    
+    if (!await recordingDir.exists()) {
+      await recordingDir.create(recursive: true);
+    }
+    
+    return recordingDir.path;
+  }
+  
+  /// Upload Web Blob to Firebase Storage
+  Future<String?> _uploadWebBlob(dynamic blob) async {
+    try {
+      final currentUser = _auth.currentUser;
+      if (currentUser == null) {
+        debugPrint('[CallRecording] ❌ No authenticated user');
+        return null;
       }
       
-      return recordingDir.path;
+      final userId = currentUser.uid;
+      final fileName = '${DateTime.now().millisecondsSinceEpoch}.webm';
+      final storageRef = _storage.ref().child('call_recordings/$userId/$fileName');
+      
+      debugPrint('[CallRecording] ☁️ Uploading web blob to Firebase Storage...');
+      debugPrint('[CallRecording]    Path: call_recordings/$userId/$fileName');
+      
+      // Upload blob using putBlob (Web-specific)
+      final uploadTask = storageRef.putBlob(
+        blob,
+        SettableMetadata(
+          contentType: 'audio/webm',
+          customMetadata: {
+            'callId': _currentCallId ?? 'unknown',
+            'recordedAt': DateTime.now().toIso8601String(),
+          },
+        ),
+      );
+      
+      final snapshot = await uploadTask;
+      final downloadUrl = await snapshot.ref.getDownloadURL();
+      
+      debugPrint('[CallRecording] ✅ Web upload completed');
+      debugPrint('[CallRecording]    URL: $downloadUrl');
+      
+      return downloadUrl;
+    } catch (e) {
+      debugPrint('[CallRecording] ❌ Web upload failed: $e');
+      return null;
     }
   }
   
-  /// Upload recording to Firebase Storage
-  Future<String?> _uploadRecording(String localPath) async {
+  /// Upload Mobile file to Firebase Storage
+  Future<String?> _uploadMobileFile(String localPath) async {
     try {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
@@ -224,10 +330,9 @@ class CallRecordingService {
       final fileName = '${DateTime.now().millisecondsSinceEpoch}.m4a';
       final storageRef = _storage.ref().child('call_recordings/$userId/$fileName');
       
-      debugPrint('[CallRecording] ☁️ Uploading to Firebase Storage...');
+      debugPrint('[CallRecording] ☁️ Uploading mobile file to Firebase Storage...');
       debugPrint('[CallRecording]    Path: call_recordings/$userId/$fileName');
       
-      // Upload file
       final file = File(localPath);
       final uploadTask = storageRef.putFile(
         file,
@@ -240,16 +345,15 @@ class CallRecordingService {
         ),
       );
       
-      // Wait for upload to complete
       final snapshot = await uploadTask;
       final downloadUrl = await snapshot.ref.getDownloadURL();
       
-      debugPrint('[CallRecording] ✅ Upload completed');
+      debugPrint('[CallRecording] ✅ Mobile upload completed');
       debugPrint('[CallRecording]    URL: $downloadUrl');
       
       return downloadUrl;
     } catch (e) {
-      debugPrint('[CallRecording] ❌ Upload failed: $e');
+      debugPrint('[CallRecording] ❌ Mobile upload failed: $e');
       return null;
     }
   }
@@ -268,8 +372,6 @@ class CallRecordingService {
       }
       
       final userId = currentUser.uid;
-      
-      // Create recording document
       final docRef = _firestore.collection('call_recordings').doc();
       
       final recording = CallRecording(
@@ -310,7 +412,6 @@ class CallRecordingService {
       debugPrint('[CallRecording] 📢 Notifying remote user: $remoteUserId');
       debugPrint('[CallRecording]    Recording: $isRecording');
       
-      // Create notification in Firestore
       await _firestore.collection('call_recording_notifications').add({
         'callId': callId,
         'recordingUserId': currentUser.uid,
@@ -322,19 +423,16 @@ class CallRecordingService {
       debugPrint('[CallRecording] ✅ Notification sent');
     } catch (e) {
       debugPrint('[CallRecording] ⚠️ Failed to notify remote user: $e');
-      // Don't throw - notification failure shouldn't stop recording
     }
   }
   
-  /// Delete local recording file
+  /// Delete local recording file (Mobile only)
   Future<void> _deleteLocalFile(String path) async {
     try {
-      if (!kIsWeb) {
-        final file = File(path);
-        if (await file.exists()) {
-          await file.delete();
-          debugPrint('[CallRecording] 🗑️ Local file deleted: $path');
-        }
+      final file = File(path);
+      if (await file.exists()) {
+        await file.delete();
+        debugPrint('[CallRecording] 🗑️ Local file deleted: $path');
       }
     } catch (e) {
       debugPrint('[CallRecording] ⚠️ Failed to delete local file: $e');
@@ -400,10 +498,8 @@ class CallRecordingService {
   /// Delete a recording
   Future<bool> deleteRecording(CallRecording recording) async {
     try {
-      // Delete from Firestore
       await _firestore.collection('call_recordings').doc(recording.id).delete();
       
-      // Delete from Storage
       final storageRef = _storage.refFromURL(recording.recordingUrl);
       await storageRef.delete();
       
@@ -420,6 +516,11 @@ class CallRecordingService {
     if (_isRecording) {
       await cancelRecording();
     }
-    await _audioRecorder.dispose();
+    
+    if (kIsWeb) {
+      _webRecorder?.dispose();
+    } else {
+      await _mobileRecorder?.dispose();
+    }
   }
 }

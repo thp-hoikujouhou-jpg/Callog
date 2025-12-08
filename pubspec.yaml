@@ -60,6 +60,12 @@ dependencies:
   # Path Provider for storing temporary recording files
   path_provider: 2.1.5
   
+  # Web package for Web Audio API
+  web: ^1.1.0
+  
+  # Google Generative AI (Gemini) for transcription
+  google_generative_ai: ^0.4.6
+  
   # UI Components
   cupertino_icons: 1.0.8
 

@@ -3,6 +3,8 @@
   "version": "1.0.0",
   "dependencies": {
     "agora-token": "^2.0.3",
-    "firebase-admin": "^12.0.0"
+    "firebase-admin": "^12.0.0",
+    "@google/generative-ai": "^0.21.0",
+    "node-fetch": "^2.7.0"
   }
 }
