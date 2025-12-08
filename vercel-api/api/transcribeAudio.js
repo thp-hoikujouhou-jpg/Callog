@@ -2,17 +2,18 @@
  * Vercel API Endpoint: Audio Transcription with Google Cloud Speech-to-Text
  * 
  * This endpoint downloads audio from Firebase Storage and transcribes it using 
- * Google Cloud Speech-to-Text API (専用の音声認識API).
+ * Google Cloud Speech-to-Text API (専用の音声認識API) with Service Account authentication.
  * 
- * Benefits over Gemini:
+ * Benefits:
  * - ✅ Dedicated speech recognition API (not general-purpose LLM)
- * - ✅ Production-grade stability
+ * - ✅ Production-grade stability with Service Account
  * - ✅ High-accuracy Japanese support
  * - ✅ Native WebM format support
- * - ✅ No model version confusion issues
+ * - ✅ No API key management needed
  */
 
 import fetch from 'node-fetch';
+import { SpeechClient } from '@google-cloud/speech';
 
 export default async function handler(req, res) {
   // Set CORS headers (Allow requests from any origin)
@@ -33,10 +34,9 @@ export default async function handler(req, res) {
   try {
     const { audioUrl, audioFormat } = req.body;
     
-    // Get Google Cloud API Key from environment variable (priority) or request body (fallback)
-    const apiKey = process.env.GOOGLE_CLOUD_API_KEY || req.body.apiKey;
-
-    console.log('[TranscribeAudio] 🔑 API Key check:', apiKey ? '✅ Available' : '❌ Missing');
+    console.log('[TranscribeAudio] 🎙️ Starting transcription...');
+    console.log('[TranscribeAudio]    Audio URL:', audioUrl);
+    console.log('[TranscribeAudio]    Format:', audioFormat);
 
     // Validate required parameters
     if (!audioUrl || !audioFormat) {
@@ -45,17 +45,19 @@ export default async function handler(req, res) {
         required: ['audioUrl', 'audioFormat'] 
       });
     }
-    
-    if (!apiKey) {
-      return res.status(500).json({
-        error: 'GOOGLE_CLOUD_API_KEY not configured in environment variables or request body'
-      });
-    }
 
-    console.log('[TranscribeAudio] 🎙️ Starting transcription...');
-    console.log('[TranscribeAudio]    Audio URL:', audioUrl);
-    console.log('[TranscribeAudio]    Format:', audioFormat);
-    console.log('[TranscribeAudio]    API Key source:', process.env.GOOGLE_CLOUD_API_KEY ? 'Environment Variable' : 'Request Body');
+    // Initialize Google Cloud Speech client with service account from environment
+    // Expected env var: GOOGLE_APPLICATION_CREDENTIALS_JSON (stringified JSON)
+    let speechClient;
+    
+    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      console.log('[TranscribeAudio] 🔑 Using Service Account from environment variable');
+      const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
+      speechClient = new SpeechClient({ credentials });
+    } else {
+      console.log('[TranscribeAudio] 🔑 Using default Google Cloud credentials');
+      speechClient = new SpeechClient(); // Will use GOOGLE_APPLICATION_CREDENTIALS env var or default credentials
+    }
 
     // Download audio file from Firebase Storage
     console.log('[TranscribeAudio] 📥 Downloading audio file...');
@@ -74,58 +76,37 @@ export default async function handler(req, res) {
     
     console.log('[TranscribeAudio] ✅ Audio downloaded:', audioBytes.length, 'bytes');
 
-    // Google Cloud Speech-to-Text API v1 endpoint
-    const speechApiUrl = `https://speech.googleapis.com/v1/speech:recognize?key=${apiKey}`;
-
     console.log('[TranscribeAudio] 🤖 Sending to Google Cloud Speech-to-Text API...');
 
-    // Prepare request body for Speech-to-Text API (高品質設定)
-    const requestBody = {
-      config: {
-        encoding: audioFormat === 'webm' ? 'WEBM_OPUS' : 'MP4', // WebM Opus or MP4/M4A
-        sampleRateHertz: 48000, // 48kHz (録音設定と一致)
-        languageCode: 'ja-JP', // Japanese
-        enableAutomaticPunctuation: true, // 句読点自動挿入
-        enableWordTimeOffsets: false, // Word-level timestamps (optional)
-        model: 'latest_long', // 'latest_long' モデル (最新・長時間対応・高精度)
-        useEnhanced: true, // 拡張モデル使用 (精度向上)
-        audioChannelCount: 1, // モノラル (録音設定と一致)
-      },
+    // Prepare Speech-to-Text request (高品質設定)
+    const request = {
       audio: {
-        content: audioBytes.toString('base64'), // Base64-encoded audio
+        content: audioBytes.toString('base64'),
+      },
+      config: {
+        encoding: audioFormat === 'webm' ? 'WEBM_OPUS' : 'MP4',
+        sampleRateHertz: 48000, // 48kHz (録音設定と一致)
+        languageCode: 'ja-JP',  // Japanese
+        enableAutomaticPunctuation: true, // 句読点自動挿入
+        model: 'latest_long',   // 最新・長時間対応モデル
+        useEnhanced: true,      // 拡張モデル使用 (精度向上)
+        audioChannelCount: 1,   // モノラル (録音設定と一致)
       },
     };
 
-    // Send request to Speech-to-Text API
-    const speechResponse = await fetch(speechApiUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(requestBody),
-    });
-
-    if (!speechResponse.ok) {
-      const errorText = await speechResponse.text();
-      console.error('[TranscribeAudio] ❌ Speech API Error:', speechResponse.status, errorText);
-      return res.status(500).json({ 
-        error: 'Speech-to-Text API request failed',
-        status: speechResponse.status,
-        details: errorText,
-      });
-    }
-
-    const speechResult = await speechResponse.json();
-    console.log('[TranscribeAudio] 📄 Raw API Response:', JSON.stringify(speechResult, null, 2));
+    // Perform speech recognition
+    const [response] = await speechClient.recognize(request);
+    
+    console.log('[TranscribeAudio] 📄 Raw API Response:', JSON.stringify(response, null, 2));
 
     // Extract transcription from results
-    if (!speechResult.results || speechResult.results.length === 0) {
+    if (!response.results || response.results.length === 0) {
       console.warn('[TranscribeAudio] ⚠️ No transcription results returned');
       return res.status(500).json({ error: 'No transcription results' });
     }
 
     // Concatenate all alternatives (usually only one)
-    const transcription = speechResult.results
+    const transcription = response.results
       .map(result => result.alternatives[0].transcript)
       .join('\n');
 
@@ -137,12 +118,15 @@ export default async function handler(req, res) {
     console.log('[TranscribeAudio] ✅ Transcription completed');
     console.log('[TranscribeAudio]    Length:', transcription.length, 'characters');
 
+    // Get confidence score
+    const confidence = response.results[0]?.alternatives[0]?.confidence || null;
+
     // Return transcription
     return res.status(200).json({ 
       transcription: transcription,
       audioFormat: audioFormat,
       audioSize: audioBytes.length,
-      confidence: speechResult.results[0]?.alternatives[0]?.confidence || null,
+      confidence: confidence,
     });
 
   } catch (error) {
