@@ -15,19 +15,31 @@ export default async function handler(req, res) {
   }
 
   try {
-    const { audioUrl, audioFormat, apiKey } = req.body;
+    const { audioUrl, audioFormat } = req.body;
+    
+    // Get Gemini API Key from environment variable (priority) or request body (fallback)
+    const apiKey = process.env.GEMINI_API_KEY || req.body.apiKey;
+
+    console.log('[TranscribeAudio] 🔑 API Key check:', apiKey ? '✅ Available' : '❌ Missing');
 
     // Validate required parameters
-    if (!audioUrl || !audioFormat || !apiKey) {
+    if (!audioUrl || !audioFormat) {
       return res.status(400).json({ 
         error: 'Missing required parameters', 
-        required: ['audioUrl', 'audioFormat', 'apiKey'] 
+        required: ['audioUrl', 'audioFormat'] 
+      });
+    }
+    
+    if (!apiKey) {
+      return res.status(500).json({
+        error: 'GEMINI_API_KEY not configured in environment variables or request body'
       });
     }
 
     console.log('[TranscribeAudio] 🎙️ Starting transcription...');
     console.log('[TranscribeAudio]    Audio URL:', audioUrl);
     console.log('[TranscribeAudio]    Format:', audioFormat);
+    console.log('[TranscribeAudio]    API Key source:', process.env.GEMINI_API_KEY ? 'Environment Variable' : 'Request Body');
 
     // Download audio file from Firebase Storage
     console.log('[TranscribeAudio] 📥 Downloading audio file...');

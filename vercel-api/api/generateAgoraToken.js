@@ -27,12 +27,24 @@ module.exports = async (req, res) => {
       });
     }
     
-    // Get environment variables
+    // Get environment variables from Vercel
     const appId = process.env.AGORA_APP_ID;
     const appCertificate = process.env.AGORA_APP_CERTIFICATE;
     
+    console.log('[AgoraToken] 🔑 Environment check:');
+    console.log('[AgoraToken]    App ID:', appId ? '✅ Set' : '❌ Missing');
+    console.log('[AgoraToken]    App Certificate:', appCertificate ? '✅ Set' : '❌ Missing');
+    
+    // Check if App ID exists
+    if (!appId) {
+      return res.status(500).json({
+        error: 'AGORA_APP_ID environment variable not configured'
+      });
+    }
+    
     // Check certificate
     if (!appCertificate) {
+      console.log('[AgoraToken] ⚠️ App Certificate not configured - returning null token');
       return res.status(200).json({
         data: {
           token: null,
@@ -43,6 +55,8 @@ module.exports = async (req, res) => {
         }
       });
     }
+    
+    console.log('[AgoraToken] ✅ Generating token with App Certificate');
     
     // Generate token
     const expirationTimeInSeconds = Math.floor(Date.now() / 1000) + 86400;

@@ -18,8 +18,8 @@ class GeminiTranscriptionService {
   factory GeminiTranscriptionService() => _instance;
   GeminiTranscriptionService._internal();
 
-  // Gemini API Configuration
-  static const String _apiKey = 'AIzaSyDCnU16tQHO_hxqDJFL-R01ure40QdzqLg';
+  // Note: Gemini API Key is now stored in Vercel environment variables
+  // No need to include it in the Flutter app for better security
   
   // Firebase instances
   final FirebaseFirestore _firestore = FirebaseFirestore.instance;
@@ -53,14 +53,14 @@ class GeminiTranscriptionService {
       debugPrint('[GeminiTranscription] 🚀 Calling Vercel API...');
       debugPrint('[GeminiTranscription]    Endpoint: $vercelEndpoint');
       
-      // Call Vercel API
+      // Call Vercel API (API key is stored in Vercel environment variables)
       final response = await http.post(
         Uri.parse(vercelEndpoint),
         headers: {'Content-Type': 'application/json'},
         body: jsonEncode({
           'audioUrl': audioUrl,
           'audioFormat': audioFormat,
-          'apiKey': _apiKey,
+          // API key is now stored in Vercel environment (GEMINI_API_KEY)
         }),
       );
       
