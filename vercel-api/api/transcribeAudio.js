@@ -79,15 +79,17 @@ export default async function handler(req, res) {
 
     console.log('[TranscribeAudio] 🤖 Sending to Google Cloud Speech-to-Text API...');
 
-    // Prepare request body for Speech-to-Text API
+    // Prepare request body for Speech-to-Text API (高品質設定)
     const requestBody = {
       config: {
         encoding: audioFormat === 'webm' ? 'WEBM_OPUS' : 'MP4', // WebM Opus or MP4/M4A
-        sampleRateHertz: 48000, // Standard sample rate for WebM
+        sampleRateHertz: 48000, // 48kHz (録音設定と一致)
         languageCode: 'ja-JP', // Japanese
         enableAutomaticPunctuation: true, // 句読点自動挿入
         enableWordTimeOffsets: false, // Word-level timestamps (optional)
-        model: 'default', // Use 'default' or 'video' model
+        model: 'latest_long', // 'latest_long' モデル (最新・長時間対応・高精度)
+        useEnhanced: true, // 拡張モデル使用 (精度向上)
+        audioChannelCount: 1, // モノラル (録音設定と一致)
       },
       audio: {
         content: audioBytes.toString('base64'), // Base64-encoded audio

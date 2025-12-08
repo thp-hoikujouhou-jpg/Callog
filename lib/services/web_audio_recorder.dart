@@ -27,10 +27,17 @@ class WebAudioRecorder {
         debugPrint('🎤 WebAudioRecorder: 録音開始リクエスト');
       }
 
-      // マイク権限をリクエスト
+      // マイク権限をリクエスト (高品質設定)
+      final audioConstraints = js.JSObject();
+      audioConstraints.setProperty('echoCancellation'.toJS, true.toJS); // エコーキャンセル
+      audioConstraints.setProperty('noiseSuppression'.toJS, true.toJS); // ノイズ除去
+      audioConstraints.setProperty('autoGainControl'.toJS, true.toJS);  // 自動ゲイン調整
+      audioConstraints.setProperty('sampleRate'.toJS, 48000.toJS);      // 48kHz (高品質)
+      audioConstraints.setProperty('channelCount'.toJS, 1.toJS);        // モノラル (音声認識最適)
+      
       final streamPromise = web.window.navigator.mediaDevices.getUserMedia(
         web.MediaStreamConstraints(
-          audio: true.toJS,
+          audio: audioConstraints,
           video: false.toJS,
         ),
       );
@@ -38,13 +45,21 @@ class WebAudioRecorder {
 
       if (kDebugMode) {
         debugPrint('✅ WebAudioRecorder: マイク権限取得成功');
+        debugPrint('🎚️ 録音品質設定:');
+        debugPrint('   - Sample Rate: 48000 Hz');
+        debugPrint('   - Bit Rate: 128 kbps');
+        debugPrint('   - Echo Cancellation: ON');
+        debugPrint('   - Noise Suppression: ON');
+        debugPrint('   - Auto Gain Control: ON');
+        debugPrint('   - Channel: Mono');
       }
 
-      // MediaRecorderを作成
+      // MediaRecorderを作成 (高品質設定)
       _mediaRecorder = web.MediaRecorder(
         stream,
         web.MediaRecorderOptions(
           mimeType: 'audio/webm;codecs=opus',
+          audioBitsPerSecond: 128000, // 128kbps (高品質音声)
         ),
       );
 
