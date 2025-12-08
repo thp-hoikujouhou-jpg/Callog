@@ -7,6 +7,7 @@ import '../services/agora_token_service.dart';
 import '../services/call_history_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/auth_service.dart';
+import '../services/call_recording_service.dart';
 import '../utils/image_proxy.dart';
 import 'package:agora_rtc_engine/agora_rtc_engine.dart';
 
@@ -41,6 +42,7 @@ class AgoraVoiceCallScreen extends StatefulWidget {
 class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   final AgoraVoiceCallService _callService = AgoraVoiceCallService();
   final CallHistoryService _historyService = CallHistoryService();
+  final CallRecordingService _recordingService = CallRecordingService();
   
   // Call State
   bool _isConnecting = true;
@@ -51,6 +53,12 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   Timer? _callTimer;
   String _connectionStatus = '接続中...';
   DateTime? _callStartTime;
+  
+  // Recording State
+  bool _isRecording = false;
+  bool _remoteIsRecording = false;
+  StreamSubscription<Map<String, dynamic>>? _recordingNotificationSubscription;
+  String? _currentChannelName;
   
   @override
   void initState() {
@@ -63,6 +71,11 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   void dispose() {
     debugPrint('🧹 [Agora Screen] Disposing voice call screen');
     _callTimer?.cancel();
+    _recordingNotificationSubscription?.cancel();
+    // Stop recording if active
+    if (_isRecording) {
+      _recordingService.stopRecording();
+    }
     // Don't auto-end call on dispose - let user explicitly end it
     // _endCall();
     super.dispose();
@@ -144,6 +157,8 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       
       // Use provided channel name or generate one
       final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
+      _currentChannelName = channelName; // Store for recording notifications
+      
       debugPrint('📞 [Agora Screen] ═══════════════════════════════════════');
       debugPrint('📞 [Agora Screen] VOICE CALL SETUP');
       debugPrint('📞 [Agora Screen] Channel: $channelName');
@@ -151,6 +166,9 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       debugPrint('📞 [Agora Screen] Friend ID: ${widget.friendId}');
       debugPrint('📞 [Agora Screen] Friend Name: ${widget.friendName}');
       debugPrint('📞 [Agora Screen] ═══════════════════════════════════════');
+      
+      // Setup recording notification listener
+      _setupRecordingNotificationListener(channelName);
       
       // Generate Agora token using Cloud Functions
       String? token;
@@ -350,10 +368,121 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
     });
   }
 
+  /// Toggle call recording
+  Future<void> _toggleRecording() async {
+    if (!_isRecording) {
+      // Start recording
+      debugPrint('🎙️ [Recording] Starting recording...');
+      final success = await _recordingService.startRecording(
+        _currentChannelName ?? 'unknown',
+        widget.friendId,
+      );
+      
+      if (success) {
+        setState(() {
+          _isRecording = true;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('📹 録音を開始しました'),
+              backgroundColor: Colors.green,
+              duration: Duration(seconds: 2),
+            ),
+          );
+        }
+      } else {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('❌ 録音の開始に失敗しました'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } else {
+      // Stop recording
+      debugPrint('🛑 [Recording] Stopping recording...');
+      final recording = await _recordingService.stopRecording();
+      
+      setState(() {
+        _isRecording = false;
+      });
+      
+      if (mounted) {
+        if (recording != null) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('✅ 録音を保存しました (${recording.formattedDuration})'),
+              backgroundColor: Colors.green,
+              duration: const Duration(seconds: 3),
+            ),
+          );
+        } else {
+          ScaffoldMessenger.of(context).showSnackBar(
+            const SnackBar(
+              content: Text('⚠️ 録音の保存に失敗しました'),
+              backgroundColor: Colors.orange,
+            ),
+          );
+        }
+      }
+    }
+  }
+
+  /// Setup recording notification listener
+  void _setupRecordingNotificationListener(String callId) {
+    debugPrint('🔔 [Recording] Setting up notification listener for call: $callId');
+    
+    _recordingNotificationSubscription = _recordingService
+        .listenForRecordingNotifications(callId)
+        .listen((notification) {
+      if (notification.isNotEmpty) {
+        final isRecording = notification['isRecording'] as bool;
+        
+        debugPrint('🔔 [Recording] Notification received: isRecording=$isRecording');
+        
+        if (mounted) {
+          setState(() {
+            _remoteIsRecording = isRecording;
+          });
+          
+          // Show snackbar to user
+          if (isRecording) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('🔴 相手が録音を開始しました'),
+                backgroundColor: Colors.red,
+                duration: Duration(seconds: 3),
+              ),
+            );
+          } else {
+            ScaffoldMessenger.of(context).showSnackBar(
+              const SnackBar(
+                content: Text('⏸️ 相手が録音を停止しました'),
+                backgroundColor: Colors.grey,
+                duration: Duration(seconds: 2),
+              ),
+            );
+          }
+        }
+      }
+    });
+  }
+
   /// End call
   Future<void> _endCall() async {
     debugPrint('🔴 [Agora Screen] Ending call...');
     _callTimer?.cancel();
+    _recordingNotificationSubscription?.cancel();
+    
+    // Stop recording if active
+    if (_isRecording) {
+      debugPrint('🛑 [Recording] Stopping recording due to call end');
+      await _recordingService.stopRecording();
+    }
     
     // Log call end
     final callStartTime = _callStartTime;
@@ -483,9 +612,44 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
 
             const Spacer(),
 
+            // Recording notification banner
+            if (_remoteIsRecording)
+              Container(
+                width: double.infinity,
+                padding: const EdgeInsets.symmetric(vertical: 12, horizontal: 20),
+                margin: const EdgeInsets.symmetric(horizontal: 32),
+                decoration: BoxDecoration(
+                  color: Colors.red.withValues(alpha: 0.2),
+                  borderRadius: BorderRadius.circular(12),
+                  border: Border.all(color: Colors.red, width: 2),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    Icon(
+                      Icons.fiber_manual_record,
+                      color: Colors.red,
+                      size: 16,
+                    ),
+                    const SizedBox(width: 8),
+                    const Text(
+                      '相手が録音中です',
+                      style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 14,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            
+            if (_remoteIsRecording)
+              const SizedBox(height: 16),
+
             // Control buttons
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+              padding: const EdgeInsets.symmetric(horizontal: 16.0, vertical: 48.0),
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                 children: [
@@ -496,6 +660,15 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
                     onPressed: _toggleSpeaker,
                     backgroundColor: _isSpeakerOn ? Colors.white : Colors.grey.shade700,
                     iconColor: _isSpeakerOn ? Colors.grey.shade900 : Colors.white,
+                  ),
+
+                  // Recording button
+                  _buildControlButton(
+                    icon: _isRecording ? Icons.stop : Icons.fiber_manual_record,
+                    label: _isRecording ? '停止' : '録音',
+                    onPressed: _isConnected ? _toggleRecording : null,
+                    backgroundColor: _isRecording ? Colors.red : Colors.white,
+                    iconColor: _isRecording ? Colors.white : Colors.red,
                   ),
 
                   // Mute button
@@ -528,18 +701,19 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   Widget _buildControlButton({
     required IconData icon,
     required String label,
-    required VoidCallback onPressed,
+    required VoidCallback? onPressed,
     required Color backgroundColor,
     required Color iconColor,
     bool isLarge = false,
   }) {
     final size = isLarge ? 72.0 : 60.0;
     final iconSize = isLarge ? 36.0 : 28.0;
+    final isDisabled = onPressed == null;
 
     return Column(
       children: [
         Material(
-          color: backgroundColor,
+          color: isDisabled ? Colors.grey.shade800 : backgroundColor,
           borderRadius: BorderRadius.circular(size / 2),
           child: InkWell(
             onTap: onPressed,
@@ -559,7 +733,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
               ),
               child: Icon(
                 icon,
-                color: iconColor,
+                color: isDisabled ? Colors.grey.shade600 : iconColor,
                 size: iconSize,
               ),
             ),
@@ -569,7 +743,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
         Text(
           label,
           style: TextStyle(
-            color: Colors.grey.shade400,
+            color: isDisabled ? Colors.grey.shade600 : Colors.grey.shade400,
             fontSize: 12,
           ),
         ),

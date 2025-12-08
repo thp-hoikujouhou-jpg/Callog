@@ -54,6 +54,12 @@ dependencies:
   # WebSocket for signaling (legacy - will be replaced by Agora)
   web_socket_channel: 3.0.1
   
+  # Audio Recording for call recording feature
+  record: 5.1.2
+  
+  # Path Provider for storing temporary recording files
+  path_provider: 2.1.5
+  
   # UI Components
   cupertino_icons: 1.0.8
 

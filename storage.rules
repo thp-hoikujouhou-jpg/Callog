@@ -1,0 +1,46 @@
+rules_version = '2';
+
+service firebase.storage {
+  match /b/{bucket}/o {
+    
+    // ✅ プロフィール画像 - ワイルドカード対応
+    match /profile_images/{userId}/{allPaths=**} {
+      // 読み取り: すべての認証済みユーザー（友達検索・表示用）
+      allow read: if request.auth != null;
+      
+      // 書き込み: 自分自身のプロフィール画像のみ
+      allow write: if request.auth != null && 
+                      request.auth.uid == userId;
+    }
+    
+    // ✅ 通話録音ファイル - ワイルドカード対応（NEW! 更新版）
+    match /call_recordings/{userId}/{allPaths=**} {
+      // 読み取り: 自分自身の録音のみ
+      allow read: if request.auth != null && 
+                     request.auth.uid == userId;
+      
+      // 書き込み: 自分自身の録音のみ
+      allow write: if request.auth != null && 
+                      request.auth.uid == userId;
+    }
+    
+    // ✅ ミーティングノート添付ファイル（将来用）
+    match /meeting_notes/{userId}/{allPaths=**} {
+      allow read: if request.auth != null && 
+                     request.auth.uid == userId;
+      allow write: if request.auth != null && 
+                      request.auth.uid == userId;
+    }
+    
+    // ✅ チャット添付ファイル（将来用）
+    match /chat_attachments/{chatId}/{allPaths=**} {
+      allow read: if request.auth != null;
+      allow write: if request.auth != null;
+    }
+    
+    // ❌ その他のファイル: デフォルトで拒否
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

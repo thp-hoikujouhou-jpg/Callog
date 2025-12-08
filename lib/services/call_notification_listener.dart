@@ -39,14 +39,17 @@ class CallNotificationListener {
 
     try {
       // Listen to call_notifications collection where peerId matches current user
-      // Only get notifications from the last 1 minute to avoid old notifications
-      final oneMinuteAgo = DateTime.now().subtract(const Duration(minutes: 1));
+      // 🔥 CRITICAL FIX: Remove time filter to receive calls immediately after reload
+      // Instead, we'll check timestamp in the callback to filter old notifications
+      final tenSecondsAgo = DateTime.now().subtract(const Duration(seconds: 10));
+      
+      debugPrint('[CallListener] 🔥 Listening for calls (last 10 seconds filter)');
       
       _notificationSubscription = _firestore
           .collection('call_notifications')
           .where('peerId', isEqualTo: userId)
           .where('status', isEqualTo: 'ringing')
-          .where('createdAt', isGreaterThan: oneMinuteAgo.millisecondsSinceEpoch)
+          .where('createdAt', isGreaterThan: tenSecondsAgo.millisecondsSinceEpoch)
           .snapshots()
           .listen(
         (QuerySnapshot snapshot) {

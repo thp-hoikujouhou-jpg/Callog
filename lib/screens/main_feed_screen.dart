@@ -43,6 +43,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       debugPrint('🏠 [MainFeed] Initializing main feed screen...');
     }
     
+    // 🔥 CRITICAL FIX: Initialize Call Listener FIRST for immediate incoming call detection
+    _initializeCallListener();
+    
     // Load friends immediately with post-frame callback to ensure build context is ready
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       if (mounted) {
@@ -54,7 +57,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     });
     
     _globalCleanupOldMessages(); // Clean up old messages on app start
-    _initializePushNotifications(); // Initialize push notifications
+    _initializePushNotifications(); // Initialize push notifications (FCM token, etc.)
     _handleUrlParameters(); // Handle URL parameters for incoming calls (Web)
     
     // Initialize Web notification listener for background notifications
@@ -99,8 +102,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         debugPrint('⚠️ [Push] FCM Token not available yet');
       }
       
-      // Initialize Call Notification Listener (Firestore-based)
-      _initializeCallListener();
+      // Call listener is now initialized in initState() for immediate availability
     } catch (e, stackTrace) {
       debugPrint('❌ [Push] Push notification initialization error: $e');
       debugPrint('Stack trace: $stackTrace');
