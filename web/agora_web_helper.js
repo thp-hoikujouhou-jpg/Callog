@@ -10,6 +10,26 @@ window.agoraClients = {};
 window.agoraAudioTracks = {};
 window.agoraVideoTracks = {};
 
+// REMOVED: ensureFlutterUIOnTop() - No longer manipulating Flutter UI z-index
+
+/**
+ * Resume AudioContext (required for browser autoplay policy)
+ */
+function resumeAudioContext() {
+  if (window.AgoraRTC && window.AgoraRTC.audioContext) {
+    if (window.AgoraRTC.audioContext.state === 'suspended') {
+      console.log('[AgoraWebHelper] 🔊 Resuming AudioContext...');
+      window.AgoraRTC.audioContext.resume().then(() => {
+        console.log('[AgoraWebHelper] ✅ AudioContext resumed successfully');
+      }).catch(err => {
+        console.error('[AgoraWebHelper] ❌ Failed to resume AudioContext:', err);
+      });
+    } else {
+      console.log('[AgoraWebHelper] 🔊 AudioContext state:', window.AgoraRTC.audioContext.state);
+    }
+  }
+}
+
 /**
  * Create and join Agora channel with audio only
  * 
@@ -45,14 +65,19 @@ window.agoraJoinAudioChannel = async function(appId, channelName, token, uid = 0
       console.log('[AgoraWebHelper] ✅ Subscribed to user:', user.uid);
       
       if (mediaType === 'audio') {
+        // Resume AudioContext first (browser autoplay policy)
+        resumeAudioContext();
+        
         // Play the remote audio track
         const remoteAudioTrack = user.audioTrack;
-        remoteAudioTrack.play();
-        console.log('[AgoraWebHelper] 🔊 Playing remote audio from user:', user.uid);
         
-        // Set volume to maximum
+        // CRITICAL FIX: Set volume BEFORE playing
+        console.log(`[AgoraWebHelper] 🔊 Setting remote audio volume to 100 for user: ${user.uid}`);
         remoteAudioTrack.setVolume(100);
-        console.log('[AgoraWebHelper] 🔊 Remote audio volume set to 100');
+        
+        // Play after volume is set
+        remoteAudioTrack.play();
+        console.log(`[AgoraWebHelper] ✅ Remote audio playing at volume 100 from user: ${user.uid}`);
       }
     });
     
@@ -147,10 +172,18 @@ window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0
       console.log('[AgoraWebHelper] ✅ Subscribed to user:', user.uid);
       
       if (mediaType === 'audio') {
+        // Resume AudioContext first (browser autoplay policy)
+        resumeAudioContext();
+        
         const remoteAudioTrack = user.audioTrack;
-        remoteAudioTrack.play();
+        
+        // CRITICAL FIX: Set volume BEFORE playing
+        console.log(`[AgoraWebHelper] 🔊 Setting remote audio volume to 100 for user: ${user.uid}`);
         remoteAudioTrack.setVolume(100);
-        console.log('[AgoraWebHelper] 🔊 Playing remote audio from user:', user.uid);
+        
+        // Play after volume is set
+        remoteAudioTrack.play();
+        console.log(`[AgoraWebHelper] ✅ Remote audio playing at volume 100 from user: ${user.uid}`);
       }
       
       if (mediaType === 'video') {
@@ -158,11 +191,14 @@ window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0
         // Play video in a div with id 'remote-video-container'
         const remoteContainer = document.getElementById('remote-video-container');
         if (remoteContainer) {
-          remoteContainer.style.display = 'block'; // Show remote video container
+          remoteContainer.style.display = 'block';
+          remoteContainer.style.visibility = 'visible';
+          remoteContainer.style.pointerEvents = 'none'; // CRITICAL: Video never captures clicks
+          remoteContainer.style.zIndex = '-1'; // ALWAYS behind Flutter UI
           remoteVideoTrack.play(remoteContainer);
-          console.log('[AgoraWebHelper] 📹 Playing remote video from user:', user.uid);
+          console.log('[AgoraWebHelper] 📹 Playing remote video, z-index: -1 (behind Flutter)');
         } else {
-          console.warn('[AgoraWebHelper] ⚠️ remote-video-container not found, cannot play video');
+          console.warn('[AgoraWebHelper] ⚠️ remote-video-container not found');
         }
       }
     });
@@ -202,11 +238,14 @@ window.agoraJoinVideoChannel = async function(appId, channelName, token, uid = 0
     // Play local video in a div with id 'local-video-container'
     const localContainer = document.getElementById('local-video-container');
     if (localContainer) {
-      localContainer.style.display = 'block'; // Show local video container
+      localContainer.style.display = 'block';
+      localContainer.style.visibility = 'visible';
+      localContainer.style.pointerEvents = 'none'; // CRITICAL: Video never captures clicks
+      localContainer.style.zIndex = '-1'; // ALWAYS behind Flutter UI
       videoTrack.play(localContainer);
-      console.log('[AgoraWebHelper] 📹 Playing local video');
+      console.log('[AgoraWebHelper] 📹 Playing local video, z-index: -1 (behind Flutter)');
     } else {
-      console.warn('[AgoraWebHelper] ⚠️ local-video-container not found, cannot play local video');
+      console.warn('[AgoraWebHelper] ⚠️ local-video-container not found');
     }
     
     // Store tracks globally
@@ -279,15 +318,19 @@ window.agoraLeaveChannel = async function(channelName) {
       delete window.agoraVideoTracks[channelName];
     }
     
-    // Hide video containers
+    // Hide video containers and reset z-index
     const localContainer = document.getElementById('local-video-container');
     const remoteContainer = document.getElementById('remote-video-container');
     if (localContainer) {
       localContainer.style.display = 'none';
+      localContainer.style.visibility = 'hidden';
+      localContainer.style.zIndex = '-1'; // Move behind everything when hidden
       console.log('[AgoraWebHelper] 🙈 Local video container hidden');
     }
     if (remoteContainer) {
       remoteContainer.style.display = 'none';
+      remoteContainer.style.visibility = 'hidden';
+      remoteContainer.style.zIndex = '-1'; // Move behind everything when hidden
       console.log('[AgoraWebHelper] 🙈 Remote video container hidden');
     }
     

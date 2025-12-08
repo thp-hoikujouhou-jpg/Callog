@@ -477,51 +477,7 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
 
                 const SizedBox(height: 8),
 
-                // Connection indicator
-                if (_isConnecting)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      SizedBox(
-                        width: 16,
-                        height: 16,
-                        child: CircularProgressIndicator(
-                          strokeWidth: 2,
-                          valueColor: AlwaysStoppedAnimation<Color>(
-                            Colors.greenAccent,
-                          ),
-                        ),
-                      ),
-                      const SizedBox(width: 12),
-                      Text(
-                        '接続中...',
-                        style: TextStyle(
-                          color: Colors.grey.shade400,
-                          fontSize: 16,
-                        ),
-                      ),
-                    ],
-                  )
-                else if (_isConnected)
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      Icon(
-                        Icons.check_circle,
-                        color: Colors.greenAccent,
-                        size: 20,
-                      ),
-                      const SizedBox(width: 8),
-                      Text(
-                        '通話中',
-                        style: TextStyle(
-                          color: Colors.greenAccent,
-                          fontSize: 16,
-                          fontWeight: FontWeight.w600,
-                        ),
-                      ),
-                    ],
-                  ),
+                // Connection indicator removed - status shown in top bar only
               ],
             ),
 

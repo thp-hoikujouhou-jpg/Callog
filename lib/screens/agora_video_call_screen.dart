@@ -3,6 +3,7 @@ import 'package:flutter/foundation.dart' show kIsWeb;
 import 'dart:async';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import '../services/agora_video_call_service.dart';
+import '../services/agora_token_service.dart';
 import '../services/call_history_service.dart';
 import '../services/push_notification_service.dart';
 import '../services/auth_service.dart';
@@ -79,6 +80,33 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       await _callService.initialize();
       debugPrint('✅ [Agora Video] Agora engine initialized');
       
+      // Use provided channel name or generate one
+      final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
+      debugPrint('📞 [Agora Video] Channel: $channelName');
+      debugPrint('📞 [Agora Video] Call type: ${widget.isIncoming ? "Incoming" : "Outgoing"}');
+      
+      // 🔑 CRITICAL FIX: Generate Token for video call
+      debugPrint('🔑 [Agora Video] Attempting to generate token...');
+      String? token;
+      try {
+        final tokenService = AgoraTokenService();
+        final tokenData = await tokenService.generateToken(
+          channelName: channelName,
+          uid: 0,
+          role: 'publisher',
+        );
+        token = tokenData['token'] as String?;
+        debugPrint('✅ [Agora Video] Token generated successfully');
+        if (token != null) {
+          debugPrint('🔑 [Agora Video] Token length: ${token.length}');
+        } else {
+          debugPrint('⚠️ [Agora Video] Token is null (App Certificate may not be configured)');
+        }
+      } catch (tokenError) {
+        debugPrint('⚠️ [Agora Video] Failed to generate token: $tokenError');
+        debugPrint('💡 [Agora Video] Continuing without token (may fail if App Certificate is required)');
+      }
+      
       // Set up event handlers AFTER initialization
       _callService.onUserJoined = (userId) {
         debugPrint('✅ [Agora Video] User joined: $userId');
@@ -145,13 +173,8 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
         }
       };
       
-      // Use provided channel name or generate one
-      final channelName = widget.channelName ?? _generateChannelName(widget.friendId);
-      debugPrint('📞 [Agora Video] Joining channel: $channelName');
-      debugPrint('📞 [Agora Video] Call type: ${widget.isIncoming ? "Incoming" : "Outgoing"}');
-      
-      // Join the channel
-      await _callService.joinChannel(channelName);
+      // Join the channel with token
+      await _callService.joinChannel(channelName, token: token);
       debugPrint('✅ [Agora Video] Join channel request sent');
       
       // Web SDK workaround: Force connection after timeout if onUserJoined doesn't fire
@@ -362,43 +385,77 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: Colors.black,
-      body: SafeArea(
-        child: Stack(
-          children: [
-            // Remote video (full screen)
-            if (_remoteUid != null)
-              _buildRemoteVideo()
-            else
-              _buildWaitingView(),
+      // Web: Transparent background to show HTML video containers below
+      // Mobile: Black background with AgoraVideoView
+      backgroundColor: kIsWeb ? Colors.transparent : Colors.black,
+      body: Stack(
+        children: [
+          // Layer 0: Remote video (full screen) - for mobile only
+          if (_remoteUid != null && !kIsWeb)
+            _buildRemoteVideo()
+          else if (!kIsWeb)
+            _buildWaitingView(),
 
-            // Top bar (status and duration)
-            _buildTopBar(),
+          // Web: HTML video containers are managed separately (z-index: 10, 50)
+          // Flutter UI must be wrapped in Positioned with explicit stacking
+          
+          // Layer 1000: Flutter UI elements (always on top with explicit positioning)
+          Positioned.fill(
+            child: SafeArea(
+              child: Stack(
+                children: [
+                  // Top bar (status and duration)
+                  _buildTopBar(),
 
-            // Local video (picture-in-picture)
-            if (!_isVideoOff)
-              _buildLocalVideo(),
+                  // Local video (picture-in-picture) - mobile only
+                  if (!_isVideoOff && !kIsWeb)
+                    _buildLocalVideo(),
 
-            // Control buttons
-            _buildControlButtons(),
-          ],
-        ),
+                  // Control buttons
+                  _buildControlButtons(),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
   /// Remote video view
   Widget _buildRemoteVideo() {
+    // Web platform: Use native HTML video container
+    if (kIsWeb) {
+      // Return empty container - video is shown in HTML div#remote-video-container
+      return Container(
+        color: Colors.transparent,
+        child: const Center(
+          child: Text(
+            '',
+            style: TextStyle(color: Colors.white70),
+          ),
+        ),
+      );
+    }
+    
+    // Mobile platform: Use Flutter AgoraVideoView (FULL SCREEN)
     final engine = _callService.engine;
     if (engine == null) {
-      return const Center(child: Text('エンジンが初期化されていません'));
+      return Container(
+        color: Colors.black,
+        child: const Center(child: Text('エンジンが初期化されていません', style: TextStyle(color: Colors.white))),
+      );
     }
     
     final channelName = _callService.currentChannelName;
     if (channelName == null) {
-      return const Center(child: Text('チャンネル名が不明です'));
+      return Container(
+        color: Colors.black,
+        child: const Center(child: Text('チャンネル名が不明です', style: TextStyle(color: Colors.white))),
+      );
     }
     
+    // CRITICAL FIX: Simple full-screen AgoraVideoView without Positioned wrapper
     return SizedBox.expand(
       child: AgoraVideoView(
         controller: VideoViewController.remote(
@@ -477,6 +534,27 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
 
   /// Local video (picture-in-picture)
   Widget _buildLocalVideo() {
+    // Web platform: Use native HTML video container (positioned in index.html)
+    if (kIsWeb) {
+      // Return empty container - local video is shown in HTML div#local-video-container
+      return Positioned(
+        top: 80,
+        right: 16,
+        child: Container(
+          width: 120,
+          height: 160,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(12),
+            border: Border.all(color: Colors.transparent, width: 2),
+          ),
+          child: const Center(
+            child: Text('', style: TextStyle(color: Colors.transparent)),
+          ),
+        ),
+      );
+    }
+    
+    // Mobile platform: Use Flutter AgoraVideoView
     return Positioned(
       top: 80,
       right: 16,
@@ -515,44 +593,63 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
     );
   }
 
-  /// Top bar
+  /// Top bar (connection status and call duration)
   Widget _buildTopBar() {
     return Positioned(
       top: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: const EdgeInsets.all(16.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.topCenter,
-            end: Alignment.bottomCenter,
-            colors: [
-              Colors.black.withValues(alpha: 0.7),
-              Colors.transparent,
-            ],
-          ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceBetween,
-          children: [
-            Text(
-              _connectionStatus,
-              style: TextStyle(
-                color: _isConnected ? Colors.greenAccent : Colors.white70,
-                fontSize: 14,
-              ),
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.all(20.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.topCenter,
+              end: Alignment.bottomCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.85),
+                Colors.black.withValues(alpha: 0.6),
+                Colors.transparent,
+              ],
             ),
-            if (_isConnected)
-              Text(
-                _formatDuration(_callDuration),
-                style: const TextStyle(
-                  color: Colors.white,
-                  fontSize: 14,
-                  fontWeight: FontWeight.bold,
+          ),
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withValues(alpha: 0.7),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Text(
+                  _connectionStatus,
+                  style: TextStyle(
+                    color: _isConnected ? Colors.blueAccent : Colors.white,
+                    fontSize: 15,
+                    fontWeight: FontWeight.w600,
+                  ),
                 ),
               ),
-          ],
+              if (_isConnected)
+                Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: Colors.black.withValues(alpha: 0.7),
+                    borderRadius: BorderRadius.circular(12),
+                  ),
+                  child: Text(
+                    _formatDuration(_callDuration),
+                    style: const TextStyle(
+                      color: Colors.white,
+                      fontSize: 15,
+                      fontWeight: FontWeight.bold,
+                    ),
+                  ),
+                ),
+            ],
+          ),
         ),
       ),
     );
@@ -564,21 +661,24 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
       bottom: 0,
       left: 0,
       right: 0,
-      child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
-        decoration: BoxDecoration(
-          gradient: LinearGradient(
-            begin: Alignment.bottomCenter,
-            end: Alignment.topCenter,
-            colors: [
-              Colors.black.withValues(alpha: 0.8),
-              Colors.transparent,
-            ],
+      child: Material(
+        color: Colors.transparent,
+        child: Container(
+          padding: const EdgeInsets.symmetric(horizontal: 32.0, vertical: 48.0),
+          decoration: BoxDecoration(
+            gradient: LinearGradient(
+              begin: Alignment.bottomCenter,
+              end: Alignment.topCenter,
+              colors: [
+                Colors.black.withValues(alpha: 0.95),
+                Colors.black.withValues(alpha: 0.7),
+                Colors.transparent,
+              ],
+            ),
           ),
-        ),
-        child: Row(
-          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-          children: [
+          child: Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+            children: [
             // Camera switch button
             _buildControlButton(
               icon: Icons.cameraswitch,
@@ -617,6 +717,7 @@ class _AgoraVideoCallScreenState extends State<AgoraVideoCallScreen> {
             ),
           ],
         ),
+      ),
       ),
     );
   }

@@ -53,8 +53,42 @@
 </head>
 <body>
   <!-- Video containers for Agora Web SDK (hidden by default, shown only during video calls) -->
-  <div id="local-video-container" style="position: absolute; width: 150px; height: 200px; top: 20px; right: 20px; z-index: 9999; border-radius: 10px; overflow: hidden; background: #000; display: none;"></div>
-  <div id="remote-video-container" style="position: absolute; width: 100%; height: 100%; top: 0; left: 0; z-index: 1; background: #000; display: none;"></div>
+  <!-- CRITICAL: These containers MUST stay BEHIND Flutter UI -->
+  <!-- Strategy: Use position:fixed with z-index:0 to create video background layer -->
+  <!-- Flutter app (flt-glass-pane) has z-index auto, so we ensure video is below -->
+  
+  <!-- Remote video: Video layer (z-index controlled by JS) -->
+  <div id="remote-video-container" style="
+    position: fixed;
+    width: 100vw;
+    height: 100vh;
+    top: 0;
+    left: 0;
+    z-index: -1;
+    background: #000;
+    display: none;
+    visibility: hidden;
+    pointer-events: none;
+    overflow: hidden;
+  "></div>
+  
+  <!-- Local video: Picture-in-picture (z-index controlled by JS) -->
+  <div id="local-video-container" style="
+    position: fixed;
+    width: 150px;
+    height: 200px;
+    top: 100px;
+    right: 20px;
+    z-index: -1;
+    border-radius: 10px;
+    overflow: hidden;
+    background: #000;
+    display: none;
+    visibility: hidden;
+    border: 2px solid white;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.5);
+    pointer-events: none;
+  "></div>
   
   <script>
     // Disable service worker to prevent initialization timeout
@@ -62,6 +96,19 @@
       serviceWorkerVersion: null,
     };
   </script>
+  
+  <!-- Minimal styling - NO z-index interference -->
+  <style>
+    /* Body must not interfere with z-index stacking */
+    body {
+      margin: 0;
+      padding: 0;
+      overflow: hidden;
+    }
+    
+    /* NO CSS z-index rules - JavaScript will handle everything dynamically */
+  </style>
+  
   <script src="flutter_bootstrap.js" async></script>
 </body>
 </html>
