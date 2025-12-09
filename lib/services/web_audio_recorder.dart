@@ -34,7 +34,7 @@ class WebAudioRecorder {
         'noiseSuppression': true,  // ノイズ除去
         'autoGainControl': true,   // 自動ゲイン調整
         'sampleRate': 48000,       // 48kHz (高品質)
-        'channelCount': 1,         // モノラル (音声認識最適)
+        'channelCount': 2,         // ステレオ (WEBM出力と整合)
       };
       
       // Convert to JS object
@@ -56,7 +56,7 @@ class WebAudioRecorder {
         debugPrint('   - Echo Cancellation: ON');
         debugPrint('   - Noise Suppression: ON');
         debugPrint('   - Auto Gain Control: ON');
-        debugPrint('   - Channel: Mono');
+        debugPrint('   - Channel: Stereo (2ch)');
       }
 
       // MediaRecorderを作成 (高品質設定)

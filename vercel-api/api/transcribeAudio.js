@@ -93,11 +93,11 @@ export default async function handler(req, res) {
       config: {
         encoding: audioFormat === 'webm' ? 'WEBM_OPUS' : 'MP4',
         sampleRateHertz: 48000, // 48kHz (録音設定と一致)
+        audioChannelCount: 2,   // ステレオ (2ch) - Flutter録音設定と一致
         languageCode: 'ja-JP',  // Japanese
         enableAutomaticPunctuation: true, // 句読点自動挿入
         model: 'latest_long',   // 最新・長時間対応モデル
         useEnhanced: true,      // 拡張モデル使用 (精度向上)
-        // audioChannelCount: Unspecified (自動検出 - WEBM ヘッダから取得)
       },
     };
 
