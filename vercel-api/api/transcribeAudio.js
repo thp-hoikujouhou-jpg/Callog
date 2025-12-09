@@ -46,17 +46,24 @@ export default async function handler(req, res) {
       });
     }
 
-    // Initialize Google Cloud Speech client with service account from environment
-    // Expected env var: GOOGLE_APPLICATION_CREDENTIALS_JSON (stringified JSON)
+    // Initialize Google Cloud Speech client with Firebase service account
+    // Use existing FIREBASE_SERVICE_ACCOUNT (Base64 encoded)
     let speechClient;
     
-    if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
-      console.log('[TranscribeAudio] 🔑 Using Service Account from environment variable');
+    if (process.env.FIREBASE_SERVICE_ACCOUNT) {
+      console.log('[TranscribeAudio] 🔑 Using Firebase Service Account (Base64)');
+      // Decode Base64 to get JSON string
+      const serviceAccountJson = Buffer.from(process.env.FIREBASE_SERVICE_ACCOUNT, 'base64').toString('utf-8');
+      const credentials = JSON.parse(serviceAccountJson);
+      console.log('[TranscribeAudio] 📧 Service Account Email:', credentials.client_email);
+      speechClient = new SpeechClient({ credentials });
+    } else if (process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON) {
+      console.log('[TranscribeAudio] 🔑 Using GOOGLE_APPLICATION_CREDENTIALS_JSON');
       const credentials = JSON.parse(process.env.GOOGLE_APPLICATION_CREDENTIALS_JSON);
       speechClient = new SpeechClient({ credentials });
     } else {
       console.log('[TranscribeAudio] 🔑 Using default Google Cloud credentials');
-      speechClient = new SpeechClient(); // Will use GOOGLE_APPLICATION_CREDENTIALS env var or default credentials
+      speechClient = new SpeechClient(); // Fallback to default credentials
     }
 
     // Download audio file from Firebase Storage
