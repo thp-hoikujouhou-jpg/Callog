@@ -1056,12 +1056,12 @@ class LocalizationService extends ChangeNotifier {
       'fr': 'Transcrire',
     },
     'transcribing_with_ai': {
-      'en': 'Transcribing with Gemini AI...',
-      'ja': 'Gemini AIで文字起こし中...',
-      'ko': 'Gemini AI로 텍스트 변환 중...',
-      'zh': '使用 Gemini AI 转录中...',
-      'es': 'Transcribiendo con Gemini AI...',
-      'fr': 'Transcription avec Gemini AI...',
+      'en': 'Transcribing...',
+      'ja': '文字起こし中...',
+      'ko': '텍스트 변환 중...',
+      'zh': '转录中...',
+      'es': 'Transcribiendo...',
+      'fr': 'Transcription...',
     },
     'transcription_completed': {
       'en': 'Transcription completed',
