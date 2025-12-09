@@ -14,7 +14,7 @@ class AgoraTokenService {
 
   // Vercel Functions endpoint
   static const String _generateTokenUrl = 
-      'https://callog-api-v2.vercel.app/api/generateAgoraToken';
+      'https://callog.vercel.app/api/generateAgoraToken';
 
   /// Generate Agora RTC Token
   /// 

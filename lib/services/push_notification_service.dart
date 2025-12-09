@@ -27,7 +27,7 @@ class PushNotificationService {
   
   // Vercel Functions endpoint (No Firebase Admin SDK required)
   static const String _sendPushUrl = 
-      'https://callog-api-v2.vercel.app/api/sendPushNotification';
+      'https://callog.vercel.app/api/sendPushNotification';
   
   final FlutterLocalNotificationsPlugin _localNotifications = 
       FlutterLocalNotificationsPlugin();

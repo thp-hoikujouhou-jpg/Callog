@@ -48,7 +48,7 @@ class GeminiTranscriptionService {
       debugPrint('[GeminiTranscription] 📡 Using Vercel API proxy to bypass CORS');
       
       // Use Vercel API endpoint to transcribe (bypasses CORS)
-      final vercelEndpoint = 'https://callog-api-v2.vercel.app/api/transcribeAudio';
+      final vercelEndpoint = 'https://callog.vercel.app/api/transcribeAudio';
       
       debugPrint('[GeminiTranscription] 🚀 Calling Vercel API...');
       debugPrint('[GeminiTranscription]    Endpoint: $vercelEndpoint');
