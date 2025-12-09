@@ -97,7 +97,7 @@ export default async function handler(req, res) {
         enableAutomaticPunctuation: true, // 句読点自動挿入
         model: 'latest_long',   // 最新・長時間対応モデル
         useEnhanced: true,      // 拡張モデル使用 (精度向上)
-        audioChannelCount: 1,   // モノラル (録音設定と一致)
+        // audioChannelCount: Unspecified (自動検出 - WEBM ヘッダから取得)
       },
     };
 
