@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
+import '../services/gemini_summary_service.dart';
 import '../models/call_recording.dart';
 
 class CallHistoryScreen extends StatefulWidget {
@@ -24,6 +25,15 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   
   // Cache for user display names
   final Map<String, String> _userDisplayNames = {};
+  
+  // Gemini summary service
+  final GeminiSummaryService _summaryService = GeminiSummaryService();
+  
+  // Track which recordings are being summarized
+  final Map<String, bool> _isSummarizing = {};
+  
+  // Cache for summaries
+  final Map<String, String> _summaries = {};
 
   @override
   void initState() {
@@ -35,6 +45,178 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   @override
   void dispose() {
     super.dispose();
+  }
+  
+  /// Show edit transcription dialog
+  Future<void> _showEditDialog(CallRecording recording) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    final controller = TextEditingController(text: recording.transcription ?? '');
+    
+    final result = await showDialog<String>(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.edit, color: Colors.blue),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                localService.translate('edit_transcription'),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          constraints: const BoxConstraints(minWidth: 400, maxHeight: 400),
+          child: TextField(
+            controller: controller,
+            maxLines: null,
+            decoration: InputDecoration(
+              hintText: localService.translate('enter_text'),
+              border: const OutlineInputBorder(),
+            ),
+            autofocus: true,
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('cancel')),
+          ),
+          ElevatedButton(
+            onPressed: () => Navigator.pop(context, controller.text),
+            child: Text(localService.translate('save')),
+          ),
+        ],
+      ),
+    );
+    
+    if (result != null && result != recording.transcription) {
+      // Update transcription in Firestore
+      try {
+        await _firestore.collection('call_recordings').doc(recording.id).update({
+          'transcription': result,
+          'transcriptionEditedAt': FieldValue.serverTimestamp(),
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localService.translate('transcription_updated')),
+              backgroundColor: Colors.green,
+            ),
+          );
+        }
+      } catch (e) {
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text('${localService.translate('error')}: $e'),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    }
+  }
+  
+  /// Generate AI summary for transcription
+  Future<void> _generateSummary(CallRecording recording) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    if (recording.transcription == null || recording.transcription!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localService.translate('no_transcription_to_summarize')),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    setState(() {
+      _isSummarizing[recording.id] = true;
+    });
+    
+    try {
+      final summary = await _summaryService.summarizeText(recording.transcription!);
+      
+      if (summary != null && summary.isNotEmpty) {
+        setState(() {
+          _summaries[recording.id] = summary;
+          _isSummarizing[recording.id] = false;
+        });
+        
+        if (mounted) {
+          _showSummaryDialog(summary);
+        }
+      } else {
+        setState(() {
+          _isSummarizing[recording.id] = false;
+        });
+        
+        if (mounted) {
+          ScaffoldMessenger.of(context).showSnackBar(
+            SnackBar(
+              content: Text(localService.translate('summary_failed')),
+              backgroundColor: Colors.red,
+            ),
+          );
+        }
+      }
+    } catch (e) {
+      setState(() {
+        _isSummarizing[recording.id] = false;
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${localService.translate('error')}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
+  /// Show summary dialog
+  void _showSummaryDialog(String summary) {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: Row(
+          children: [
+            const Icon(Icons.auto_awesome, color: Colors.purple),
+            const SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                localService.translate('ai_summary'),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: Container(
+          constraints: const BoxConstraints(maxHeight: 400, minWidth: 300),
+          child: SingleChildScrollView(
+            child: SelectableText(
+              summary,
+              style: const TextStyle(fontSize: 14, height: 1.5),
+            ),
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: Text(localService.translate('close')),
+          ),
+        ],
+      ),
+    );
   }
   
   /// Get display name for a user ID
@@ -350,14 +532,42 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           children: [
                             Icon(Icons.check_circle, size: 18, color: Colors.green.shade700),
                             const SizedBox(width: 8),
-                            Text(
-                              localService.translate('transcription_result'),
-                              style: TextStyle(
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                                color: Colors.green.shade700,
+                            Expanded(
+                              child: Text(
+                                localService.translate('transcription_result'),
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 14,
+                                  color: Colors.green.shade700,
+                                ),
                               ),
                             ),
+                            // Edit button
+                            IconButton(
+                              icon: const Icon(Icons.edit, size: 18),
+                              onPressed: () => _showEditDialog(recording),
+                              tooltip: localService.translate('edit'),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.blue.shade700,
+                            ),
+                            const SizedBox(width: 8),
+                            // AI Summary button
+                            if (_isSummarizing[recording.id] == true)
+                              const SizedBox(
+                                width: 18,
+                                height: 18,
+                                child: CircularProgressIndicator(strokeWidth: 2),
+                              )
+                            else
+                              IconButton(
+                                icon: const Icon(Icons.auto_awesome, size: 18),
+                                onPressed: () => _generateSummary(recording),
+                                tooltip: localService.translate('ai_summary'),
+                                padding: EdgeInsets.zero,
+                                constraints: const BoxConstraints(),
+                                color: Colors.purple.shade700,
+                              ),
                           ],
                         ),
                         const Divider(),
