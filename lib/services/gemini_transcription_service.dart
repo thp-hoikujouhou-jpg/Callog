@@ -64,17 +64,34 @@ class GeminiTranscriptionService {
         }),
       );
       
+      debugPrint('[GeminiTranscription] 📬 Response status: ${response.statusCode}');
+      debugPrint('[GeminiTranscription] 📄 Response body: ${response.body}');
+      
       if (response.statusCode != 200) {
         debugPrint('[GeminiTranscription] ❌ Vercel API error: ${response.statusCode}');
         debugPrint('[GeminiTranscription]    Response: ${response.body}');
+        
+        // Try to parse error message
+        try {
+          final errorData = jsonDecode(response.body);
+          debugPrint('[GeminiTranscription]    Error details: ${errorData['error']}');
+          if (errorData['message'] != null) {
+            debugPrint('[GeminiTranscription]    Message: ${errorData['message']}');
+          }
+        } catch (e) {
+          // Ignore JSON parsing error
+        }
         return null;
       }
       
       final responseData = jsonDecode(response.body);
       final transcription = responseData['transcription'] as String?;
       
-      if (transcription == null || transcription.isEmpty) {
-        debugPrint('[GeminiTranscription] ⚠️ No transcription result from API');
+      debugPrint('[GeminiTranscription] 📝 Raw transcription: $transcription');
+      
+      if (transcription == null || transcription.trim().isEmpty) {
+        debugPrint('[GeminiTranscription] ⚠️ Empty transcription result from API');
+        debugPrint('[GeminiTranscription]    This may indicate silent audio or speech recognition failure');
         return null;
       }
       

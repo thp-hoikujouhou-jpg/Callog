@@ -954,16 +954,18 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         actions: [
-          IconButton(
-            icon: const Icon(Icons.history),
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
-              );
-            },
-            tooltip: '通話履歴',
-          ),
+          // Only show call history button on larger screens (PC/tablet)
+          if (MediaQuery.of(context).size.width > 600)
+            IconButton(
+              icon: const Icon(Icons.history),
+              onPressed: () {
+                Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
+                );
+              },
+              tooltip: '通話履歴',
+            ),
           IconButton(
             icon: const Icon(Icons.calendar_today),
             onPressed: () {

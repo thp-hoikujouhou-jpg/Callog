@@ -46,14 +46,16 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     _firestore
         .collection('call_recordings')
         .where('userId', isEqualTo: currentUser.uid)
-        .orderBy('timestamp', descending: true)
-        .limit(50)
+        .limit(100)
         .snapshots()
         .listen((snapshot) {
       if (mounted) {
         final recordings = snapshot.docs
             .map((doc) => CallRecording.fromMap(doc.data(), doc.id))
             .toList();
+        
+        // Sort in memory
+        recordings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
         setState(() {
           _recordings = recordings;
@@ -90,12 +92,11 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         debugPrint('📞 [CallHistory] Loading recordings for user: ${currentUser.uid}');
       }
 
-      // Fetch recordings from Firestore
+      // Fetch recordings from Firestore (simple query without orderBy to avoid index requirement)
       final snapshot = await _firestore
           .collection('call_recordings')
           .where('userId', isEqualTo: currentUser.uid)
-          .orderBy('timestamp', descending: true)
-          .limit(50)
+          .limit(100)
           .get();
 
       if (kDebugMode) {
@@ -105,6 +106,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       final recordings = snapshot.docs
           .map((doc) => CallRecording.fromMap(doc.data(), doc.id))
           .toList();
+      
+      // Sort in memory instead of using Firestore orderBy (to avoid composite index requirement)
+      recordings.sort((a, b) => b.timestamp.compareTo(a.timestamp));
 
       setState(() {
         _recordings = recordings;
