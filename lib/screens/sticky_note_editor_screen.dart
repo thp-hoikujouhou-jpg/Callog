@@ -92,10 +92,12 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
     if (user == null) return;
     
     // Validate input
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
     if (_keyPointsController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('話し合いの要点を入力してください'),
+        SnackBar(
+          content: Text(localService.translate('please_enter_key_points')),
           backgroundColor: Colors.orange,
         ),
       );
@@ -104,8 +106,8 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
     
     if (_resultsController.text.trim().isEmpty) {
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('話し合いの結果を入力してください'),
+        SnackBar(
+          content: Text(localService.translate('please_enter_results')),
           backgroundColor: Colors.orange,
         ),
       );
@@ -162,8 +164,8 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(
-            content: Text('メモを保存しました'),
+          SnackBar(
+            content: Text(localService.translate('memo_saved')),
             backgroundColor: Colors.green,
           ),
         );
@@ -184,7 +186,7 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
-            content: Text('エラー: $e'),
+            content: Text('${localService.translate('error')}: $e'),
             backgroundColor: Colors.red,
           ),
         );
@@ -237,7 +239,9 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingNote != null ? 'メモを編集' : '新しいメモ'),
+        title: Text(widget.existingNote != null 
+          ? localService.translate('edit_memo') 
+          : localService.translate('create_new_memo')),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         actions: [
@@ -259,7 +263,7 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
             IconButton(
               icon: const Icon(Icons.check),
               onPressed: _saveStickyNote,
-              tooltip: '保存',
+              tooltip: localService.translate('save'),
             ),
         ],
       ),
@@ -280,8 +284,8 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
             // Key points field
             _buildTextField(
               controller: _keyPointsController,
-              label: '話し合いの要点',
-              hint: '通話で話し合った内容を入力してください',
+              label: localService.translate('key_points'),
+              hint: localService.translate('key_points_hint'),
               maxLines: 5,
               icon: Icons.notes,
             ),
@@ -291,8 +295,8 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
             // Results field
             _buildTextField(
               controller: _resultsController,
-              label: '話し合いの結果',
-              hint: '結論や次のアクションを入力してください',
+              label: localService.translate('discussion_results'),
+              hint: localService.translate('results_hint'),
               maxLines: 5,
               icon: Icons.assignment_turned_in,
             ),
@@ -344,9 +348,9 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
-                const Text(
-                  '今日の話し相手',
-                  style: TextStyle(
+                Text(
+                  Provider.of<LocalizationService>(context, listen: false).translate('todays_contact'),
+                  style: const TextStyle(
                     fontSize: 12,
                     color: Colors.grey,
                   ),
@@ -374,15 +378,16 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
       child: ElevatedButton.icon(
         onPressed: () {
           _autoImportFromCallHistory();
+          final localService = Provider.of<LocalizationService>(context, listen: false);
           ScaffoldMessenger.of(context).showSnackBar(
-            const SnackBar(
-              content: Text('通話履歴から要点をインポートしました'),
+            SnackBar(
+              content: Text(localService.translate('imported_from_call')),
               backgroundColor: Colors.blue,
             ),
           );
         },
         icon: const Icon(Icons.download),
-        label: const Text('通話履歴から要点をインポート'),
+        label: Text(Provider.of<LocalizationService>(context, listen: false).translate('import_from_call_history')),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue.shade600,
           foregroundColor: Colors.white,
@@ -443,9 +448,9 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
           children: [
             Icon(Icons.palette, size: 20, color: Colors.blue.shade600),
             const SizedBox(width: 8),
-            const Text(
-              'ノートの色',
-              style: TextStyle(
+            Text(
+              localService.translate('note_color'),
+              style: const TextStyle(
                 fontSize: 16,
                 fontWeight: FontWeight.bold,
               ),
@@ -515,7 +520,9 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
                 ),
               )
             : const Icon(Icons.save),
-        label: Text(_isSaving ? '保存中...' : 'メモを保存'),
+        label: Text(_isSaving 
+          ? Provider.of<LocalizationService>(context, listen: false).translate('saving')
+          : Provider.of<LocalizationService>(context, listen: false).translate('save_memo')),
         style: ElevatedButton.styleFrom(
           backgroundColor: Colors.blue.shade600,
           foregroundColor: Colors.white,

@@ -100,8 +100,8 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
       }
       
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(
-          content: Text('メモを削除しました'),
+        SnackBar(
+          content: Text(localService.translate('memo_deleted')),
           backgroundColor: Colors.green,
         ),
       );
@@ -110,9 +110,10 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
         debugPrint('❌ [StickyNotesList] Error deleting note: $e');
       }
       
+      final localService = Provider.of<LocalizationService>(context, listen: false);
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('エラー: $e'),
+          content: Text('${localService.translate('error')}: $e'),
           backgroundColor: Colors.red,
         ),
       );
@@ -124,12 +125,12 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
-        title: const Text('メモを削除'),
-        content: const Text('このメモを削除してもよろしいですか？'),
+        title: Text(localService.translate('delete_memo')),
+        content: Text(localService.translate('delete_memo_confirm')),
         actions: [
           TextButton(
             onPressed: () => Navigator.pop(context, false),
-            child: const Text('キャンセル'),
+            child: Text(localService.translate('cancel')),
           ),
           ElevatedButton(
             onPressed: () => Navigator.pop(context, true),
@@ -137,7 +138,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
               backgroundColor: Colors.red,
               foregroundColor: Colors.white,
             ),
-            child: const Text('削除'),
+            child: Text(localService.translate('delete')),
           ),
         ],
       ),
@@ -179,7 +180,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
           ),
           const SizedBox(height: 16),
           Text(
-            'まだメモがありません',
+            localService.translate('no_memos_yet'),
             style: TextStyle(
               fontSize: 18,
               color: Colors.grey.shade600,
@@ -187,7 +188,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
           ),
           const SizedBox(height: 8),
           Text(
-            '下の + ボタンでメモを作成',
+            localService.translate('tap_plus_to_create'),
             style: TextStyle(
               fontSize: 14,
               color: Colors.grey.shade500,
@@ -217,6 +218,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
   
   /// Build sticky note card
   Widget _buildStickyNoteCard(StickyNote note) {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
     final color = Color(int.parse(note.colorHex.substring(1), radix: 16) + 0xFF000000);
     
     return GestureDetector(
@@ -299,9 +301,9 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
                   const SizedBox(height: 12),
                   
                   // Key points (preview)
-                  const Text(
-                    '📝 要点:',
-                    style: TextStyle(
+                  Text(
+                    localService.translate('key_points_short'),
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -317,9 +319,9 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
                   const SizedBox(height: 8),
                   
                   // Results (preview)
-                  const Text(
-                    '✅ 結果:',
-                    style: TextStyle(
+                  Text(
+                    localService.translate('results_short'),
+                    style: const TextStyle(
                       fontSize: 12,
                       fontWeight: FontWeight.bold,
                     ),
@@ -346,18 +348,18 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
                     color: Colors.blue.shade600,
                     borderRadius: BorderRadius.circular(10),
                   ),
-                  child: const Row(
+                  child: Row(
                     mainAxisSize: MainAxisSize.min,
                     children: [
-                      Icon(
+                      const Icon(
                         Icons.phone,
                         size: 10,
                         color: Colors.white,
                       ),
-                      SizedBox(width: 2),
+                      const SizedBox(width: 2),
                       Text(
-                        'インポート',
-                        style: TextStyle(
+                        localService.translate('imported'),
+                        style: const TextStyle(
                           color: Colors.white,
                           fontSize: 8,
                           fontWeight: FontWeight.bold,

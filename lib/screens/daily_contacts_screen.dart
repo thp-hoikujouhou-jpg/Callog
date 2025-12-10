@@ -256,12 +256,20 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
                       ),
                     ),
                     const SizedBox(height: 4),
-                    Text(
-                      '${contact.callCount} ${contact.callCount == 1 ? 'call' : 'calls'}',
-                      style: TextStyle(
-                        fontSize: 14,
-                        color: Colors.grey.shade600,
-                      ),
+                    Builder(
+                      builder: (context) {
+                        final localService = Provider.of<LocalizationService>(context, listen: false);
+                        final callWord = contact.callCount == 1 
+                          ? localService.translate('call_singular')
+                          : localService.translate('calls_plural');
+                        return Text(
+                          '${contact.callCount} $callWord',
+                          style: TextStyle(
+                            fontSize: 14,
+                            color: Colors.grey.shade600,
+                          ),
+                        );
+                      }
                     ),
                   ],
                 ),
