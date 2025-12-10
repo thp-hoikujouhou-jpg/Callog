@@ -88,6 +88,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
   
   /// Delete sticky note
   Future<void> _deleteNote(StickyNote note) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
     try {
       await _firestore.collection('sticky_notes').doc(note.id).delete();
       
@@ -122,6 +123,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
   
   /// Show delete confirmation dialog
   Future<void> _showDeleteConfirmation(StickyNote note) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
     final confirmed = await showDialog<bool>(
       context: context,
       builder: (context) => AlertDialog(
@@ -169,6 +171,7 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
   
   /// Build empty state
   Widget _buildEmptyState() {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
     return Center(
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,

@@ -65,10 +65,10 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       final Map<String, _ContactInfo> contactMap = {};
       
       for (var doc in querySnapshot.docs) {
-        final recording = CallRecording.fromFirestore(doc.data(), doc.id);
+        final recording = CallRecording.fromMap(doc.data(), doc.id);
         
         // Get contact ID (other participant)
-        final contactId = recording.otherUserId ?? 'unknown';
+        final contactId = recording.callPartner ?? 'unknown';
         
         if (contactMap.containsKey(contactId)) {
           contactMap[contactId]!.callCount++;
