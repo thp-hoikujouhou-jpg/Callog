@@ -43,15 +43,15 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
       final querySnapshot = await _firestore
           .collection('call_recordings')
           .where('userId', isEqualTo: user.uid)
-          .where('startTime', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDay))
-          .where('startTime', isLessThanOrEqualTo: Timestamp.fromDate(lastDay))
+          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(firstDay))
+          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(lastDay))
           .get();
       
       // Count calls per date
       final Map<String, int> counts = {};
       for (var doc in querySnapshot.docs) {
         final data = doc.data();
-        final startTime = (data['startTime'] as Timestamp?)?.toDate();
+        final startTime = (data['timestamp'] as Timestamp?)?.toDate();
         if (startTime != null) {
           final dateKey = '${startTime.year}-${startTime.month}-${startTime.day}';
           counts[dateKey] = (counts[dateKey] ?? 0) + 1;
