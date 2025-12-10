@@ -1,4 +1,5 @@
 import 'dart:convert';
+import 'dart:math';
 import 'package:flutter/foundation.dart';
 import 'package:http/http.dart' as http;
 
@@ -8,7 +9,8 @@ import 'package:http/http.dart' as http;
 /// - Summarize transcription text using Gemini AI
 /// - Extract key points from call recordings
 /// - Support for Japanese and other languages
-/// - Rate limit handling with user-friendly error messages
+/// - Rate limit handling with exponential backoff retry
+/// - User-friendly error messages
 class GeminiSummaryService {
   // Singleton pattern
   static final GeminiSummaryService _instance = GeminiSummaryService._internal();
@@ -19,14 +21,24 @@ class GeminiSummaryService {
   static const String _apiKey = 'AIzaSyCZEIJG-SMR-wSlqg820rBKveDe4rjWnfA';
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
   
-  /// Summarize transcription text into key points
+  // Retry configuration (Exponential Backoff)
+  static const int _maxRetries = 3;
+  static const int _initialDelayMs = 1000; // 1 second
+  static const int _maxDelayMs = 8000; // 8 seconds
+  
+  /// Summarize transcription text into key points with automatic retry
   /// 
   /// [transcription] - The full transcription text
   /// Returns a list of key points or error message if failed
   Future<String?> summarizeText(String transcription) async {
+    return await _summarizeWithRetry(transcription, 0);
+  }
+  
+  /// Internal method to handle API calls with exponential backoff retry
+  Future<String?> _summarizeWithRetry(String transcription, int attemptNumber) async {
     try {
       if (kDebugMode) {
-        debugPrint('🤖 [GeminiSummary] Starting summarization...');
+        debugPrint('🤖 [GeminiSummary] Starting summarization (Attempt ${attemptNumber + 1}/$_maxRetries)...');
         debugPrint('🤖 [GeminiSummary] Text length: ${transcription.length} characters');
       }
       
@@ -70,11 +82,25 @@ $transcription
         debugPrint('🤖 [GeminiSummary] Response status: ${response.statusCode}');
       }
       
-      // Handle rate limit error (429)
+      // Handle rate limit error (429) with retry
       if (response.statusCode == 429) {
-        debugPrint('⚠️ [GeminiSummary] Rate limit exceeded (429)');
-        debugPrint('⚠️ [GeminiSummary] Response: ${response.body}');
-        return 'ERROR_429:APIの利用制限に達しました。しばらく待ってから再度お試しください。\n\n💡 ヒント: Google AI Studioでクォータを確認できます。';
+        debugPrint('⚠️ [GeminiSummary] Rate limit exceeded (429) - Attempt ${attemptNumber + 1}');
+        
+        // If we haven't exceeded max retries, retry with exponential backoff
+        if (attemptNumber < _maxRetries - 1) {
+          final delayMs = _calculateBackoffDelay(attemptNumber);
+          debugPrint('🔄 [GeminiSummary] Retrying after ${delayMs}ms...');
+          
+          // Wait before retrying
+          await Future.delayed(Duration(milliseconds: delayMs));
+          
+          // Retry the request
+          return await _summarizeWithRetry(transcription, attemptNumber + 1);
+        }
+        
+        // Max retries exceeded
+        debugPrint('❌ [GeminiSummary] Max retries exceeded for 429 error');
+        return 'ERROR_429:APIの利用制限に達しました。${_formatRetryMessage(attemptNumber)}';
       }
       
       // Handle forbidden error (403)
@@ -117,6 +143,9 @@ $transcription
       if (kDebugMode) {
         debugPrint('✅ [GeminiSummary] Summary generated successfully');
         debugPrint('✅ [GeminiSummary] Summary length: ${summary.length} characters');
+        if (attemptNumber > 0) {
+          debugPrint('✅ [GeminiSummary] Succeeded after ${attemptNumber + 1} attempts');
+        }
       }
       
       return summary.trim();
@@ -132,5 +161,27 @@ $transcription
       
       return 'ERROR:予期しないエラーが発生しました。後でもう一度お試しください。';
     }
+  }
+  
+  /// Calculate exponential backoff delay with jitter
+  /// 
+  /// Formula: min(maxDelay, initialDelay * 2^attempt) + random jitter
+  int _calculateBackoffDelay(int attemptNumber) {
+    // Exponential backoff: 1s, 2s, 4s, 8s...
+    final exponentialDelay = _initialDelayMs * pow(2, attemptNumber);
+    
+    // Cap at maximum delay
+    final cappedDelay = min(exponentialDelay.toInt(), _maxDelayMs);
+    
+    // Add random jitter (0-1000ms) to prevent thundering herd
+    final random = Random();
+    final jitter = random.nextInt(1000);
+    
+    return cappedDelay + jitter;
+  }
+  
+  /// Format retry message for user
+  String _formatRetryMessage(int attemptNumber) {
+    return '${attemptNumber + 1}回試行しましたが、利用制限が続いています。\n\n💡 対処方法:\n• 数分待ってから再度お試しください\n• Google AI Studioでクォータを確認\n• 連続してリクエストを送信しないでください';
   }
 }

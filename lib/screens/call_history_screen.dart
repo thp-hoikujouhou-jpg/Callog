@@ -139,6 +139,17 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       _isSummarizing[recording.id] = true;
     });
     
+    // Show processing message with retry hint
+    if (mounted) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+          content: Text('🤖 AI要約を生成中... (最大3回まで自動リトライ)'),
+          backgroundColor: Colors.blue,
+          duration: Duration(seconds: 2),
+        ),
+      );
+    }
+    
     try {
       final summary = await _summaryService.summarizeText(recording.transcription!);
       
@@ -280,19 +291,27 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 16),
+              Text('🔄 自動リトライ機能:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('• 最大3回まで自動的にリトライします'),
+              Text('• 待機時間: 1秒 → 2秒 → 4秒 (指数バックオフ)'),
+              Text('• リトライ後も失敗した場合はこのエラーが表示されます'),
+              SizedBox(height: 16),
               Text('📊 対処方法:', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('1. しばらく待ってから再度お試しください'),
-              Text('2. Google AI Studioでクォータを確認してください'),
-              Text('3. 無料プランの場合は1分あたり15リクエストまでです'),
+              Text('1. 数分待ってから再度お試しください'),
+              Text('2. 連続してリクエストを送信しないでください'),
+              Text('3. Google AI Studioでクォータを確認してください'),
+              Text('4. 無料プランの制限: 1分あたり15リクエスト'),
               SizedBox(height: 16),
               Text('🔗 詳細情報:', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
               Text('• Google AI Studio: aistudio.google.com'),
               Text('• クォータ確認: API設定 > クォータ'),
+              Text('• Googleの推奨対策: Exponential Backoff実装済み'),
               SizedBox(height: 16),
               Text(
-                '💡 ヒント: 頻繁に429エラーが発生する場合は、有料プランへのアップグレードをご検討ください。',
+                '💡 ヒント: トラフィックの平滑化が重要です。頻繁に429エラーが発生する場合は、リクエストの間隔を空けるか、有料プランへのアップグレードをご検討ください。',
                 style: TextStyle(fontSize: 12, color: Colors.grey),
               ),
             ],
