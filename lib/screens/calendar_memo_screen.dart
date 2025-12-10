@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/call_recording.dart';
 import 'call_history_screen.dart';
-import 'sticky_notes_list_screen.dart';
+import 'daily_contacts_screen.dart';
 
 class CalendarMemoScreen extends StatefulWidget {
   const CalendarMemoScreen({super.key});
@@ -117,17 +117,17 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
     _loadCallCounts();
   }
   
-  /// Handle date tap - navigate to sticky notes list screen
+  /// Handle date tap - navigate to daily contacts screen
   void _onDateTap(DateTime date) {
     setState(() {
       _selectedDate = date;
     });
     
-    // Navigate to sticky notes list screen (show saved memos for this date)
+    // Navigate to daily contacts screen (show contact avatars with call history)
     Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => StickyNotesListScreen(selectedDate: date),
+        builder: (_) => DailyContactsScreen(selectedDate: date),
       ),
     );
   }

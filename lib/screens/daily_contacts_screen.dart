@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/call_recording.dart';
+import '../models/sticky_note.dart';
 import 'sticky_note_editor_screen.dart';
 
 class DailyContactsScreen extends StatefulWidget {
@@ -25,6 +26,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   
   List<_ContactInfo> _contacts = [];
   bool _isLoading = true;
+  Set<String> _contactsWithNotes = {};  // Track which contacts have sticky notes
   
   @override
   void initState() {
@@ -96,6 +98,9 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       if (kDebugMode) {
         debugPrint('📱 [DailyContacts] Loaded ${_contacts.length} contacts for ${widget.selectedDate}');
       }
+      
+      // Check which contacts have sticky notes
+      _checkStickyNotes();
     } catch (e) {
       if (kDebugMode) {
         debugPrint('❌ [DailyContacts] Error loading contacts: $e');
@@ -103,6 +108,44 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       setState(() {
         _isLoading = false;
       });
+    }
+  }
+  
+  /// Check which contacts have sticky notes
+  Future<void> _checkStickyNotes() async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    
+    try {
+      final startOfDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      
+      final querySnapshot = await _firestore
+          .collection('sticky_notes')
+          .where('userId', isEqualTo: user.uid)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .get();
+      
+      final contactsWithNotes = <String>{};
+      for (var doc in querySnapshot.docs) {
+        final contactId = doc.data()['contactId'] as String?;
+        if (contactId != null) {
+          contactsWithNotes.add(contactId);
+        }
+      }
+      
+      setState(() {
+        _contactsWithNotes = contactsWithNotes;
+      });
+      
+      if (kDebugMode) {
+        debugPrint('📝 [DailyContacts] Found ${contactsWithNotes.length} contacts with sticky notes');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [DailyContacts] Error checking sticky notes: $e');
+      }
     }
   }
   
@@ -139,7 +182,42 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   }
   
   /// Handle contact tap - navigate to sticky note editor
-  void _onContactTap(_ContactInfo contact) {
+  Future<void> _onContactTap(_ContactInfo contact) async {
+    final user = _auth.currentUser;
+    if (user == null) return;
+    
+    // Check if sticky note already exists for this contact on this date
+    StickyNote? existingNote;
+    try {
+      final startOfDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+      final endOfDay = startOfDay.add(const Duration(days: 1));
+      
+      final querySnapshot = await _firestore
+          .collection('sticky_notes')
+          .where('userId', isEqualTo: user.uid)
+          .where('contactId', isEqualTo: contact.contactId)
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .limit(1)
+          .get();
+      
+      if (querySnapshot.docs.isNotEmpty) {
+        existingNote = StickyNote.fromFirestore(
+          querySnapshot.docs.first.data(),
+          querySnapshot.docs.first.id,
+        );
+        
+        if (kDebugMode) {
+          debugPrint('📝 [DailyContacts] Found existing note for ${contact.contactName}');
+        }
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ [DailyContacts] Error checking existing note: $e');
+      }
+    }
+    
+    // Navigate to sticky note editor (with or without existing note)
     Navigator.push(
       context,
       MaterialPageRoute(
@@ -149,6 +227,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
           contactName: contact.contactName,
           contactPhotoUrl: contact.contactPhotoUrl,
           callRecordings: contact.recordings,
+          existingNote: existingNote,  // Pass existing note if found
         ),
       ),
     );
@@ -274,6 +353,23 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
                   ],
                 ),
               ),
+              
+              // Sticky note indicator (if contact has a note)
+              if (_contactsWithNotes.contains(contact.contactId)) ...[
+                Container(
+                  padding: const EdgeInsets.all(6),
+                  decoration: BoxDecoration(
+                    color: Colors.amber.shade100,
+                    borderRadius: BorderRadius.circular(8),
+                  ),
+                  child: Icon(
+                    Icons.note,
+                    size: 20,
+                    color: Colors.amber.shade700,
+                  ),
+                ),
+                const SizedBox(width: 8),
+              ],
               
               // Arrow icon
               Icon(

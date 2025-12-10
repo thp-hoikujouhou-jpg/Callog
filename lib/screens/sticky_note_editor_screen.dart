@@ -174,13 +174,8 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
           ),
         );
         
-        // Navigate to sticky notes list screen
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(
-            builder: (_) => StickyNotesListScreen(selectedDate: widget.selectedDate),
-          ),
-        );
+        // Navigate back to daily contacts screen
+        Navigator.pop(context, true);  // Return true to indicate save success
       }
     } catch (e) {
       if (kDebugMode) {
