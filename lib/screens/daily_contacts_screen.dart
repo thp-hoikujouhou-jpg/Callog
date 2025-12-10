@@ -168,10 +168,25 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   /// Get contact photo URL
   Future<String?> _getContactPhotoUrl(String userId) async {
     try {
+      if (kDebugMode) {
+        debugPrint('🔍 [DailyContacts] Fetching photo URL for userId: $userId');
+      }
+      
       final doc = await _firestore.collection('users').doc(userId).get();
+      
+      if (kDebugMode) {
+        debugPrint('📄 [DailyContacts] User doc exists: ${doc.exists}');
+      }
+      
       if (doc.exists) {
         final data = doc.data();
-        return data?['photoUrl'] as String?;
+        final photoUrl = data?['photoUrl'] as String?;
+        
+        if (kDebugMode) {
+          debugPrint('📸 [DailyContacts] Photo URL for $userId: $photoUrl');
+        }
+        
+        return photoUrl;
       }
     } catch (e) {
       if (kDebugMode) {
@@ -218,7 +233,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
     }
     
     // Navigate to sticky note editor (with or without existing note)
-    Navigator.push(
+    final result = await Navigator.push(
       context,
       MaterialPageRoute(
         builder: (_) => StickyNoteEditorScreen(
@@ -231,6 +246,14 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         ),
       ),
     );
+    
+    // Reload sticky notes indicators after returning from editor
+    if (result == true && mounted) {
+      if (kDebugMode) {
+        debugPrint('🔄 [DailyContacts] Reloading sticky notes after save');
+      }
+      await _checkStickyNotes();
+    }
   }
   
   @override
@@ -289,6 +312,10 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   
   /// Build contact card
   Widget _buildContactCard(_ContactInfo contact) {
+    if (kDebugMode) {
+      debugPrint('🎨 [DailyContacts] Building card for ${contact.contactName}, photoUrl: ${contact.contactPhotoUrl}, hasNote: ${_contactsWithNotes.contains(contact.contactId)}');
+    }
+    
     return Card(
       margin: const EdgeInsets.only(bottom: 12),
       elevation: 2,
