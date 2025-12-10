@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../services/localization_service.dart';
+import 'call_history_screen.dart';
 
 class CalendarNotesScreen extends StatefulWidget {
   const CalendarNotesScreen({super.key});
@@ -82,6 +83,18 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
         title: Text(localService.translate('calendar')),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
+        actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
+              );
+            },
+            tooltip: '通話履歴',
+          ),
+        ],
       ),
       body: SafeArea(
         child: Column(
