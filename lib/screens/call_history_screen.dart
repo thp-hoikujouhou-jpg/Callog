@@ -143,6 +143,39 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       final summary = await _summaryService.summarizeText(recording.transcription!);
       
       if (summary != null && summary.isNotEmpty) {
+        // Check if summary is an error message
+        if (summary.startsWith('ERROR')) {
+          setState(() {
+            _isSummarizing[recording.id] = false;
+          });
+          
+          // Extract error message after colon
+          final errorMessage = summary.contains(':') 
+            ? summary.split(':')[1].trim() 
+            : summary;
+          
+          if (mounted) {
+            ScaffoldMessenger.of(context).showSnackBar(
+              SnackBar(
+                content: Text(errorMessage),
+                backgroundColor: summary.contains('429') ? Colors.orange : Colors.red,
+                duration: const Duration(seconds: 5),
+                action: summary.contains('429') 
+                  ? SnackBarAction(
+                      label: '詳細',
+                      textColor: Colors.white,
+                      onPressed: () {
+                        _showRateLimitDialog();
+                      },
+                    )
+                  : null,
+              ),
+            );
+          }
+          return;
+        }
+        
+        // Normal summary
         setState(() {
           _summaries[recording.id] = summary;
           _isSummarizing[recording.id] = false;
@@ -175,6 +208,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           SnackBar(
             content: Text('${localService.translate('error')}: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 5),
           ),
         );
       }
@@ -213,6 +247,61 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           TextButton(
             onPressed: () => Navigator.pop(context),
             child: Text(localService.translate('close')),
+          ),
+        ],
+      ),
+    );
+  }
+  
+  /// Show rate limit information dialog
+  void _showRateLimitDialog() {
+    showDialog(
+      context: context,
+      builder: (context) => AlertDialog(
+        title: const Row(
+          children: [
+            Icon(Icons.info_outline, color: Colors.orange),
+            SizedBox(width: 8),
+            Expanded(
+              child: Text(
+                'API利用制限について',
+                style: TextStyle(fontSize: 18),
+              ),
+            ),
+          ],
+        ),
+        content: const SingleChildScrollView(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Text(
+                'Gemini APIの利用制限に達しました。',
+                style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
+              ),
+              SizedBox(height: 16),
+              Text('📊 対処方法:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('1. しばらく待ってから再度お試しください'),
+              Text('2. Google AI Studioでクォータを確認してください'),
+              Text('3. 無料プランの場合は1分あたり15リクエストまでです'),
+              SizedBox(height: 16),
+              Text('🔗 詳細情報:', style: TextStyle(fontWeight: FontWeight.bold)),
+              SizedBox(height: 8),
+              Text('• Google AI Studio: aistudio.google.com'),
+              Text('• クォータ確認: API設定 > クォータ'),
+              SizedBox(height: 16),
+              Text(
+                '💡 ヒント: 頻繁に429エラーが発生する場合は、有料プランへのアップグレードをご検討ください。',
+                style: TextStyle(fontSize: 12, color: Colors.grey),
+              ),
+            ],
+          ),
+        ),
+        actions: [
+          TextButton(
+            onPressed: () => Navigator.pop(context),
+            child: const Text('閉じる'),
           ),
         ],
       ),
