@@ -9,7 +9,7 @@ import '../services/call_notification_listener.dart';
 import '../utils/image_proxy.dart';
 import '../utils/web_notification_listener.dart';
 import 'search_contacts_screen.dart';
-import 'calendar_notes_screen.dart';
+import 'calendar_memo_screen.dart';
 import 'call_history_screen.dart';
 import 'profile_settings_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
@@ -971,7 +971,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             onPressed: () {
               Navigator.push(
                 context,
-                MaterialPageRoute(builder: (_) => const CalendarNotesScreen()),
+                MaterialPageRoute(builder: (_) => const CalendarMemoScreen()),
               );
             },
             tooltip: localService.translate('calendar'),
