@@ -15,7 +15,7 @@ class GeminiSummaryService {
   GeminiSummaryService._internal();
 
   // Gemini API configuration
-  static const String _apiKey = 'AIzaSyDCnU16tQHO_hxqDJFL-R01ure40QdzqLg';
+  static const String _apiKey = 'AIzaSyCZEIJG-SMR-wSlqg820rBKveDe4rjWnfA';
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
   
   /// Summarize transcription text into key points
