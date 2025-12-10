@@ -21,10 +21,10 @@ class GeminiSummaryService {
   static const String _apiKey = 'AIzaSyCZEIJG-SMR-wSlqg820rBKveDe4rjWnfA';
   static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-2.0-flash-lite:generateContent';
   
-  // Retry configuration (Exponential Backoff)
-  static const int _maxRetries = 3;
-  static const int _initialDelayMs = 1000; // 1 second
-  static const int _maxDelayMs = 8000; // 8 seconds
+  // Retry configuration (Exponential Backoff) - Enhanced for higher success rate
+  static const int _maxRetries = 5; // Increased from 3 to 5 retries
+  static const int _initialDelayMs = 2000; // Increased from 1s to 2s
+  static const int _maxDelayMs = 16000; // Increased from 8s to 16s
   
   /// Summarize transcription text into key points with automatic retry
   /// 
@@ -38,7 +38,7 @@ class GeminiSummaryService {
   Future<String?> _summarizeWithRetry(String transcription, int attemptNumber) async {
     try {
       if (kDebugMode) {
-        debugPrint('🤖 [GeminiSummary] Starting summarization (Attempt ${attemptNumber + 1}/$_maxRetries)...');
+        debugPrint('🤖 [GeminiSummary] Starting summarization (Attempt ${attemptNumber + 1}/${_maxRetries + 1})...');
         debugPrint('🤖 [GeminiSummary] Text length: ${transcription.length} characters');
       }
       
@@ -182,6 +182,6 @@ $transcription
   
   /// Format retry message for user
   String _formatRetryMessage(int attemptNumber) {
-    return '${attemptNumber + 1}回試行しましたが、利用制限が続いています。\n\n💡 対処方法:\n• 数分待ってから再度お試しください\n• Google AI Studioでクォータを確認\n• 連続してリクエストを送信しないでください';
+    return '${attemptNumber + 1}回試行しましたが、利用制限が続いています。\n\n💡 対処方法:\n• 2〜3分待ってから再度お試しください\n• Google AI Studioでクォータを確認\n• 連続してリクエストを送信しないでください\n• 無料プランの制限: 1分あたり15リクエスト';
   }
 }

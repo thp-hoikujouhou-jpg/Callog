@@ -143,7 +143,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         const SnackBar(
-          content: Text('🤖 AI要約を生成中... (最大3回まで自動リトライ)'),
+          content: Text('🤖 AI要約を生成中... (最大5回まで自動リトライ)'),
           backgroundColor: Colors.blue,
           duration: Duration(seconds: 2),
         ),
@@ -193,7 +193,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         });
         
         if (mounted) {
-          _showSummaryDialog(summary);
+          _showSummaryDialog(summary, recording);
         }
       } else {
         setState(() {
@@ -226,8 +226,8 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     }
   }
   
-  /// Show summary dialog
-  void _showSummaryDialog(String summary) {
+  /// Show summary dialog with replace option
+  void _showSummaryDialog(String summary, CallRecording recording) {
     final localService = Provider.of<LocalizationService>(context, listen: false);
     
     showDialog(
@@ -248,9 +248,36 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         content: Container(
           constraints: const BoxConstraints(maxHeight: 400, minWidth: 300),
           child: SingleChildScrollView(
-            child: SelectableText(
-              summary,
-              style: const TextStyle(fontSize: 14, height: 1.5),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                SelectableText(
+                  summary,
+                  style: const TextStyle(fontSize: 14, height: 1.5),
+                ),
+                const SizedBox(height: 16),
+                Container(
+                  padding: const EdgeInsets.all(12),
+                  decoration: BoxDecoration(
+                    color: Colors.blue.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.blue.withValues(alpha: 0.3)),
+                  ),
+                  child: Row(
+                    children: [
+                      const Icon(Icons.info_outline, size: 20, color: Colors.blue),
+                      const SizedBox(width: 8),
+                      Expanded(
+                        child: Text(
+                          localService.translate('replace_transcription_hint'),
+                          style: const TextStyle(fontSize: 12, color: Colors.blue),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -259,9 +286,52 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             onPressed: () => Navigator.pop(context),
             child: Text(localService.translate('close')),
           ),
+          ElevatedButton.icon(
+            onPressed: () async {
+              Navigator.pop(context);
+              await _replaceTranscriptionWithSummary(recording, summary);
+            },
+            icon: const Icon(Icons.swap_horiz),
+            label: Text(localService.translate('replace_with_summary')),
+            style: ElevatedButton.styleFrom(
+              backgroundColor: Colors.purple,
+              foregroundColor: Colors.white,
+            ),
+          ),
         ],
       ),
     );
+  }
+  
+  /// Replace transcription text with AI summary
+  Future<void> _replaceTranscriptionWithSummary(CallRecording recording, String summary) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    try {
+      await _firestore.collection('call_recordings').doc(recording.id).update({
+        'transcription': summary,
+        'transcriptionEditedAt': FieldValue.serverTimestamp(),
+        'replacedWithSummary': true,
+      });
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text(localService.translate('transcription_replaced')),
+            backgroundColor: Colors.green,
+          ),
+        );
+      }
+    } catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${localService.translate('error')}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
   }
   
   /// Show rate limit information dialog
@@ -291,10 +361,11 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                 style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16),
               ),
               SizedBox(height: 16),
-              Text('🔄 自動リトライ機能:', style: TextStyle(fontWeight: FontWeight.bold)),
+              Text('🔄 自動リトライ機能 (強化版):', style: TextStyle(fontWeight: FontWeight.bold)),
               SizedBox(height: 8),
-              Text('• 最大3回まで自動的にリトライします'),
-              Text('• 待機時間: 1秒 → 2秒 → 4秒 (指数バックオフ)'),
+              Text('• 最大5回まで自動的にリトライします (成功率向上)'),
+              Text('• 待機時間: 2秒 → 4秒 → 8秒 → 16秒 (指数バックオフ)'),
+              Text('• 合計最大40秒まで自動リトライを継続'),
               Text('• リトライ後も失敗した場合はこのエラーが表示されます'),
               SizedBox(height: 16),
               Text('📊 対処方法:', style: TextStyle(fontWeight: FontWeight.bold)),
