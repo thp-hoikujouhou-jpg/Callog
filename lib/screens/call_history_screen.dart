@@ -441,8 +441,23 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     }
     
     try {
-      // Get contact name
-      final contactName = await _getDisplayName(recording.callPartner ?? '');
+      // Get contact name and photo URL
+      final contactId = recording.callPartner ?? 'unknown';
+      final contactName = await _getDisplayName(contactId);
+      
+      // Fetch contact photo URL from Firestore
+      String? contactPhotoUrl;
+      try {
+        final userDoc = await _firestore.collection('users').doc(contactId).get();
+        if (userDoc.exists) {
+          final data = userDoc.data();
+          contactPhotoUrl = data?['photoUrl'] as String?;
+        }
+      } catch (e) {
+        if (kDebugMode) {
+          debugPrint('⚠️ [CallHistory] Could not fetch photo URL: $e');
+        }
+      }
       
       // Navigate to sticky note editor with pre-filled data
       await Navigator.push(
@@ -450,16 +465,16 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
         MaterialPageRoute(
           builder: (_) => StickyNoteEditorScreen(
             selectedDate: recording.timestamp, // Use call date
-            contactId: recording.callPartner ?? 'unknown',
+            contactId: contactId,
             contactName: contactName,
-            contactPhotoUrl: null, // Will be fetched by editor
+            contactPhotoUrl: contactPhotoUrl, // Fetched from Firestore
             callRecordings: [recording], // Pass recording for auto-import
           ),
         ),
       );
       
       if (kDebugMode) {
-        debugPrint('📝 [CallHistory] Navigated to sticky note editor');
+        debugPrint('📝 [CallHistory] Navigated to sticky note editor with photo: $contactPhotoUrl');
       }
     } catch (e) {
       if (kDebugMode) {

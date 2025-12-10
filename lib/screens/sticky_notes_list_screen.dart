@@ -75,6 +75,9 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
       
       if (kDebugMode) {
         debugPrint('📋 [StickyNotesList] Loaded ${notes.length} notes for ${widget.selectedDate}');
+        for (final note in notes) {
+          debugPrint('  - Note: ${note.contactName}, photoUrl: ${note.contactPhotoUrl}');
+        }
       }
     } catch (e) {
       if (kDebugMode) {
@@ -166,7 +169,29 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
           : _notes.isEmpty
               ? _buildEmptyState()
               : _buildStickyNotesGrid(),
+      floatingActionButton: FloatingActionButton(
+        onPressed: _showContactSelectionDialog,
+        backgroundColor: Colors.blue.shade600,
+        child: const Icon(Icons.add, color: Colors.white),
+        tooltip: localService.translate('create_new_memo'),
+      ),
     );
+  }
+  
+  /// Show dialog to select contact for new memo
+  Future<void> _showContactSelectionDialog() async {
+    // Navigate to daily contacts screen to select a contact
+    final result = await Navigator.push(
+      context,
+      MaterialPageRoute(
+        builder: (_) => DailyContactsScreen(selectedDate: widget.selectedDate),
+      ),
+    );
+    
+    // Reload notes after returning (in case a new note was created)
+    if (result == true || mounted) {
+      _loadStickyNotes();
+    }
   }
   
   /// Build empty state
@@ -390,12 +415,41 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
     };
     
     final lang = localService.currentLanguage;
-    final months = monthNames[lang] ?? monthNames['en']!;
+    final year = widget.selectedDate.year;
+    final month = widget.selectedDate.month;
+    final day = widget.selectedDate.day;
     
-    if (lang == 'ja' || lang == 'ko' || lang == 'zh') {
-      return '${widget.selectedDate.year}年${months[widget.selectedDate.month - 1]}${widget.selectedDate.day}日';
-    } else {
-      return '${months[widget.selectedDate.month - 1]} ${widget.selectedDate.day}, ${widget.selectedDate.year}';
+    // Language-specific date formatting
+    switch (lang) {
+      case 'ja':
+        // Japanese: 2025年12月10日
+        return '${year}年${month}月${day}日';
+        
+      case 'ko':
+        // Korean: 2025년 12월 10일
+        return '${year}년 ${month}월 ${day}일';
+        
+      case 'zh':
+        // Chinese: 2025年12月10日
+        return '${year}年${month}月${day}日';
+        
+      case 'es':
+        // Spanish: 10 de diciembre de 2025
+        final monthNames = ['enero', 'febrero', 'marzo', 'abril', 'mayo', 'junio', 
+                           'julio', 'agosto', 'septiembre', 'octubre', 'noviembre', 'diciembre'];
+        return '$day de ${monthNames[month - 1]} de $year';
+        
+      case 'fr':
+        // French: 10 décembre 2025
+        final monthNames = ['janvier', 'février', 'mars', 'avril', 'mai', 'juin',
+                           'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'];
+        return '$day ${monthNames[month - 1]} $year';
+        
+      default:
+        // English: December 10, 2025
+        final monthNames = ['January', 'February', 'March', 'April', 'May', 'June',
+                           'July', 'August', 'September', 'October', 'November', 'December'];
+        return '${monthNames[month - 1]} $day, $year';
     }
   }
 }

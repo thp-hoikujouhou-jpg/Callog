@@ -155,6 +155,10 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
           callRecordingId: _callRecordingId,
         );
         
+        if (kDebugMode) {
+          debugPrint('💾 [StickyNoteEditor] Saving note with contactPhotoUrl: ${widget.contactPhotoUrl}');
+        }
+        
         await _firestore.collection('sticky_notes').add(note.toFirestore());
         
         if (kDebugMode) {
