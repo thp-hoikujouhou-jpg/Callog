@@ -10,6 +10,7 @@ import '../utils/image_proxy.dart';
 import '../utils/web_notification_listener.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_notes_screen.dart';
+import 'call_history_screen.dart';
 import 'profile_settings_screen.dart';
 import 'package:permission_handler/permission_handler.dart';
 import 'agora_voice_call_screen.dart';
@@ -953,6 +954,16 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         actions: [
+          IconButton(
+            icon: const Icon(Icons.history),
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
+              );
+            },
+            tooltip: '通話履歴',
+          ),
           IconButton(
             icon: const Icon(Icons.calendar_today),
             onPressed: () {

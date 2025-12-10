@@ -26,6 +26,48 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   void initState() {
     super.initState();
     _loadRecordings();
+    _setupRealtimeListener();
+  }
+  
+  @override
+  void dispose() {
+    super.dispose();
+  }
+  
+  /// Setup realtime listener for transcription updates
+  void _setupRealtimeListener() {
+    final currentUser = _auth.currentUser;
+    if (currentUser == null) return;
+
+    if (kDebugMode) {
+      debugPrint('🔄 [CallHistory] Setting up realtime listener');
+    }
+
+    _firestore
+        .collection('call_recordings')
+        .where('userId', isEqualTo: currentUser.uid)
+        .orderBy('timestamp', descending: true)
+        .limit(50)
+        .snapshots()
+        .listen((snapshot) {
+      if (mounted) {
+        final recordings = snapshot.docs
+            .map((doc) => CallRecording.fromMap(doc.data(), doc.id))
+            .toList();
+
+        setState(() {
+          _recordings = recordings;
+        });
+
+        if (kDebugMode) {
+          debugPrint('🔄 [CallHistory] Updated ${recordings.length} recordings');
+        }
+      }
+    }, onError: (error) {
+      if (kDebugMode) {
+        debugPrint('❌ [CallHistory] Listener error: $error');
+      }
+    });
   }
 
   Future<void> _loadRecordings() async {
@@ -166,28 +208,37 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             if (recording.transcriptionStatus != null)
               Row(
                 children: [
-                  Icon(
-                    recording.transcriptionStatus == 'completed'
-                        ? Icons.check_circle
-                        : recording.transcriptionStatus == 'processing'
-                            ? Icons.hourglass_empty
-                            : Icons.error,
-                    size: 16,
-                    color: recording.transcriptionStatus == 'completed'
-                        ? Colors.green
-                        : recording.transcriptionStatus == 'processing'
-                            ? Colors.orange
-                            : Colors.red,
-                  ),
+                  if (recording.transcriptionStatus == 'processing')
+                    const SizedBox(
+                      width: 16,
+                      height: 16,
+                      child: CircularProgressIndicator(
+                        strokeWidth: 2,
+                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                      ),
+                    )
+                  else
+                    Icon(
+                      recording.transcriptionStatus == 'completed'
+                          ? Icons.check_circle
+                          : Icons.error,
+                      size: 16,
+                      color: recording.transcriptionStatus == 'completed'
+                          ? Colors.green
+                          : Colors.red,
+                    ),
                   const SizedBox(width: 4),
                   Text(
                     recording.transcriptionStatus == 'completed'
                         ? '文字起こし完了'
                         : recording.transcriptionStatus == 'processing'
-                            ? '処理中'
+                            ? '文字起こし中...'
                             : '文字起こし失敗',
                     style: TextStyle(
                       fontSize: 12,
+                      fontWeight: recording.transcriptionStatus == 'processing'
+                          ? FontWeight.bold
+                          : FontWeight.normal,
                       color: recording.transcriptionStatus == 'completed'
                           ? Colors.green
                           : recording.transcriptionStatus == 'processing'
@@ -206,34 +257,84 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 // Transcription text
-                if (recording.transcription != null && recording.transcription!.isNotEmpty)
+                if (recording.transcriptionStatus == 'processing')
+                  Container(
+                    width: double.infinity,
+                    padding: const EdgeInsets.all(16),
+                    decoration: BoxDecoration(
+                      color: Colors.orange.shade50,
+                      borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.orange.shade200),
+                    ),
+                    child: Column(
+                      children: [
+                        const SizedBox(
+                          width: 32,
+                          height: 32,
+                          child: CircularProgressIndicator(
+                            strokeWidth: 3,
+                            valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                          ),
+                        ),
+                        const SizedBox(height: 12),
+                        const Text(
+                          '文字起こし処理中...',
+                          style: TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                            color: Colors.orange,
+                          ),
+                        ),
+                        const SizedBox(height: 4),
+                        Text(
+                          '完了すると自動的に表示されます',
+                          style: TextStyle(
+                            fontSize: 12,
+                            color: Colors.grey.shade600,
+                          ),
+                        ),
+                      ],
+                    ),
+                  )
+                else if (recording.transcription != null && recording.transcription!.isNotEmpty)
                   Container(
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.blue.shade50,
+                      color: Colors.green.shade50,
                       borderRadius: BorderRadius.circular(8),
+                      border: Border.all(color: Colors.green.shade200),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.text_fields, size: 16, color: Colors.blue.shade700),
-                            const SizedBox(width: 4),
+                            Icon(Icons.check_circle, size: 18, color: Colors.green.shade700),
+                            const SizedBox(width: 8),
                             Text(
-                              '文字起こし',
+                              '文字起こし結果',
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
-                                color: Colors.blue.shade700,
+                                fontSize: 14,
+                                color: Colors.green.shade700,
                               ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
+                        const Divider(),
                         SelectableText(
                           recording.transcription!,
                           style: const TextStyle(fontSize: 14, height: 1.5),
+                        ),
+                        const SizedBox(height: 8),
+                        Text(
+                          'テキストを選択してコピーできます',
+                          style: TextStyle(
+                            fontSize: 11,
+                            color: Colors.grey.shade600,
+                            fontStyle: FontStyle.italic,
+                          ),
                         ),
                       ],
                     ),

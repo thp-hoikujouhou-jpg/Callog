@@ -488,17 +488,21 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
       
       if (mounted) {
         if (transcription != null && transcription.isNotEmpty) {
+          // Show success SnackBar
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
               content: Text('✅ ${LocalizationService().translate('transcription_completed')}'),
               backgroundColor: Colors.green,
-              action: SnackBarAction(
-                label: LocalizationService().translate('confirm_button'),
-                textColor: Colors.white,
-                onPressed: () => _showTranscriptionDialog(transcription),
-              ),
+              duration: const Duration(seconds: 2),
             ),
           );
+          
+          // Automatically show transcription dialog after a brief delay
+          Future.delayed(const Duration(milliseconds: 500), () {
+            if (mounted) {
+              _showTranscriptionDialog(transcription);
+            }
+          });
         } else {
           ScaffoldMessenger.of(context).showSnackBar(
             SnackBar(
@@ -533,18 +537,55 @@ class _AgoraVoiceCallScreenState extends State<AgoraVoiceCallScreen> {
   void _showTranscriptionDialog(String transcription) {
     showDialog(
       context: context,
+      barrierDismissible: false,
       builder: (context) => AlertDialog(
         title: Row(
           children: [
             const Icon(Icons.text_snippet, color: Colors.blue),
             const SizedBox(width: 8),
-            Text(LocalizationService().translate('transcription_result')),
+            Expanded(
+              child: Text(
+                LocalizationService().translate('transcription_result'),
+                style: const TextStyle(fontSize: 18),
+              ),
+            ),
           ],
         ),
-        content: SingleChildScrollView(
-          child: SelectableText(
-            transcription,
-            style: const TextStyle(fontSize: 16),
+        content: Container(
+          constraints: const BoxConstraints(maxHeight: 400, minWidth: 300),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Container(
+                padding: const EdgeInsets.all(12),
+                decoration: BoxDecoration(
+                  color: Colors.blue.shade50,
+                  borderRadius: BorderRadius.circular(8),
+                ),
+                child: const Row(
+                  children: [
+                    Icon(Icons.info_outline, size: 16, color: Colors.blue),
+                    SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        '文字起こしが完了しました。テキストを選択してコピーできます。',
+                        style: TextStyle(fontSize: 12, color: Colors.blue),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              const SizedBox(height: 12),
+              Expanded(
+                child: SingleChildScrollView(
+                  child: SelectableText(
+                    transcription,
+                    style: const TextStyle(fontSize: 16, height: 1.5),
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         actions: [
