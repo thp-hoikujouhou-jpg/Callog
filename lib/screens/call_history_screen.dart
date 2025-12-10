@@ -7,6 +7,8 @@ import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/gemini_summary_service.dart';
 import '../models/call_recording.dart';
+import '../models/sticky_note.dart';
+import 'sticky_note_editor_screen.dart';
 
 class CallHistoryScreen extends StatefulWidget {
   const CallHistoryScreen({super.key});
@@ -423,6 +425,58 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     return userId;
   }
   
+  /// Save transcription as sticky note to calendar
+  Future<void> _saveToCalendar(CallRecording recording) async {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
+    
+    // Check if transcription exists
+    if (recording.transcription == null || recording.transcription!.isEmpty) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(localService.translate('no_transcription_data')),
+          backgroundColor: Colors.orange,
+        ),
+      );
+      return;
+    }
+    
+    try {
+      // Get contact name
+      final contactName = await _getDisplayName(recording.callPartner ?? '');
+      
+      // Navigate to sticky note editor with pre-filled data
+      await Navigator.push(
+        context,
+        MaterialPageRoute(
+          builder: (_) => StickyNoteEditorScreen(
+            selectedDate: recording.timestamp, // Use call date
+            contactId: recording.callPartner ?? 'unknown',
+            contactName: contactName,
+            contactPhotoUrl: null, // Will be fetched by editor
+            callRecordings: [recording], // Pass recording for auto-import
+          ),
+        ),
+      );
+      
+      if (kDebugMode) {
+        debugPrint('📝 [CallHistory] Navigated to sticky note editor');
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [CallHistory] Error saving to calendar: $e');
+      }
+      
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(
+            content: Text('${localService.translate('failed_to_save_note')}: $e'),
+            backgroundColor: Colors.red,
+          ),
+        );
+      }
+    }
+  }
+  
   /// Setup realtime listener for transcription updates
   void _setupRealtimeListener() {
     final currentUser = _auth.currentUser;
@@ -747,6 +801,16 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                                 constraints: const BoxConstraints(),
                                 color: Colors.purple.shade700,
                               ),
+                            const SizedBox(width: 8),
+                            // Save to Calendar button (NEW!)
+                            IconButton(
+                              icon: const Icon(Icons.calendar_month, size: 18),
+                              onPressed: () => _saveToCalendar(recording),
+                              tooltip: localService.translate('save_to_calendar'),
+                              padding: EdgeInsets.zero,
+                              constraints: const BoxConstraints(),
+                              color: Colors.green.shade700,
+                            ),
                           ],
                         ),
                         const Divider(),

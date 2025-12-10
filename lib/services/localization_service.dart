@@ -1609,6 +1609,38 @@ class LocalizationService extends ChangeNotifier {
       'es': 'llamada',
       'fr': 'appel',
     },
+    'save_to_calendar': {
+      'en': 'Save to Calendar',
+      'ja': 'カレンダーに保存',
+      'ko': '캘린더에 저장',
+      'zh': '保存到日历',
+      'es': 'Guardar en calendario',
+      'fr': 'Enregistrer dans le calendrier',
+    },
+    'save_as_sticky_note': {
+      'en': 'Save as sticky note',
+      'ja': 'スティッキーノートとして保存',
+      'ko': '스티커 메모로 저장',
+      'zh': '保存为便签',
+      'es': 'Guardar como nota adhesiva',
+      'fr': 'Enregistrer comme note autocollante',
+    },
+    'sticky_note_saved': {
+      'en': 'Sticky note saved successfully',
+      'ja': 'スティッキーノートを保存しました',
+      'ko': '스티커 메모가 저장되었습니다',
+      'zh': '便签已成功保存',
+      'es': 'Nota adhesiva guardada con éxito',
+      'fr': 'Note autocollante enregistrée avec succès',
+    },
+    'failed_to_save_note': {
+      'en': 'Failed to save sticky note',
+      'ja': 'スティッキーノートの保存に失敗しました',
+      'ko': '스티커 메모 저장 실패',
+      'zh': '保存便签失败',
+      'es': 'Error al guardar nota adhesiva',
+      'fr': 'Échec de l\'enregistrement de la note',
+    },
 
   };
 }
