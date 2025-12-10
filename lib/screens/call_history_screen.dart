@@ -21,6 +21,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   List<CallRecording> _recordings = [];
   bool _isLoading = true;
   String? _error;
+  
+  // Cache for user display names
+  final Map<String, String> _userDisplayNames = {};
 
   @override
   void initState() {
@@ -32,6 +35,31 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   @override
   void dispose() {
     super.dispose();
+  }
+  
+  /// Get display name for a user ID
+  Future<String> _getDisplayName(String userId) async {
+    // Check cache first
+    if (_userDisplayNames.containsKey(userId)) {
+      return _userDisplayNames[userId]!;
+    }
+    
+    try {
+      final userDoc = await _firestore.collection('users').doc(userId).get();
+      if (userDoc.exists) {
+        final data = userDoc.data();
+        final displayName = data?['username'] ?? data?['name'] ?? userId;
+        _userDisplayNames[userId] = displayName;
+        return displayName;
+      }
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('❌ [CallHistory] Error fetching display name: $e');
+      }
+    }
+    
+    // Fallback to user ID
+    return userId;
   }
   
   /// Setup realtime listener for transcription updates
@@ -82,7 +110,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       final currentUser = _auth.currentUser;
       if (currentUser == null) {
         setState(() {
-          _error = 'ユーザーがログインしていません';
+          _error = 'User not logged in';  // Will be shown in UI with localization
           _isLoading = false;
         });
         return;
@@ -133,14 +161,14 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: const Text('通話履歴'),
+        title: Text(localService.translate('call_history')),
         backgroundColor: Colors.blue.shade600,
         foregroundColor: Colors.white,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
             onPressed: _loadRecordings,
-            tooltip: '再読み込み',
+            tooltip: localService.translate('reload'),
           ),
         ],
       ),
@@ -158,7 +186,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                         const SizedBox(height: 16),
                         ElevatedButton(
                           onPressed: _loadRecordings,
-                          child: const Text('再試行'),
+                          child: Text(localService.translate('retry')),
                         ),
                       ],
                     ),
@@ -170,9 +198,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           children: [
                             Icon(Icons.history, size: 64, color: Colors.grey.shade400),
                             const SizedBox(height: 16),
-                            const Text(
-                              '通話履歴がありません',
-                              style: TextStyle(fontSize: 16, color: Colors.grey),
+                            Text(
+                              localService.translate('no_call_history'),
+                              style: const TextStyle(fontSize: 16, color: Colors.grey),
                             ),
                           ],
                         ),
@@ -190,6 +218,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   }
 
   Widget _buildRecordingCard(CallRecording recording) {
+    final localService = Provider.of<LocalizationService>(context, listen: false);
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
     final dateStr = dateFormat.format(recording.timestamp);
 
@@ -200,15 +229,20 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           recording.callType == 'video' ? Icons.videocam : Icons.phone,
           color: Colors.blue.shade600,
         ),
-        title: Text(
-          recording.callPartner ?? '不明',
-          style: const TextStyle(fontWeight: FontWeight.bold),
+        title: FutureBuilder<String>(
+          future: _getDisplayName(recording.callPartner ?? ''),
+          builder: (context, snapshot) {
+            return Text(
+              snapshot.data ?? recording.callPartner ?? localService.translate('unknown_contact'),
+              style: const TextStyle(fontWeight: FontWeight.bold),
+            );
+          },
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
             Text(dateStr),
-            Text('通話時間: ${recording.formattedDuration}'),
+            Text('${localService.translate('call_duration')}: ${recording.formattedDuration}'),
             if (recording.transcriptionStatus != null)
               Row(
                 children: [
@@ -234,10 +268,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                   const SizedBox(width: 4),
                   Text(
                     recording.transcriptionStatus == 'completed'
-                        ? '文字起こし完了'
+                        ? localService.translate('transcription_completed')
                         : recording.transcriptionStatus == 'processing'
-                            ? '文字起こし中...'
-                            : '文字起こし失敗',
+                            ? localService.translate('transcription_processing')
+                            : localService.translate('transcription_failed'),
                     style: TextStyle(
                       fontSize: 12,
                       fontWeight: recording.transcriptionStatus == 'processing'
@@ -281,9 +315,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           ),
                         ),
                         const SizedBox(height: 12),
-                        const Text(
-                          '文字起こし処理中...',
-                          style: TextStyle(
+                        Text(
+                          localService.translate('processing_message'),
+                          style: const TextStyle(
                             fontWeight: FontWeight.bold,
                             fontSize: 14,
                             color: Colors.orange,
@@ -291,7 +325,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                         ),
                         const SizedBox(height: 4),
                         Text(
-                          '完了すると自動的に表示されます',
+                          localService.translate('auto_display_message'),
                           style: TextStyle(
                             fontSize: 12,
                             color: Colors.grey.shade600,
@@ -317,7 +351,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                             Icon(Icons.check_circle, size: 18, color: Colors.green.shade700),
                             const SizedBox(width: 8),
                             Text(
-                              '文字起こし結果',
+                              localService.translate('transcription_result'),
                               style: TextStyle(
                                 fontWeight: FontWeight.bold,
                                 fontSize: 14,
@@ -333,7 +367,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                         ),
                         const SizedBox(height: 8),
                         Text(
-                          'テキストを選択してコピーできます',
+                          localService.translate('copy_instruction'),
                           style: TextStyle(
                             fontSize: 11,
                             color: Colors.grey.shade600,
@@ -351,9 +385,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                       color: Colors.grey.shade100,
                       borderRadius: BorderRadius.circular(8),
                     ),
-                    child: const Text(
-                      '文字起こしデータがありません',
-                      style: TextStyle(color: Colors.grey),
+                    child: Text(
+                      localService.translate('no_transcription_data'),
+                      style: const TextStyle(color: Colors.grey),
                     ),
                   ),
                 

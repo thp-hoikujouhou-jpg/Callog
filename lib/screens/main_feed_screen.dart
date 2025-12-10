@@ -964,7 +964,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
                 );
               },
-              tooltip: '通話履歴',
+              tooltip: localService.translate('call_history'),
             ),
           IconButton(
             icon: const Icon(Icons.calendar_today),

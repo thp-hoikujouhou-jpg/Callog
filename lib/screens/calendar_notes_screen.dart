@@ -92,7 +92,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
                 MaterialPageRoute(builder: (_) => const CallHistoryScreen()),
               );
             },
-            tooltip: '通話履歴',
+            tooltip: localService.translate('call_history'),
           ),
         ],
       ),
