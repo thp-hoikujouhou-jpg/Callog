@@ -16,7 +16,7 @@ class GeminiSummaryService {
 
   // Gemini API configuration
   static const String _apiKey = 'AIzaSyDCnU16tQHO_hxqDJFL-R01ure40QdzqLg';
-  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1beta/models/gemini-pro:generateContent';
+  static const String _baseUrl = 'https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent';
   
   /// Summarize transcription text into key points
   /// 
@@ -31,13 +31,13 @@ class GeminiSummaryService {
       
       // Prepare prompt for Gemini
       final prompt = '''
-以下の通話の文字起こしテキストを分析して、重要なポイントを箇条書き（最大5項目）でまとめてください。
-各項目は簡潔に、1行以内で記載してください。
+以下の通話文字起こしから、重要なポイントを箇条書き（3〜5項目）でまとめてください。
+各項目は「・」で始め、簡潔に1行で記載してください。
 
 文字起こしテキスト:
 $transcription
 
-要約（箇条書き）:
+要点まとめ:
 ''';
 
       // Call Gemini API
