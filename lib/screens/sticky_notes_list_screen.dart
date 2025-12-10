@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/sticky_note.dart';
 import 'sticky_note_editor_screen.dart';
+import 'daily_contacts_screen.dart';
 
 class StickyNotesListScreen extends StatefulWidget {
   final DateTime selectedDate;
