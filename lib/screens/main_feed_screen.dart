@@ -1407,18 +1407,25 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         final isRead = message['read'] ?? false;
                         final messageType = message['type'] ?? 'text';
                         
-                        // CRITICAL: Check if this is a call notification message
-                        final isCallMessage = messageType.contains('call');
-                        final isVideoCall = messageType.contains('video');
-                        final isMissedCall = messageType.contains('missed');
-                        final isCancelledCall = messageType.contains('cancelled');
+                        // CRITICAL: Check if this is a call log message (new structure)
+                        final isCallMessage = messageType == 'call_log';
+                        final callType = message['callType'] ?? '';  // 'video' or 'voice'
+                        final callStatus = message['status'] ?? '';  // 'completed', 'missed', 'declined', 'failed'
+                        final callDirection = message['direction'] ?? '';  // 'outgoing' or 'incoming'
+                        final isVideoCall = callType == 'video';
+                        
+                        // Only show missed calls to the caller (outgoing direction + missed status)
+                        final isMissedCall = callStatus == 'missed' && callDirection == 'outgoing';
+                        final isDeclinedCall = callStatus == 'declined';
+                        final isFailedCall = callStatus == 'failed';
+                        final isCompletedCall = callStatus == 'completed';
                         
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              // Call notification (missed call) UI - WhatsApp/LINE style
+                              // Call notification UI - WhatsApp/LINE style
                               if (isCallMessage)
                                 Container(
                                   margin: const EdgeInsets.only(bottom: 8),
@@ -1429,16 +1436,20 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   decoration: BoxDecoration(
                                     color: isMissedCall 
                                         ? Colors.red.shade50 
-                                        : isCancelledCall
+                                        : isDeclinedCall
                                             ? Colors.orange.shade50
-                                            : Colors.green.shade50,
+                                            : isFailedCall
+                                                ? Colors.grey.shade200
+                                                : Colors.green.shade50,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isMissedCall 
                                           ? Colors.red.shade300 
-                                          : isCancelledCall
+                                          : isDeclinedCall
                                               ? Colors.orange.shade300
-                                              : Colors.green.shade300,
+                                              : isFailedCall
+                                                  ? Colors.grey.shade400
+                                                  : Colors.green.shade300,
                                       width: 2,
                                     ),
                                   ),
@@ -1451,9 +1462,11 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                         decoration: BoxDecoration(
                                           color: isMissedCall 
                                               ? Colors.red.shade100 
-                                              : isCancelledCall
+                                              : isDeclinedCall
                                                   ? Colors.orange.shade100
-                                                  : Colors.green.shade100,
+                                                  : isFailedCall
+                                                      ? Colors.grey.shade300
+                                                      : Colors.green.shade100,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
@@ -1461,40 +1474,42 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                           size: 24,
                                           color: isMissedCall 
                                               ? Colors.red.shade700 
-                                              : isCancelledCall
+                                              : isDeclinedCall
                                                   ? Colors.orange.shade700
-                                                  : Colors.green.shade700,
+                                                  : isFailedCall
+                                                      ? Colors.grey.shade700
+                                                      : Colors.green.shade700,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
                                       // Call direction icon (WhatsApp/LINE style)
                                       Icon(
-                                        isCancelledCall ? Icons.call_made : Icons.call_received,
+                                        callDirection == 'outgoing' ? Icons.call_made : Icons.call_received,
                                         size: 20,
                                         color: isMissedCall 
                                             ? Colors.red.shade600 
-                                            : isCancelledCall
+                                            : isDeclinedCall
                                                 ? Colors.orange.shade600
-                                                : Colors.green.shade600,
+                                                : isFailedCall
+                                                    ? Colors.grey.shade600
+                                                    : Colors.green.shade600,
                                       ),
                                       const SizedBox(width: 8),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
                                           Text(
-                                            isMissedCall 
-                                                ? (isVideoCall ? localService.translate('missed_video_call') : localService.translate('missed_voice_call'))
-                                                : isCancelledCall
-                                                    ? (isVideoCall ? localService.translate('cancelled_video_call') : localService.translate('cancelled_voice_call'))
-                                                    : (isVideoCall ? localService.translate('video_call') : localService.translate('voice_call')),
+                                            _getCallStatusText(localService, isVideoCall, callStatus),
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
                                               color: isMissedCall 
                                                   ? Colors.red.shade800 
-                                                  : isCancelledCall
+                                                  : isDeclinedCall
                                                       ? Colors.orange.shade800
-                                                      : Colors.green.shade800,
+                                                      : isFailedCall
+                                                          ? Colors.grey.shade700
+                                                          : Colors.green.shade800,
                                             ),
                                           ),
                                           if (message['duration'] != null)
@@ -1565,5 +1580,28 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       ),
       ],
     );
+  }
+  
+  /// Get call status text based on call type and status
+  String _getCallStatusText(LocalizationService localService, bool isVideo, String status) {
+    switch (status) {
+      case 'missed':
+        return isVideo 
+            ? localService.translate('missed_video_call') 
+            : localService.translate('missed_voice_call');
+      case 'declined':
+        return isVideo 
+            ? localService.translate('declined_video_call') 
+            : localService.translate('declined_voice_call');
+      case 'failed':
+        return isVideo 
+            ? localService.translate('failed_video_call') 
+            : localService.translate('failed_voice_call');
+      case 'completed':
+      default:
+        return isVideo 
+            ? localService.translate('video_call') 
+            : localService.translate('voice_call');
+    }
   }
 }
