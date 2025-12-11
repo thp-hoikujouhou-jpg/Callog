@@ -1421,6 +1421,16 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         final isFailedCall = callStatus == 'failed';
                         final isCompletedCall = callStatus == 'completed';
                         
+                        // CRITICAL: Skip rendering if message type is unknown or incomplete
+                        if (messageType != 'text' && messageType != 'call_log') {
+                          return const SizedBox.shrink();  // Don't render unknown message types
+                        }
+                        
+                        // CRITICAL: Skip rendering call logs with missing required fields
+                        if (isCallMessage && (callType.isEmpty || callStatus.isEmpty || callDirection.isEmpty)) {
+                          return const SizedBox.shrink();  // Don't render incomplete call logs
+                        }
+                        
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                           child: Column(
