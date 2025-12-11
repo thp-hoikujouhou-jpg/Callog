@@ -1376,29 +1376,92 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         final message = messages[index].data() as Map<String, dynamic>;
                         final isMe = message['senderId'] == currentUser.uid;
                         final isRead = message['read'] ?? false;
+                        final messageType = message['type'] ?? 'text';
+                        
+                        // CRITICAL: Check if this is a call notification message
+                        final isCallMessage = messageType.contains('call');
+                        final isVideoCall = messageType.contains('video');
+                        final isMissedCall = messageType.contains('missed');
                         
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                margin: const EdgeInsets.only(bottom: 4),
-                                padding: const EdgeInsets.symmetric(
-                                  horizontal: 16,
-                                  vertical: 10,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
-                                  borderRadius: BorderRadius.circular(18),
-                                ),
-                                child: Text(
-                                  message['text'] ?? '',
-                                  style: TextStyle(
-                                    color: isMe ? Colors.white : Colors.black87,
+                              // Call notification (missed call) UI
+                              if (isCallMessage)
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 8),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 12,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isMissedCall 
+                                        ? Colors.red.shade50 
+                                        : Colors.green.shade50,
+                                    borderRadius: BorderRadius.circular(12),
+                                    border: Border.all(
+                                      color: isMissedCall 
+                                          ? Colors.red.shade200 
+                                          : Colors.green.shade200,
+                                      width: 1.5,
+                                    ),
+                                  ),
+                                  child: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      Icon(
+                                        isVideoCall ? Icons.videocam : Icons.phone,
+                                        size: 20,
+                                        color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                      ),
+                                      const SizedBox(width: 12),
+                                      Column(
+                                        crossAxisAlignment: CrossAxisAlignment.start,
+                                        children: [
+                                          Text(
+                                            isMissedCall 
+                                                ? (isVideoCall ? localService.translate('missed_video_call') : localService.translate('missed_voice_call'))
+                                                : (isVideoCall ? localService.translate('video_call') : localService.translate('voice_call')),
+                                            style: TextStyle(
+                                              fontSize: 14,
+                                              fontWeight: FontWeight.bold,
+                                              color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                            ),
+                                          ),
+                                          if (message['duration'] != null)
+                                            Text(
+                                              message['duration'] as String,
+                                              style: TextStyle(
+                                                fontSize: 12,
+                                                color: Colors.grey.shade600,
+                                              ),
+                                            ),
+                                        ],
+                                      ),
+                                    ],
+                                  ),
+                                )
+                              // Regular text message UI
+                              else
+                                Container(
+                                  margin: const EdgeInsets.only(bottom: 4),
+                                  padding: const EdgeInsets.symmetric(
+                                    horizontal: 16,
+                                    vertical: 10,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
+                                    borderRadius: BorderRadius.circular(18),
+                                  ),
+                                  child: Text(
+                                    message['text'] ?? '',
+                                    style: TextStyle(
+                                      color: isMe ? Colors.white : Colors.black87,
+                                    ),
                                   ),
                                 ),
-                              ),
                               // 既読/未読表示（自分のメッセージのみ）
                             if (isMe)
                               Padding(

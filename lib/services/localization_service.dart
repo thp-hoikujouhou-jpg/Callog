@@ -399,6 +399,22 @@ class LocalizationService extends ChangeNotifier {
       'es': 'Videollamada',
       'fr': 'Appel vidéo',
     },
+    'missed_voice_call': {
+      'en': 'Missed Voice Call',
+      'ja': '不在着信（音声）',
+      'ko': '부재중 음성 통화',
+      'zh': '未接语音通话',
+      'es': 'Llamada de voz perdida',
+      'fr': 'Appel vocal manqué',
+    },
+    'missed_video_call': {
+      'en': 'Missed Video Call',
+      'ja': '不在着信（ビデオ）',
+      'ko': '부재중 영상 통화',
+      'zh': '未接视频通话',
+      'es': 'Videollamada perdida',
+      'fr': 'Appel vidéo manqué',
+    },
     'incoming_call': {
       'en': 'Incoming Call',
       'ja': '着信',
