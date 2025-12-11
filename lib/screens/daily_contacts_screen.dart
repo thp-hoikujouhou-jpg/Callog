@@ -161,7 +161,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
           debugPrint('   allow read: if request.auth != null;');
         }
       }
-      }
+      
       setState(() {
         _isLoading = false;
       });
@@ -331,6 +331,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
               : _buildContactList(),
     );
   }
+  
   
   /// Build empty state
   Widget _buildEmptyState(LocalizationService localService) {
