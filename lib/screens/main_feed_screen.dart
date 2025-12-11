@@ -1235,7 +1235,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             ),
             const SizedBox(height: 16),
             Text(
-              localService.getText('select_friend_to_chat'),
+              localService.translate('select_friend_to_chat'),
               style: TextStyle(
                 fontSize: 18,
                 color: Colors.grey.shade600,
@@ -1244,7 +1244,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             ),
             const SizedBox(height: 8),
             Text(
-              localService.getText('tap_friend_to_start_chat'),
+              localService.translate('tap_friend_to_start_chat'),
               style: TextStyle(
                 fontSize: 14,
                 color: Colors.grey.shade500,
