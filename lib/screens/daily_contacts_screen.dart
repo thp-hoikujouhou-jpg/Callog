@@ -31,11 +31,18 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   @override
   void initState() {
     super.initState();
+    if (kDebugMode) {
+      debugPrint('🚀 [DailyContacts] initState called - Loading contacts...');
+    }
     _loadDailyContacts();
   }
   
   /// Load contacts who had calls on selected date
   Future<void> _loadDailyContacts() async {
+    if (kDebugMode) {
+      debugPrint('⏳ [DailyContacts] _loadDailyContacts() method started');
+    }
+    
     try {
       final user = _auth.currentUser;
       if (user == null) {
@@ -137,9 +144,23 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       
       // Check which contacts have sticky notes
       _checkStickyNotes();
-    } catch (e) {
+    } catch (e, stackTrace) {
       if (kDebugMode) {
         debugPrint('❌ [DailyContacts] Error loading contacts: $e');
+        debugPrint('📚 [DailyContacts] Stack trace: $stackTrace');
+        
+        // Check for common errors
+        if (e.toString().contains('requires an index')) {
+          debugPrint('🔥 [DailyContacts] FIRESTORE INDEX REQUIRED!');
+          debugPrint('💡 [DailyContacts] Open Firebase Console and create composite index');
+          debugPrint('   Collection: call_recordings');
+          debugPrint('   Fields: userId (Ascending), timestamp (Ascending)');
+        } else if (e.toString().contains('Missing or insufficient permissions')) {
+          debugPrint('🔥 [DailyContacts] SECURITY RULES BLOCKING QUERY!');
+          debugPrint('💡 [DailyContacts] Update Firestore rules:');
+          debugPrint('   allow read: if request.auth != null;');
+        }
+      }
       }
       setState(() {
         _isLoading = false;
