@@ -38,7 +38,17 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   Future<void> _loadDailyContacts() async {
     try {
       final user = _auth.currentUser;
-      if (user == null) return;
+      if (user == null) {
+        if (kDebugMode) {
+          debugPrint('❌ [DailyContacts] No user logged in');
+        }
+        return;
+      }
+      
+      if (kDebugMode) {
+        debugPrint('🔍 [DailyContacts] Loading contacts for userId: ${user.uid}');
+        debugPrint('📅 [DailyContacts] Selected date: ${widget.selectedDate}');
+      }
       
       // Get start and end of selected date
       final startOfDay = DateTime(
@@ -55,6 +65,12 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         59,
       );
       
+      if (kDebugMode) {
+        debugPrint('🕐 [DailyContacts] Query range:');
+        debugPrint('   Start: $startOfDay');
+        debugPrint('   End: $endOfDay');
+      }
+      
       // Query call recordings for selected date
       final querySnapshot = await _firestore
           .collection('call_recordings')
@@ -62,6 +78,26 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
           .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
           .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
           .get();
+      
+      if (kDebugMode) {
+        debugPrint('📦 [DailyContacts] Query returned ${querySnapshot.docs.length} recordings');
+        if (querySnapshot.docs.isEmpty) {
+          debugPrint('⚠️ [DailyContacts] No call recordings found for this date!');
+          debugPrint('💡 [DailyContacts] Check Firestore:');
+          debugPrint('   - Collection: call_recordings');
+          debugPrint('   - Field: userId = ${user.uid}');
+          debugPrint('   - Field: timestamp in range $startOfDay - $endOfDay');
+        } else {
+          debugPrint('✅ [DailyContacts] Found recordings:');
+          for (var doc in querySnapshot.docs) {
+            final data = doc.data();
+            debugPrint('   📞 Recording ID: ${doc.id}');
+            debugPrint('      userId: ${data['userId']}');
+            debugPrint('      timestamp: ${data['timestamp']}');
+            debugPrint('      callPartner: ${data['callPartner']}');
+          }
+        }
+      }
       
       // Group by contact
       final Map<String, _ContactInfo> contactMap = {};
