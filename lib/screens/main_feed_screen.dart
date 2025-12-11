@@ -1337,10 +1337,19 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
     return Column(
       children: [
-        // Selected friend header
+        // Selected friend header - Image style (exact match)
         Container(
-          padding: const EdgeInsets.all(12),
-          color: Colors.blue.shade50,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          decoration: BoxDecoration(
+            color: Colors.white,
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withOpacity(0.05),
+                blurRadius: 4,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
           child: Row(
             children: [
               Builder(
@@ -1349,8 +1358,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   final hasPhoto = photoUrl != null && photoUrl.toString().isNotEmpty;
                   
                   return CircleAvatar(
-                    radius: 20,
-                    backgroundColor: Colors.blue.shade600,
+                    radius: 24,
+                    backgroundColor: ModernUITheme.primaryCyan,
                     backgroundImage: hasPhoto
                         ? ImageProxy.getImageProvider(photoUrl)
                         : null,
@@ -1374,40 +1383,56 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               Expanded(
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
                   children: [
                     Text(
                       _selectedFriend?['username'] ?? 'Unknown',
                       style: const TextStyle(
-                        fontWeight: FontWeight.bold,
+                        fontWeight: FontWeight.w600,
                         fontSize: 16,
-                        color: Colors.black,
+                        color: Color(0xFF1A1A1A),
                       ),
                     ),
+                    const SizedBox(height: 2),
                     Text(
-                      _selectedFriend?['location'] ?? '',
+                      'Online',
                       style: TextStyle(
-                        fontSize: 12,
-                        color: Colors.grey.shade600,
+                        fontSize: 13,
+                        color: Colors.grey.shade500,
                       ),
                     ),
                   ],
                 ),
               ),
-              IconButton(
-                icon: const Icon(Icons.phone),
-                onPressed: _startVoiceCall,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.green.shade600,
-                  foregroundColor: Colors.white,
+              // Voice call button - Image style
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF4CAF50),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.phone, size: 20),
+                  color: Colors.white,
+                  padding: EdgeInsets.zero,
+                  onPressed: _startVoiceCall,
                 ),
               ),
               const SizedBox(width: 8),
-              IconButton(
-                icon: const Icon(Icons.videocam),
-                onPressed: _startVideoCall,
-                style: IconButton.styleFrom(
-                  backgroundColor: Colors.blue.shade600,
-                  foregroundColor: Colors.white,
+              // Video call button - Image style
+              Container(
+                width: 40,
+                height: 40,
+                decoration: const BoxDecoration(
+                  color: Color(0xFF2196F3),
+                  shape: BoxShape.circle,
+                ),
+                child: IconButton(
+                  icon: const Icon(Icons.videocam, size: 20),
+                  color: Colors.white,
+                  padding: EdgeInsets.zero,
+                  onPressed: _startVideoCall,
                 ),
               ),
             ],
@@ -1509,8 +1534,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                           return const SizedBox.shrink();  // Don't render incomplete call logs
                         }
                         
-                        return Align(
-                          alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                        return Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 2),
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
@@ -1614,48 +1639,60 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     ],
                                   ),
                                 )
-                              // Regular text message UI (only show if messageType is 'text')
+                              // Regular text message UI - Image style (exact match)
                               else if (messageType == 'text' && (message['text'] ?? '').isNotEmpty)
                                 Container(
-                                  margin: const EdgeInsets.only(bottom: 4),
+                                  margin: EdgeInsets.only(
+                                    left: isMe ? 60 : 16,
+                                    right: isMe ? 16 : 60,
+                                    bottom: 8,
+                                  ),
                                   padding: const EdgeInsets.symmetric(
                                     horizontal: 16,
-                                    vertical: 10,
+                                    vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isMe ? Colors.blue.shade600 : Colors.grey.shade300,
-                                    borderRadius: BorderRadius.circular(18),
-                                  ),
-                                  child: Text(
-                                    message['text'] ?? '',
-                                    style: TextStyle(
-                                      color: isMe ? Colors.white : Colors.black87,
+                                    color: isMe 
+                                        ? const Color(0xFF00D4FF)  // Light cyan (like image)
+                                        : Colors.white,
+                                    borderRadius: BorderRadius.only(
+                                      topLeft: const Radius.circular(18),
+                                      topRight: const Radius.circular(18),
+                                      bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(4),
+                                      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
                                     ),
-                                  ),
-                                ),
-                              // 既読/未読表示（自分のメッセージのみ）
-                            if (isMe)
-                              Padding(
-                                padding: const EdgeInsets.only(right: 8, bottom: 4),
-                                child: Row(
-                                  mainAxisSize: MainAxisSize.min,
-                                  children: [
-                                    Icon(
-                                      isRead ? Icons.done_all : Icons.done,
-                                      size: 16,
-                                      color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
-                                    ),
-                                    const SizedBox(width: 4),
-                                    Text(
-                                      isRead ? localService.translate('read') : localService.translate('unread'),
-                                      style: TextStyle(
-                                        fontSize: 11,
-                                        color: isRead ? Colors.blue.shade600 : Colors.grey.shade600,
+                                    boxShadow: [
+                                      BoxShadow(
+                                        color: Colors.black.withOpacity(0.08),
+                                        blurRadius: 4,
+                                        offset: const Offset(0, 2),
                                       ),
-                                    ),
-                                  ],
+                                    ],
+                                  ),
+                                  child: Column(
+                                    crossAxisAlignment: CrossAxisAlignment.start,
+                                    children: [
+                                      Text(
+                                        message['text'] ?? '',
+                                        style: TextStyle(
+                                          color: isMe ? Colors.white : const Color(0xFF1A1A1A),
+                                          fontSize: 15,
+                                        ),
+                                      ),
+                                      const SizedBox(height: 4),
+                                      Text(
+                                        _formatTimestamp(message['timestamp']),
+                                        style: TextStyle(
+                                          color: isMe 
+                                              ? Colors.white.withOpacity(0.7) 
+                                              : Colors.grey.shade500,
+                                          fontSize: 11,
+                                        ),
+                                      ),
+                                    ],
+                                  ),
                                 ),
-                              ),
+
                           ],
                         ),
                         );
@@ -1691,6 +1728,30 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return isVideo 
             ? localService.translate('video_call') 
             : localService.translate('voice_call');
+    }
+  }
+
+  /// Format timestamp for chat bubbles
+  String _formatTimestamp(dynamic timestamp) {
+    try {
+      if (timestamp == null) return '';
+      
+      DateTime messageTime;
+      if (timestamp is Timestamp) {
+        messageTime = timestamp.toDate();
+      } else if (timestamp is DateTime) {
+        messageTime = timestamp;
+      } else {
+        return '';
+      }
+      
+      final now = DateTime.now();
+      final hour = messageTime.hour.toString().padLeft(2, '0');
+      final minute = messageTime.minute.toString().padLeft(2, '0');
+      
+      return '$hour:$minute';
+    } catch (e) {
+      return '';
     }
   }
 
