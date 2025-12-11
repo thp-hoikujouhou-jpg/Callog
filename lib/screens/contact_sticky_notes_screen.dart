@@ -48,29 +48,44 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
         _isLoading = true;
       });
       
+      // CRITICAL FIX: Use 'date' field instead of 'createdAt' (which doesn't exist in Firebase data)
       final querySnapshot = await _firestore
           .collection('sticky_notes')
           .where('userId', isEqualTo: user.uid)
           .where('contactId', isEqualTo: widget.contactId)
-          .orderBy('createdAt', descending: true)  // Newest first
+          .orderBy('date', descending: true)  // Newest first - sorted by date field
           .get();
       
-      final notes = querySnapshot.docs
-          .map((doc) => StickyNote.fromFirestore(doc.data(), doc.id))
-          .toList();
+      // CRITICAL DEBUG: Add detailed logging for sticky notes loading
+      print('📋 [ContactStickyNotes] Query returned ${querySnapshot.docs.length} notes for ${widget.contactName}');
+      
+      final notes = querySnapshot.docs.map((doc) {
+        print('  📄 [ContactStickyNotes] Processing note: ${doc.id}');
+        print('    - contactId: ${doc.data()['contactId']}');
+        print('    - date: ${doc.data()['date']}');
+        print('    - keyPoints length: ${(doc.data()['keyPoints'] as String?)?.length ?? 0}');
+        return StickyNote.fromFirestore(doc.data(), doc.id);
+      }).toList();
       
       setState(() {
         _notes = notes;
         _isLoading = false;
       });
       
-      if (kDebugMode) {
-        debugPrint('📋 [ContactStickyNotes] Loaded ${notes.length} notes for ${widget.contactName}');
+      print('✅ [ContactStickyNotes] Successfully loaded ${notes.length} notes for ${widget.contactName}');
+    } catch (e, stackTrace) {
+      print('❌ [ContactStickyNotes] Error loading notes: $e');
+      print('   Stack trace: $stackTrace');
+      
+      // Check for common Firestore issues
+      if (e.toString().contains('requires an index')) {
+        print('💡 [ContactStickyNotes] SOLUTION: Create composite index for sticky_notes collection:');
+        print('   Fields: userId (Ascending), contactId (Ascending), date (Descending)');
+      } else if (e.toString().contains('Missing or insufficient permissions')) {
+        print('💡 [ContactStickyNotes] SOLUTION: Update Firestore Security Rules:');
+        print('   allow read: if request.auth != null;');
       }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ [ContactStickyNotes] Error loading notes: $e');
-      }
+      
       setState(() {
         _isLoading = false;
       });

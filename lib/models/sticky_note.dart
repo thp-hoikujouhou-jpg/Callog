@@ -41,11 +41,20 @@ class StickyNote {
   });
 
   /// Create StickyNote from Firestore document
+  /// CRITICAL FIX: Enhanced null safety to prevent "Null check operator used on a null value" errors
   factory StickyNote.fromFirestore(Map<String, dynamic> data, String docId) {
+    // CRITICAL: date field is required - use null-safe conversion
+    final dateTimestamp = data['date'] as Timestamp?;
+    final dateValue = dateTimestamp?.toDate() ?? DateTime.now();
+    
+    // CRITICAL: createdAt might not exist in Firebase data - use date as fallback
+    final createdAtTimestamp = data['createdAt'] as Timestamp?;
+    final createdAtValue = createdAtTimestamp?.toDate() ?? dateValue;
+    
     return StickyNote(
       id: docId,
       userId: data['userId'] as String? ?? '',
-      date: (data['date'] as Timestamp).toDate(),
+      date: dateValue,  // Use null-safe date value
       contactId: data['contactId'] as String? ?? '',
       contactName: data['contactName'] as String? ?? '',
       contactPhotoUrl: data['contactPhotoUrl'] as String?,
@@ -53,7 +62,7 @@ class StickyNote {
       results: data['results'] as String? ?? '',
       colorHex: data['colorHex'] as String? ?? '#FFEB3B',  // Default: Yellow
       position: data['position'] as int? ?? 0,
-      createdAt: (data['createdAt'] as Timestamp?)?.toDate() ?? DateTime.now(),
+      createdAt: createdAtValue,  // Use date field if createdAt doesn't exist
       updatedAt: (data['updatedAt'] as Timestamp?)?.toDate(),
       importedFromCallHistory: data['importedFromCallHistory'] as bool? ?? false,
       callRecordingId: data['callRecordingId'] as String?,
