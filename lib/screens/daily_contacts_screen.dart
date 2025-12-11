@@ -31,31 +31,28 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   @override
   void initState() {
     super.initState();
-    if (kDebugMode) {
-      debugPrint('🚀 [DailyContacts] initState called - Loading contacts...');
-    }
+    // CRITICAL: Force logging to console (ignore kDebugMode)
+    print('🚀 [DailyContacts] initState called - Loading contacts...');
+    print('📅 [DailyContacts] Selected date: ${widget.selectedDate}');
     _loadDailyContacts();
   }
   
   /// Load contacts who had calls on selected date
   Future<void> _loadDailyContacts() async {
-    if (kDebugMode) {
-      debugPrint('⏳ [DailyContacts] _loadDailyContacts() method started');
-    }
+    print('⏳ [DailyContacts] _loadDailyContacts() method started');
     
     try {
       final user = _auth.currentUser;
       if (user == null) {
-        if (kDebugMode) {
-          debugPrint('❌ [DailyContacts] No user logged in');
-        }
+        print('❌ [DailyContacts] No user logged in');
+        setState(() {
+          _isLoading = false;
+        });
         return;
       }
       
-      if (kDebugMode) {
-        debugPrint('🔍 [DailyContacts] Loading contacts for userId: ${user.uid}');
-        debugPrint('📅 [DailyContacts] Selected date: ${widget.selectedDate}');
-      }
+      print('🔍 [DailyContacts] Loading contacts for userId: ${user.uid}');
+      print('📅 [DailyContacts] Query date: ${widget.selectedDate}');
       
       // Get start and end of selected date
       final startOfDay = DateTime(
@@ -72,14 +69,13 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         59,
       );
       
-      if (kDebugMode) {
-        debugPrint('🕐 [DailyContacts] Query range:');
-        debugPrint('   Start: $startOfDay');
-        debugPrint('   End: $endOfDay');
-      }
+      print('🕐 [DailyContacts] Query range:');
+      print('   Start: $startOfDay');
+      print('   End: $endOfDay');
       
       // Query sticky notes for selected date
       // CRITICAL FIX: Use sticky_notes instead of call_recordings to get contact info
+      print('🔍 [DailyContacts] Executing Firestore query...');
       final querySnapshot = await _firestore
           .collection('sticky_notes')
           .where('userId', isEqualTo: user.uid)
@@ -87,29 +83,30 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
           .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
           .get();
       
-      if (kDebugMode) {
-        debugPrint('📦 [DailyContacts] Query returned ${querySnapshot.docs.length} sticky notes');
-        if (querySnapshot.docs.isEmpty) {
-          debugPrint('⚠️ [DailyContacts] No sticky notes found for this date!');
-          debugPrint('💡 [DailyContacts] Check Firestore:');
-          debugPrint('   - Collection: sticky_notes');
-          debugPrint('   - Field: userId = ${user.uid}');
-          debugPrint('   - Field: date in range $startOfDay - $endOfDay');
-        } else {
-          debugPrint('✅ [DailyContacts] Found sticky notes:');
-          for (var doc in querySnapshot.docs) {
-            final data = doc.data();
-            debugPrint('   📝 Note ID: ${doc.id}');
-            debugPrint('      contactId: ${data['contactId']}');
-            debugPrint('      contactName: ${data['contactName']}');
-            debugPrint('      contactPhotoUrl: ${data['contactPhotoUrl']}');
-            debugPrint('      date: ${data['date']}');
-          }
+      print('📦 [DailyContacts] Query returned ${querySnapshot.docs.length} sticky notes');
+      
+      if (querySnapshot.docs.isEmpty) {
+        print('⚠️ [DailyContacts] No sticky notes found for this date!');
+        print('💡 [DailyContacts] Check Firestore:');
+        print('   - Collection: sticky_notes');
+        print('   - Field: userId = ${user.uid}');
+        print('   - Field: date range: $startOfDay to $endOfDay');
+      } else {
+        print('✅ [DailyContacts] Found ${querySnapshot.docs.length} sticky notes:');
+        for (var doc in querySnapshot.docs) {
+          final data = doc.data();
+          print('   📝 Note ID: ${doc.id}');
+          print('      contactId: ${data['contactId']}');
+          print('      contactName: ${data['contactName']}');
+          print('      contactPhotoUrl: ${data['contactPhotoUrl']}');
+          print('      date: ${data['date']}');
         }
       }
       
       // Group by contact (using data from sticky_notes directly)
       final Map<String, _ContactInfo> contactMap = {};
+      
+      print('🔄 [DailyContacts] Processing ${querySnapshot.docs.length} notes...');
       
       for (var doc in querySnapshot.docs) {
         final data = doc.data();
@@ -119,13 +116,12 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         final contactName = data['contactName'] as String? ?? 'Unknown';
         final contactPhotoUrl = data['contactPhotoUrl'] as String?;
         
-        if (kDebugMode) {
-          debugPrint('   📝 Processing note: contactId=$contactId, name=$contactName');
-        }
+        print('   📝 Processing note: contactId=$contactId, name=$contactName, photoUrl=$contactPhotoUrl');
         
         if (contactMap.containsKey(contactId)) {
           // Contact already exists, increment sticky note count
           contactMap[contactId]!.noteCount++;
+          print('      → Existing contact, count now: ${contactMap[contactId]!.noteCount}');
         } else {
           // New contact, add to map
           contactMap[contactId] = _ContactInfo(
@@ -135,16 +131,21 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
             noteCount: 1,
             recordings: [], // Not used anymore
           );
+          print('      → New contact added');
         }
       }
+      
+      print('✅ [DailyContacts] Processing complete, setting state...');
       
       setState(() {
         _contacts = contactMap.values.toList();
         _isLoading = false;
       });
       
-      if (kDebugMode) {
-        debugPrint('📱 [DailyContacts] Loaded ${_contacts.length} contacts for ${widget.selectedDate}');
+      print('📱 [DailyContacts] Loaded ${_contacts.length} contacts');
+      print('👥 [DailyContacts] Contact details:');
+      for (var contact in _contacts) {
+        print('   - ${contact.contactName}: ${contact.noteCount} notes, photoUrl: ${contact.contactPhotoUrl}');
       }
       
       // Mark all contacts as having sticky notes (since we query from sticky_notes)
@@ -152,14 +153,11 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         _contactsWithNotes = contactMap.keys.toSet();
       });
       
-      if (kDebugMode) {
-        debugPrint('📝 [DailyContacts] All ${_contactsWithNotes.length} contacts have sticky notes');
-      }
+      print('📝 [DailyContacts] All ${_contactsWithNotes.length} contacts marked with sticky notes');
     } catch (e, stackTrace) {
-      if (kDebugMode) {
-        debugPrint('❌ [DailyContacts] Error loading contacts: $e');
-        debugPrint('📚 [DailyContacts] Stack trace: $stackTrace');
-        
+      print('❌ [DailyContacts] ERROR loading contacts: $e');
+      print('📚 [DailyContacts] Stack trace: $stackTrace');
+      
         // Check for common errors
         if (e.toString().contains('requires an index')) {
           debugPrint('🔥 [DailyContacts] FIRESTORE INDEX REQUIRED!');
