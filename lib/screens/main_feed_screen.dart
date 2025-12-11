@@ -1350,7 +1350,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
               // Define all background gradients
               final Map<String, List<Color>> backgroundColors = {
-                'default': [const Color(0xFFE3F2FD), const Color(0xFFFFFFFF)],
+                'default': [Colors.white, Colors.white],  // Pure white background for clarity
                 'blue_gradient': [const Color(0xFFBBDEFB), const Color(0xFFE3F2FD)],
                 'purple_gradient': [const Color(0xFFE1BEE7), const Color(0xFFF3E5F5)],
                 'pink_gradient': [const Color(0xFFF8BBD0), const Color(0xFFFCE4EC)],
