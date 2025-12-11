@@ -1525,7 +1525,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                           ),
                                           if (message['duration'] != null)
                                             Text(
-                                              message['duration'] as String,
+                                              _formatDuration(message['duration']),
                                               style: TextStyle(
                                                 fontSize: 12,
                                                 color: Colors.grey.shade600,
@@ -1613,6 +1613,34 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         return isVideo 
             ? localService.translate('video_call') 
             : localService.translate('voice_call');
+    }
+  }
+
+  /// Format call duration from seconds to readable format
+  String _formatDuration(dynamic durationValue) {
+    try {
+      // Handle both int and String types from Firebase
+      final int seconds = durationValue is int 
+          ? durationValue 
+          : int.tryParse(durationValue.toString()) ?? 0;
+      
+      if (seconds < 60) {
+        return '$seconds秒';
+      }
+      
+      final int minutes = seconds ~/ 60;
+      final int remainingSeconds = seconds % 60;
+      
+      if (remainingSeconds == 0) {
+        return '$minutes分';
+      }
+      
+      return '$minutes分$remainingSeconds秒';
+    } catch (e) {
+      if (kDebugMode) {
+        debugPrint('⚠️ Error formatting duration: $e');
+      }
+      return '0秒';
     }
   }
 }
