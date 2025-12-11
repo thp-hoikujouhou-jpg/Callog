@@ -212,7 +212,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
             CircleAvatar(
               radius: 16,
               backgroundColor: Colors.white.withValues(alpha: 0.3),
-              backgroundImage: widget.contactPhotoUrl != null
+              backgroundImage: widget.contactPhotoUrl != null && widget.contactPhotoUrl!.isNotEmpty
                   ? NetworkImage(widget.contactPhotoUrl!)
                   : null,
               child: widget.contactPhotoUrl == null

@@ -319,7 +319,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
               CircleAvatar(
                 radius: 30,
                 backgroundColor: Colors.blue.shade100,
-                backgroundImage: contact.contactPhotoUrl != null
+                backgroundImage: contact.contactPhotoUrl != null && contact.contactPhotoUrl!.isNotEmpty
                     ? NetworkImage(contact.contactPhotoUrl!)
                     : null,
                 child: contact.contactPhotoUrl == null

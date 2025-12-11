@@ -328,7 +328,7 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
           CircleAvatar(
             radius: 30,
             backgroundColor: Colors.blue.shade100,
-            backgroundImage: widget.contactPhotoUrl != null
+            backgroundImage: widget.contactPhotoUrl != null && widget.contactPhotoUrl!.isNotEmpty
                 ? NetworkImage(widget.contactPhotoUrl!)
                 : null,
             child: widget.contactPhotoUrl == null
