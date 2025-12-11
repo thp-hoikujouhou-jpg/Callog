@@ -1411,6 +1411,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         final isCallMessage = messageType.contains('call');
                         final isVideoCall = messageType.contains('video');
                         final isMissedCall = messageType.contains('missed');
+                        final isCancelledCall = messageType.contains('cancelled');
                         
                         return Align(
                           alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
@@ -1428,12 +1429,16 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   decoration: BoxDecoration(
                                     color: isMissedCall 
                                         ? Colors.red.shade50 
-                                        : Colors.green.shade50,
+                                        : isCancelledCall
+                                            ? Colors.orange.shade50
+                                            : Colors.green.shade50,
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isMissedCall 
                                           ? Colors.red.shade300 
-                                          : Colors.green.shade300,
+                                          : isCancelledCall
+                                              ? Colors.orange.shade300
+                                              : Colors.green.shade300,
                                       width: 2,
                                     ),
                                   ),
@@ -1444,21 +1449,33 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                       Container(
                                         padding: const EdgeInsets.all(8),
                                         decoration: BoxDecoration(
-                                          color: isMissedCall ? Colors.red.shade100 : Colors.green.shade100,
+                                          color: isMissedCall 
+                                              ? Colors.red.shade100 
+                                              : isCancelledCall
+                                                  ? Colors.orange.shade100
+                                                  : Colors.green.shade100,
                                           shape: BoxShape.circle,
                                         ),
                                         child: Icon(
                                           isVideoCall ? Icons.videocam : Icons.phone,
                                           size: 24,
-                                          color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                          color: isMissedCall 
+                                              ? Colors.red.shade700 
+                                              : isCancelledCall
+                                                  ? Colors.orange.shade700
+                                                  : Colors.green.shade700,
                                         ),
                                       ),
                                       const SizedBox(width: 12),
-                                      // Incoming arrow icon (WhatsApp/LINE style)
+                                      // Call direction icon (WhatsApp/LINE style)
                                       Icon(
-                                        Icons.call_received,
+                                        isCancelledCall ? Icons.call_made : Icons.call_received,
                                         size: 20,
-                                        color: isMissedCall ? Colors.red.shade600 : Colors.green.shade600,
+                                        color: isMissedCall 
+                                            ? Colors.red.shade600 
+                                            : isCancelledCall
+                                                ? Colors.orange.shade600
+                                                : Colors.green.shade600,
                                       ),
                                       const SizedBox(width: 8),
                                       Column(
@@ -1467,11 +1484,17 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                           Text(
                                             isMissedCall 
                                                 ? (isVideoCall ? localService.translate('missed_video_call') : localService.translate('missed_voice_call'))
-                                                : (isVideoCall ? localService.translate('video_call') : localService.translate('voice_call')),
+                                                : isCancelledCall
+                                                    ? (isVideoCall ? localService.translate('cancelled_video_call') : localService.translate('cancelled_voice_call'))
+                                                    : (isVideoCall ? localService.translate('video_call') : localService.translate('voice_call')),
                                             style: TextStyle(
                                               fontSize: 15,
                                               fontWeight: FontWeight.w600,
-                                              color: isMissedCall ? Colors.red.shade800 : Colors.green.shade800,
+                                              color: isMissedCall 
+                                                  ? Colors.red.shade800 
+                                                  : isCancelledCall
+                                                      ? Colors.orange.shade800
+                                                      : Colors.green.shade800,
                                             ),
                                           ),
                                           if (message['duration'] != null)

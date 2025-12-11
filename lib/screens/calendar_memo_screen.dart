@@ -312,8 +312,16 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
     final lang = localService.currentLanguage;
     final months = monthNames[lang] ?? monthNames['en']!;
     
+    // Year suffix for each language
+    final yearSuffix = {
+      'ja': '年',
+      'ko': '년',
+      'zh': '年',
+    };
+    
     if (lang == 'ja' || lang == 'ko' || lang == 'zh') {
-      return '${_currentMonth.year}年 ${months[_currentMonth.month - 1]}';
+      final suffix = yearSuffix[lang] ?? '年';
+      return '${_currentMonth.year}$suffix ${months[_currentMonth.month - 1]}';
     } else {
       return '${months[_currentMonth.month - 1]} ${_currentMonth.year}';
     }

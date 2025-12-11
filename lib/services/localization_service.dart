@@ -415,6 +415,22 @@ class LocalizationService extends ChangeNotifier {
       'es': 'Videollamada perdida',
       'fr': 'Appel vidéo manqué',
     },
+    'cancelled_voice_call': {
+      'en': 'Cancelled Voice Call',
+      'ja': 'キャンセル（音声）',
+      'ko': '취소된 음성 통화',
+      'zh': '已取消语音通话',
+      'es': 'Llamada de voz cancelada',
+      'fr': 'Appel vocal annulé',
+    },
+    'cancelled_video_call': {
+      'en': 'Cancelled Video Call',
+      'ja': 'キャンセル（ビデオ）',
+      'ko': '취소된 영상 통화',
+      'zh': '已取消视频通话',
+      'es': 'Videollamada cancelada',
+      'fr': 'Appel vidéo annulé',
+    },
     'select_friend_to_chat': {
       'en': 'Select a friend to start chatting',
       'ja': '友達を選択してチャットを開始',
