@@ -312,6 +312,10 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   
   @override
   Widget build(BuildContext context) {
+    if (kDebugMode) {
+      debugPrint('🎨 [DailyContacts] build() called - _isLoading: $_isLoading, _contacts.length: ${_contacts.length}');
+    }
+    
     final localService = Provider.of<LocalizationService>(context);
     
     return Scaffold(

@@ -119,11 +119,19 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
   
   /// Handle date tap - navigate to daily contacts screen
   void _onDateTap(DateTime date) {
+    if (kDebugMode) {
+      print('📅 [CalendarMemo] Date tapped: ${date.toString().split(' ')[0]}');
+    }
+    
     setState(() {
       _selectedDate = date;
     });
     
     // Navigate to daily contacts screen (show contact avatars with call history)
+    if (kDebugMode) {
+      print('🚀 [CalendarMemo] Navigating to DailyContactsScreen...');
+    }
+    
     Navigator.push(
       context,
       MaterialPageRoute(
