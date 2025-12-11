@@ -8,6 +8,7 @@ import '../services/push_notification_service.dart';
 import '../services/call_notification_listener.dart';
 import '../utils/image_proxy.dart';
 import '../utils/web_notification_listener.dart';
+import '../theme/modern_ui_theme.dart';
 import 'search_contacts_screen.dart';
 import 'calendar_memo_screen.dart';
 import 'call_history_screen.dart';
@@ -950,9 +951,20 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
       builder: (context, localService, child) {
         return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('app_name')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('app_name'),
+          style: ModernUITheme.headingMedium.copyWith(
+            color: ModernUITheme.textWhite,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: ModernUITheme.primaryGradient,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           // Only show call history button on larger screens (PC/tablet)
           if (MediaQuery.of(context).size.width > 600)
@@ -1010,14 +1022,20 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: ModernUITheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
           children: [
             // Friends story-style row
             if (_friends.isNotEmpty)
               Container(
                 height: 90,
+                margin: const EdgeInsets.all(12),
                 padding: const EdgeInsets.symmetric(vertical: 12),
+                decoration: ModernUITheme.glassContainer(opacity: 0.1),
                 child: ListView.builder(
                   scrollDirection: Axis.horizontal,
                   padding: const EdgeInsets.symmetric(horizontal: 8),
@@ -1034,23 +1052,43 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         margin: const EdgeInsets.symmetric(horizontal: 6),
                         child: Stack(
                           children: [
-                            Container(
-                              width: isSelected ? 70 : 64,
-                              height: isSelected ? 70 : 64,
+                            // Modern UI: Gradient border with animation
+                            AnimatedContainer(
+                              duration: const Duration(milliseconds: 300),
+                              curve: Curves.easeInOutCubic,
+                              width: isSelected ? 72 : 66,
+                              height: isSelected ? 72 : 66,
                               decoration: BoxDecoration(
                                 shape: BoxShape.circle,
-                                border: Border.all(
-                                  color: isSelected
-                                      ? Colors.blue  // Selected: always blue
-                                      : (hasUnread ? Colors.green : Colors.grey.shade300),
-                                  width: isSelected || hasUnread ? 3 : 2,
-                                ),
+                                gradient: isSelected
+                                    ? ModernUITheme.primaryGradient
+                                    : hasUnread
+                                        ? ModernUITheme.successGradient
+                                        : null,
+                                border: !isSelected && !hasUnread
+                                    ? Border.all(
+                                        color: Colors.grey.shade300,
+                                        width: 2,
+                                      )
+                                    : null,
+                                boxShadow: isSelected || hasUnread
+                                    ? [
+                                        BoxShadow(
+                                          color: (isSelected 
+                                              ? ModernUITheme.primaryCyan 
+                                              : ModernUITheme.successGreen)
+                                              .withOpacity(0.3),
+                                          blurRadius: 12,
+                                          spreadRadius: 2,
+                                        ),
+                                      ]
+                                    : null,
                               ),
                               child: Padding(
                                 padding: const EdgeInsets.all(3),
                                 child: CircleAvatar(
                                   radius: isSelected ? 32 : 28,
-                                  backgroundColor: Colors.blue.shade600,
+                                  backgroundColor: ModernUITheme.primaryCyan,
                                   backgroundImage: (friend['photoUrl'] != null && 
                                                     friend['photoUrl'].toString().isNotEmpty)
                                       ? ImageProxy.getImageProvider(friend['photoUrl'])
@@ -1086,7 +1124,14 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 ),
               ),
             
-            const Divider(height: 1),
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                height: 1,
+                thickness: 1,
+                color: ModernUITheme.primaryCyan.withOpacity(0.1),
+              ),
+            ),
             
             // Chat area or empty state
             Expanded(
@@ -1175,35 +1220,67 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             
             // Message input (only show when friend is selected)
             if (_selectedFriend != null) ...[
-              const Divider(height: 1),
+              Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 16),
+              child: Divider(
+                height: 1,
+                thickness: 1,
+                color: ModernUITheme.primaryCyan.withOpacity(0.1),
+              ),
+            ),
               Container(
                 padding: const EdgeInsets.all(16),
+                decoration: BoxDecoration(
+                  color: ModernUITheme.surfaceWhite,
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(0.05),
+                      blurRadius: 8,
+                      offset: const Offset(0, -2),
+                    ),
+                  ],
+                ),
                 child: Row(
                   children: [
                     Expanded(
-                      child: TextField(
-                        controller: _messageController,
-                        decoration: InputDecoration(
-                          hintText: localService.translate('type_message'),
-                          border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(24),
+                      child: Container(
+                        decoration: ModernUITheme.glassContainer(opacity: 0.05),
+                        child: TextField(
+                          controller: _messageController,
+                          decoration: InputDecoration(
+                            hintText: localService.translate('type_message'),
+                            hintStyle: ModernUITheme.bodyMedium.copyWith(
+                              color: ModernUITheme.textHint,
+                            ),
+                            border: InputBorder.none,
+                            contentPadding: const EdgeInsets.symmetric(
+                              horizontal: 16,
+                              vertical: 12,
+                            ),
+                            prefixIcon: Icon(
+                              Icons.message,
+                              color: ModernUITheme.primaryCyan,
+                            ),
                           ),
-                          contentPadding: const EdgeInsets.symmetric(
-                            horizontal: 16,
-                            vertical: 8,
-                          ),
-                          prefixIcon: const Icon(Icons.message),
+                          style: ModernUITheme.bodyMedium,
+                          onSubmitted: (_) => _sendMessage(),
                         ),
-                        onSubmitted: (_) => _sendMessage(),
                       ),
                     ),
-                    const SizedBox(width: 8),
-                    IconButton(
-                      onPressed: _sendMessage,
-                      icon: const Icon(Icons.send),
-                      style: IconButton.styleFrom(
-                        backgroundColor: Colors.blue.shade600,
-                        foregroundColor: Colors.white,
+                    const SizedBox(width: 12),
+                    Container(
+                      width: 48,
+                      height: 48,
+                      decoration: BoxDecoration(
+                        gradient: ModernUITheme.primaryGradient,
+                        borderRadius: BorderRadius.circular(12),
+                        boxShadow: ModernUITheme.softShadow,
+                      ),
+                      child: IconButton(
+                        onPressed: _sendMessage,
+                        icon: const Icon(Icons.send),
+                        color: Colors.white,
+                        padding: EdgeInsets.zero,
                       ),
                     ),
                   ],
@@ -1212,6 +1289,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             ],
           ],
         ),
+      ),
       ),
     );
       },
