@@ -1414,8 +1414,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         final callDirection = message['direction'] ?? '';  // 'outgoing' or 'incoming'
                         final isVideoCall = callType == 'video';
                         
-                        // Only show missed calls to the caller (outgoing direction + missed status)
-                        final isMissedCall = callStatus == 'missed' && callDirection == 'outgoing';
+                        // CRITICAL FIX: Only show missed calls to the receiver who couldn't answer (incoming direction + missed status)
+                        final isMissedCall = callStatus == 'missed' && callDirection == 'incoming';
                         final isDeclinedCall = callStatus == 'declined';
                         final isFailedCall = callStatus == 'failed';
                         final isCompletedCall = callStatus == 'completed';
@@ -1525,8 +1525,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     ],
                                   ),
                                 )
-                              // Regular text message UI
-                              else
+                              // Regular text message UI (only show if messageType is 'text')
+                              else if (messageType == 'text' && (message['text'] ?? '').isNotEmpty)
                                 Container(
                                   margin: const EdgeInsets.only(bottom: 4),
                                   padding: const EdgeInsets.symmetric(
