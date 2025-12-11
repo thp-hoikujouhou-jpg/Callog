@@ -6,7 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/call_recording.dart';
 import '../models/sticky_note.dart';
-import 'sticky_note_editor_screen.dart';
+import 'contact_sticky_notes_screen.dart';
 
 class DailyContactsScreen extends StatefulWidget {
   final DateTime selectedDate;
@@ -232,25 +232,22 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       }
     }
     
-    // Navigate to sticky note editor (with or without existing note)
-    final result = await Navigator.push(
+    // Navigate to contact's sticky notes screen
+    await Navigator.push(
       context,
       MaterialPageRoute(
-        builder: (_) => StickyNoteEditorScreen(
-          selectedDate: widget.selectedDate,
+        builder: (_) => ContactStickyNotesScreen(
           contactId: contact.contactId,
           contactName: contact.contactName,
           contactPhotoUrl: contact.contactPhotoUrl,
-          callRecordings: contact.recordings,
-          existingNote: existingNote,  // Pass existing note if found
         ),
       ),
     );
     
-    // Reload sticky notes indicators after returning from editor
-    if (result == true && mounted) {
+    // Reload sticky notes indicators after returning
+    if (mounted) {
       if (kDebugMode) {
-        debugPrint('🔄 [DailyContacts] Reloading sticky notes after save');
+        debugPrint('🔄 [DailyContacts] Reloading sticky notes after returning');
       }
       await _checkStickyNotes();
     }
