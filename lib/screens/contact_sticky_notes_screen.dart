@@ -8,17 +8,19 @@ import '../models/sticky_note.dart';
 import '../models/call_recording.dart';
 import 'sticky_note_editor_screen.dart';
 
-/// Screen to display all sticky notes for a specific contact
+/// Screen to display all sticky notes for a specific contact on a specific date
 class ContactStickyNotesScreen extends StatefulWidget {
   final String contactId;
   final String contactName;
   final String? contactPhotoUrl;
+  final DateTime selectedDate;  // CRITICAL FIX: Add date filter
   
   const ContactStickyNotesScreen({
     super.key,
     required this.contactId,
     required this.contactName,
     this.contactPhotoUrl,
+    required this.selectedDate,  // Required parameter
   });
 
   @override
@@ -38,7 +40,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
     _loadStickyNotes();
   }
   
-  /// Load all sticky notes for this contact
+  /// Load sticky notes for this contact on the selected date only
   Future<void> _loadStickyNotes() async {
     final user = _auth.currentUser;
     if (user == null) return;
@@ -48,16 +50,24 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
         _isLoading = true;
       });
       
-      // CRITICAL FIX: Use 'date' field instead of 'createdAt' (which doesn't exist in Firebase data)
+      // CRITICAL FIX: Add date filtering to show only notes for the selected date
+      final startOfDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
+      final endOfDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day, 23, 59, 59);
+      
+      print('📋 [ContactStickyNotes] Loading notes for ${widget.contactName} on ${widget.selectedDate.year}-${widget.selectedDate.month.toString().padLeft(2, '0')}-${widget.selectedDate.day.toString().padLeft(2, '0')}');
+      print('   Date range: $startOfDay to $endOfDay');
+      
       final querySnapshot = await _firestore
           .collection('sticky_notes')
           .where('userId', isEqualTo: user.uid)
           .where('contactId', isEqualTo: widget.contactId)
-          .orderBy('date', descending: true)  // Newest first - sorted by date field
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .orderBy('date', descending: true)  // Newest first within the day
           .get();
       
       // CRITICAL DEBUG: Add detailed logging for sticky notes loading
-      print('📋 [ContactStickyNotes] Query returned ${querySnapshot.docs.length} notes for ${widget.contactName}');
+      print('📋 [ContactStickyNotes] Query returned ${querySnapshot.docs.length} notes for ${widget.contactName} on selected date');
       
       final notes = querySnapshot.docs.map((doc) {
         print('  📄 [ContactStickyNotes] Processing note: ${doc.id}');
@@ -80,7 +90,8 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
       // Check for common Firestore issues
       if (e.toString().contains('requires an index')) {
         print('💡 [ContactStickyNotes] SOLUTION: Create composite index for sticky_notes collection:');
-        print('   Fields: userId (Ascending), contactId (Ascending), date (Descending)');
+        print('   Fields: userId (Ascending), contactId (Ascending), date (Ascending), date (Descending)');
+        print('   Firebase Console will provide the exact index creation link in the error message.');
       } else if (e.toString().contains('Missing or insufficient permissions')) {
         print('💡 [ContactStickyNotes] SOLUTION: Update Firestore Security Rules:');
         print('   allow read: if request.auth != null;');
@@ -186,7 +197,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
       context,
       MaterialPageRoute(
         builder: (_) => StickyNoteEditorScreen(
-          selectedDate: DateTime.now(),  // Default to today
+          selectedDate: widget.selectedDate,  // Use the selected date from calendar
           contactId: widget.contactId,
           contactName: widget.contactName,
           contactPhotoUrl: widget.contactPhotoUrl,

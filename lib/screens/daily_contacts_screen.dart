@@ -216,7 +216,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       }
     }
     
-    // Navigate to contact's sticky notes screen
+    // Navigate to contact's sticky notes screen (filtered by selected date)
     await Navigator.push(
       context,
       MaterialPageRoute(
@@ -224,6 +224,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
           contactId: contact.contactId,
           contactName: contact.contactName,
           contactPhotoUrl: contact.contactPhotoUrl,
+          selectedDate: widget.selectedDate,  // CRITICAL FIX: Pass selected date for filtering
         ),
       ),
     );
