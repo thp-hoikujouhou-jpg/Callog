@@ -78,57 +78,62 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         debugPrint('   End: $endOfDay');
       }
       
-      // Query call recordings for selected date
+      // Query sticky notes for selected date
+      // CRITICAL FIX: Use sticky_notes instead of call_recordings to get contact info
       final querySnapshot = await _firestore
-          .collection('call_recordings')
+          .collection('sticky_notes')
           .where('userId', isEqualTo: user.uid)
-          .where('timestamp', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('timestamp', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
+          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
+          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
           .get();
       
       if (kDebugMode) {
-        debugPrint('📦 [DailyContacts] Query returned ${querySnapshot.docs.length} recordings');
+        debugPrint('📦 [DailyContacts] Query returned ${querySnapshot.docs.length} sticky notes');
         if (querySnapshot.docs.isEmpty) {
-          debugPrint('⚠️ [DailyContacts] No call recordings found for this date!');
+          debugPrint('⚠️ [DailyContacts] No sticky notes found for this date!');
           debugPrint('💡 [DailyContacts] Check Firestore:');
-          debugPrint('   - Collection: call_recordings');
+          debugPrint('   - Collection: sticky_notes');
           debugPrint('   - Field: userId = ${user.uid}');
-          debugPrint('   - Field: timestamp in range $startOfDay - $endOfDay');
+          debugPrint('   - Field: date in range $startOfDay - $endOfDay');
         } else {
-          debugPrint('✅ [DailyContacts] Found recordings:');
+          debugPrint('✅ [DailyContacts] Found sticky notes:');
           for (var doc in querySnapshot.docs) {
             final data = doc.data();
-            debugPrint('   📞 Recording ID: ${doc.id}');
-            debugPrint('      userId: ${data['userId']}');
-            debugPrint('      timestamp: ${data['timestamp']}');
-            debugPrint('      callPartner: ${data['callPartner']}');
+            debugPrint('   📝 Note ID: ${doc.id}');
+            debugPrint('      contactId: ${data['contactId']}');
+            debugPrint('      contactName: ${data['contactName']}');
+            debugPrint('      contactPhotoUrl: ${data['contactPhotoUrl']}');
+            debugPrint('      date: ${data['date']}');
           }
         }
       }
       
-      // Group by contact
+      // Group by contact (using data from sticky_notes directly)
       final Map<String, _ContactInfo> contactMap = {};
       
       for (var doc in querySnapshot.docs) {
-        final recording = CallRecording.fromMap(doc.data(), doc.id);
+        final data = doc.data();
         
-        // Get contact ID (other participant)
-        final contactId = recording.callPartner ?? 'unknown';
+        // Get contact information from sticky note (already complete!)
+        final contactId = data['contactId'] as String? ?? 'unknown';
+        final contactName = data['contactName'] as String? ?? 'Unknown';
+        final contactPhotoUrl = data['contactPhotoUrl'] as String?;
+        
+        if (kDebugMode) {
+          debugPrint('   📝 Processing note: contactId=$contactId, name=$contactName');
+        }
         
         if (contactMap.containsKey(contactId)) {
-          contactMap[contactId]!.callCount++;
-          contactMap[contactId]!.recordings.add(recording);
+          // Contact already exists, increment sticky note count
+          contactMap[contactId]!.noteCount++;
         } else {
-          // Fetch contact display name
-          final contactName = await _getContactName(contactId);
-          final contactPhotoUrl = await _getContactPhotoUrl(contactId);
-          
+          // New contact, add to map
           contactMap[contactId] = _ContactInfo(
             contactId: contactId,
             contactName: contactName,
             contactPhotoUrl: contactPhotoUrl,
-            callCount: 1,
-            recordings: [recording],
+            noteCount: 1,
+            recordings: [], // Not used anymore
           );
         }
       }
@@ -142,8 +147,14 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         debugPrint('📱 [DailyContacts] Loaded ${_contacts.length} contacts for ${widget.selectedDate}');
       }
       
-      // Check which contacts have sticky notes
-      _checkStickyNotes();
+      // Mark all contacts as having sticky notes (since we query from sticky_notes)
+      setState(() {
+        _contactsWithNotes = contactMap.keys.toSet();
+      });
+      
+      if (kDebugMode) {
+        debugPrint('📝 [DailyContacts] All ${_contactsWithNotes.length} contacts have sticky notes');
+      }
     } catch (e, stackTrace) {
       if (kDebugMode) {
         debugPrint('❌ [DailyContacts] Error loading contacts: $e');
@@ -153,8 +164,8 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         if (e.toString().contains('requires an index')) {
           debugPrint('🔥 [DailyContacts] FIRESTORE INDEX REQUIRED!');
           debugPrint('💡 [DailyContacts] Open Firebase Console and create composite index');
-          debugPrint('   Collection: call_recordings');
-          debugPrint('   Fields: userId (Ascending), timestamp (Ascending)');
+          debugPrint('   Collection: sticky_notes');
+          debugPrint('   Fields: userId (Ascending), date (Ascending)');
         } else if (e.toString().contains('Missing or insufficient permissions')) {
           debugPrint('🔥 [DailyContacts] SECURITY RULES BLOCKING QUERY!');
           debugPrint('💡 [DailyContacts] Update Firestore rules:');
@@ -168,90 +179,9 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
     }
   }
   
-  /// Check which contacts have sticky notes
-  Future<void> _checkStickyNotes() async {
-    final user = _auth.currentUser;
-    if (user == null) return;
-    
-    try {
-      final startOfDay = DateTime(widget.selectedDate.year, widget.selectedDate.month, widget.selectedDate.day);
-      final endOfDay = startOfDay.add(const Duration(days: 1));
-      
-      final querySnapshot = await _firestore
-          .collection('sticky_notes')
-          .where('userId', isEqualTo: user.uid)
-          .where('date', isGreaterThanOrEqualTo: Timestamp.fromDate(startOfDay))
-          .where('date', isLessThanOrEqualTo: Timestamp.fromDate(endOfDay))
-          .get();
-      
-      final contactsWithNotes = <String>{};
-      for (var doc in querySnapshot.docs) {
-        final contactId = doc.data()['contactId'] as String?;
-        if (contactId != null) {
-          contactsWithNotes.add(contactId);
-        }
-      }
-      
-      setState(() {
-        _contactsWithNotes = contactsWithNotes;
-      });
-      
-      if (kDebugMode) {
-        debugPrint('📝 [DailyContacts] Found ${contactsWithNotes.length} contacts with sticky notes');
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('⚠️ [DailyContacts] Error checking sticky notes: $e');
-      }
-    }
-  }
-  
-  /// Get contact display name
-  Future<String> _getContactName(String userId) async {
-    try {
-      final doc = await _firestore.collection('users').doc(userId).get();
-      if (doc.exists) {
-        final data = doc.data();
-        return data?['username'] ?? data?['name'] ?? userId;
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ [DailyContacts] Error fetching contact name: $e');
-      }
-    }
-    return userId;
-  }
-  
-  /// Get contact photo URL
-  Future<String?> _getContactPhotoUrl(String userId) async {
-    try {
-      if (kDebugMode) {
-        debugPrint('🔍 [DailyContacts] Fetching photo URL for userId: $userId');
-      }
-      
-      final doc = await _firestore.collection('users').doc(userId).get();
-      
-      if (kDebugMode) {
-        debugPrint('📄 [DailyContacts] User doc exists: ${doc.exists}');
-      }
-      
-      if (doc.exists) {
-        final data = doc.data();
-        final photoUrl = data?['photoUrl'] as String?;
-        
-        if (kDebugMode) {
-          debugPrint('📸 [DailyContacts] Photo URL for $userId: $photoUrl');
-        }
-        
-        return photoUrl;
-      }
-    } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ [DailyContacts] Error fetching photo URL: $e');
-      }
-    }
-    return null;
-  }
+  // REMOVED: _checkStickyNotes() - No longer needed since we query sticky_notes directly
+  // REMOVED: _getContactName() - Contact name comes from sticky_notes.contactName
+  // REMOVED: _getContactPhotoUrl() - Photo URL comes from sticky_notes.contactPhotoUrl
   
   /// Handle contact tap - navigate to sticky note editor
   Future<void> _onContactTap(_ContactInfo contact) async {
@@ -424,11 +354,11 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
                     Builder(
                       builder: (context) {
                         final localService = Provider.of<LocalizationService>(context, listen: false);
-                        final callWord = contact.callCount == 1 
-                          ? localService.translate('call_singular')
-                          : localService.translate('calls_plural');
+                        final noteWord = contact.noteCount == 1 
+                          ? localService.translate('note_singular')
+                          : localService.translate('notes_plural');
                         return Text(
-                          '${contact.callCount} $callWord',
+                          '${contact.noteCount} $noteWord',
                           style: TextStyle(
                             fontSize: 14,
                             color: Colors.grey.shade600,
@@ -520,19 +450,19 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
   }
 }
 
-/// Helper class to store contact information
+/// Helper class to store contact information from sticky notes
 class _ContactInfo {
   final String contactId;
   final String contactName;
   final String? contactPhotoUrl;
-  int callCount;
-  final List<CallRecording> recordings;
+  int noteCount;  // Number of sticky notes for this contact
+  final List<CallRecording> recordings;  // Kept for backward compatibility
   
   _ContactInfo({
     required this.contactId,
     required this.contactName,
     this.contactPhotoUrl,
-    required this.callCount,
+    required this.noteCount,
     required this.recordings,
   });
 }

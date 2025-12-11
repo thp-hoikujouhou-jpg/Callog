@@ -1378,12 +1378,28 @@ class LocalizationService extends ChangeNotifier {
 
     // Calendar Memo System
     'no_calls_on_this_day': {
-      'en': 'No calls on this day',
-      'ja': 'この日は通話がありません',
-      'ko': '이 날은 통화가 없습니다',
-      'zh': '这一天没有通话',
-      'es': 'No hay llamadas en este día',
-      'fr': 'Aucun appel ce jour',
+      'en': 'No sticky notes on this day',
+      'ja': 'この日はスティッキーノートがありません',
+      'ko': '이 날은 메모가 없습니다',
+      'zh': '这一天没有便签',
+      'es': 'No hay notas en este día',
+      'fr': 'Aucune note ce jour',
+    },
+    'note_singular': {
+      'en': 'note',
+      'ja': 'ノート',
+      'ko': '메모',
+      'zh': '便签',
+      'es': 'nota',
+      'fr': 'note',
+    },
+    'notes_plural': {
+      'en': 'notes',
+      'ja': 'ノート',
+      'ko': '메모',
+      'zh': '便签',
+      'es': 'notas',
+      'fr': 'notes',
     },
     'create_new_memo': {
       'en': 'Create New Memo',
