@@ -158,17 +158,16 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       print('❌ [DailyContacts] ERROR loading contacts: $e');
       print('📚 [DailyContacts] Stack trace: $stackTrace');
       
-        // Check for common errors
-        if (e.toString().contains('requires an index')) {
-          debugPrint('🔥 [DailyContacts] FIRESTORE INDEX REQUIRED!');
-          debugPrint('💡 [DailyContacts] Open Firebase Console and create composite index');
-          debugPrint('   Collection: sticky_notes');
-          debugPrint('   Fields: userId (Ascending), date (Ascending)');
-        } else if (e.toString().contains('Missing or insufficient permissions')) {
-          debugPrint('🔥 [DailyContacts] SECURITY RULES BLOCKING QUERY!');
-          debugPrint('💡 [DailyContacts] Update Firestore rules:');
-          debugPrint('   allow read: if request.auth != null;');
-        }
+      // Check for common errors
+      if (e.toString().contains('requires an index')) {
+        print('🔥 [DailyContacts] FIRESTORE INDEX REQUIRED!');
+        print('💡 [DailyContacts] Open Firebase Console and create composite index');
+        print('   Collection: sticky_notes');
+        print('   Fields: userId (Ascending), date (Ascending)');
+      } else if (e.toString().contains('Missing or insufficient permissions')) {
+        print('🔥 [DailyContacts] SECURITY RULES BLOCKING QUERY!');
+        print('💡 [DailyContacts] Update Firestore rules:');
+        print('   allow read: if request.auth != null;');
       }
       
       setState(() {
