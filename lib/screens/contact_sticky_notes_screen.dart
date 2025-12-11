@@ -419,7 +419,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
   
   /// Format date
   String _formatDate(DateTime date, LocalizationService localService) {
-    final languageCode = localService.currentLanguageCode;
+    final languageCode = localService.currentLanguage;
     
     final monthNames = {
       'en': ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
