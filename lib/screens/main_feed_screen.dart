@@ -1355,15 +1355,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 'purple_gradient': [const Color(0xFFF3E5F5), const Color(0xFFFFFFFF)],
                 'pink_gradient': [const Color(0xFFFCE4EC), const Color(0xFFFFFFFF)],
                 'green_gradient': [const Color(0xFFE8F5E9), const Color(0xFFFFFFFF)],
-                'orange_gradient': [const Color(0xFFFFF3E0), const Color(0xFFFFFFFF)],
+                'orange_gradient': [const Color(0xFFFFE0B2), const Color(0xFFFFF3E0)],  // Light orange gradient
                 'dark_blue': [const Color(0xFF0D47A1), const Color(0xFF1565C0)],
                 'dark_purple': [const Color(0xFF4A148C), const Color(0xFF6A1B9A)],
                 'sunset': [const Color(0xFFFF9800), const Color(0xFFE91E63)],
                 'ocean': [const Color(0xFF00BCD4), const Color(0xFF2196F3)],
               };
 
-              // FORCE WHITE BACKGROUND to debug gray issue
-              final colors = [Colors.white, Colors.white];
+              // Respect user's background preference (don't force white)
+              final colors = backgroundColors[backgroundId] ?? backgroundColors['default']!;
 
               return Container(
                 decoration: BoxDecoration(
