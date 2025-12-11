@@ -1388,7 +1388,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                           child: Column(
                             crossAxisAlignment: isMe ? CrossAxisAlignment.end : CrossAxisAlignment.start,
                             children: [
-                              // Call notification (missed call) UI
+                              // Call notification (missed call) UI - WhatsApp/LINE style
                               if (isCallMessage)
                                 Container(
                                   margin: const EdgeInsets.only(bottom: 8),
@@ -1403,20 +1403,35 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     borderRadius: BorderRadius.circular(12),
                                     border: Border.all(
                                       color: isMissedCall 
-                                          ? Colors.red.shade200 
-                                          : Colors.green.shade200,
-                                      width: 1.5,
+                                          ? Colors.red.shade300 
+                                          : Colors.green.shade300,
+                                      width: 2,
                                     ),
                                   ),
                                   child: Row(
                                     mainAxisSize: MainAxisSize.min,
                                     children: [
-                                      Icon(
-                                        isVideoCall ? Icons.videocam : Icons.phone,
-                                        size: 20,
-                                        color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                      // Call type icon (video/voice) - Larger and more prominent
+                                      Container(
+                                        padding: const EdgeInsets.all(8),
+                                        decoration: BoxDecoration(
+                                          color: isMissedCall ? Colors.red.shade100 : Colors.green.shade100,
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          isVideoCall ? Icons.videocam : Icons.phone,
+                                          size: 24,
+                                          color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                        ),
                                       ),
                                       const SizedBox(width: 12),
+                                      // Incoming arrow icon (WhatsApp/LINE style)
+                                      Icon(
+                                        Icons.call_received,
+                                        size: 20,
+                                        color: isMissedCall ? Colors.red.shade600 : Colors.green.shade600,
+                                      ),
+                                      const SizedBox(width: 8),
                                       Column(
                                         crossAxisAlignment: CrossAxisAlignment.start,
                                         children: [
@@ -1425,9 +1440,9 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                                 ? (isVideoCall ? localService.translate('missed_video_call') : localService.translate('missed_voice_call'))
                                                 : (isVideoCall ? localService.translate('video_call') : localService.translate('voice_call')),
                                             style: TextStyle(
-                                              fontSize: 14,
-                                              fontWeight: FontWeight.bold,
-                                              color: isMissedCall ? Colors.red.shade700 : Colors.green.shade700,
+                                              fontSize: 15,
+                                              fontWeight: FontWeight.w600,
+                                              color: isMissedCall ? Colors.red.shade800 : Colors.green.shade800,
                                             ),
                                           ),
                                           if (message['duration'] != null)
