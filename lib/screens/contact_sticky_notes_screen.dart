@@ -103,38 +103,45 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
     }
   }
   
-  /// Delete a sticky note
+  /// Delete a sticky note from Firestore
   Future<void> _deleteNote(StickyNote note) async {
     final localService = Provider.of<LocalizationService>(context, listen: false);
     try {
+      print('🗑️ [ContactStickyNotes] Deleting note from Firestore...');
+      print('   Note ID: ${note.id}');
+      print('   Contact: ${note.contactName}');
+      print('   Date: ${note.date}');
+      
+      // Delete from Firestore
       await _firestore.collection('sticky_notes').doc(note.id).delete();
       
+      print('✅ [ContactStickyNotes] Successfully deleted note from Firestore: ${note.id}');
+      
+      // Remove from local list
       setState(() {
         _notes.remove(note);
       });
       
-      if (kDebugMode) {
-        debugPrint('✅ [ContactStickyNotes] Deleted note: ${note.id}');
-      }
+      print('📱 [ContactStickyNotes] Removed note from local list. Remaining notes: ${_notes.length}');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text(localService.translate('memo_deleted')),
             backgroundColor: Colors.green,
+            duration: const Duration(seconds: 2),
           ),
         );
       }
     } catch (e) {
-      if (kDebugMode) {
-        debugPrint('❌ [ContactStickyNotes] Error deleting note: $e');
-      }
+      print('❌ [ContactStickyNotes] Error deleting note: $e');
       
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(
             content: Text('Error: $e'),
             backgroundColor: Colors.red,
+            duration: const Duration(seconds: 3),
           ),
         );
       }
@@ -351,7 +358,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // Date and imported badge
+              // Date, imported badge, and delete button
               Row(
                 children: [
                   Icon(Icons.calendar_today, size: 14, color: color),
@@ -387,6 +394,15 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
                       ),
                     ),
                   ],
+                  const Spacer(),
+                  // Delete button
+                  IconButton(
+                    icon: Icon(Icons.delete_outline, size: 20, color: Colors.red.shade400),
+                    padding: EdgeInsets.zero,
+                    constraints: const BoxConstraints(),
+                    onPressed: () => _showDeleteConfirmation(note),
+                    tooltip: localService.translate('delete_memo'),
+                  ),
                 ],
               ),
               
