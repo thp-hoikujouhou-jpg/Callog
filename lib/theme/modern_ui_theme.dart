@@ -114,26 +114,20 @@ class ModernUITheme {
     );
   }
   
-  /// Neumorphism pressed container
+  /// Neumorphism pressed container (simulated inset shadow)
   static BoxDecoration neumorphicPressed({
     Color color = const Color(0xFFF5F5F5),
     BorderRadius? borderRadius,
   }) {
     return BoxDecoration(
-      color: color,
+      color: color.withOpacity(0.95),
       borderRadius: borderRadius ?? BorderRadius.circular(20),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.15),
-          offset: const Offset(-4, -4),
-          blurRadius: 8,
-          inset: true,
-        ),
-        BoxShadow(
-          color: Colors.white,
-          offset: const Offset(4, 4),
-          blurRadius: 8,
-          inset: true,
+          color: Colors.black.withOpacity(0.1),
+          offset: const Offset(2, 2),
+          blurRadius: 4,
+          spreadRadius: -2,
         ),
       ],
     );
@@ -247,7 +241,7 @@ class ModernUITheme {
         titleTextStyle: headingMedium.copyWith(color: textPrimary),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
-      cardTheme: CardTheme(
+      cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: radiusMedium),
         color: surfaceWhite,
