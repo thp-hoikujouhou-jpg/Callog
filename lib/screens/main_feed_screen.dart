@@ -1223,7 +1223,36 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
     final selectedId = _selectedFriendId;
     
     if (currentUser == null || selectedId == null) {
-      return const SizedBox.shrink();
+      // Show friendly placeholder instead of blank gray area
+      return Center(
+        child: Column(
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            Icon(
+              Icons.chat_bubble_outline,
+              size: 80,
+              color: Colors.grey.shade300,
+            ),
+            const SizedBox(height: 16),
+            Text(
+              localService.getText('select_friend_to_chat'),
+              style: TextStyle(
+                fontSize: 18,
+                color: Colors.grey.shade600,
+                fontWeight: FontWeight.w500,
+              ),
+            ),
+            const SizedBox(height: 8),
+            Text(
+              localService.getText('tap_friend_to_start_chat'),
+              style: TextStyle(
+                fontSize: 14,
+                color: Colors.grey.shade500,
+              ),
+            ),
+          ],
+        ),
+      );
     }
 
     final chatId = _getChatId(currentUser.uid, selectedId);

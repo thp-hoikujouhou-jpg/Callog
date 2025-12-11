@@ -415,6 +415,22 @@ class LocalizationService extends ChangeNotifier {
       'es': 'Videollamada perdida',
       'fr': 'Appel vidéo manqué',
     },
+    'select_friend_to_chat': {
+      'en': 'Select a friend to start chatting',
+      'ja': '友達を選択してチャットを開始',
+      'ko': '채팅을 시작할 친구를 선택하세요',
+      'zh': '选择朋友开始聊天',
+      'es': 'Selecciona un amigo para chatear',
+      'fr': 'Sélectionnez un ami pour discuter',
+    },
+    'tap_friend_to_start_chat': {
+      'en': 'Tap on a friend from the list to begin',
+      'ja': 'リストから友達をタップして開始してください',
+      'ko': '목록에서 친구를 탭하여 시작하세요',
+      'zh': '点击列表中的朋友开始',
+      'es': 'Toca a un amigo de la lista para comenzar',
+      'fr': 'Appuyez sur un ami de la liste pour commencer',
+    },
     'incoming_call': {
       'en': 'Incoming Call',
       'ja': '着信',
