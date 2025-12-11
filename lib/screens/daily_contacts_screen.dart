@@ -231,12 +231,12 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       ),
     );
     
-    // Reload sticky notes indicators after returning
+    // Reload contacts after returning from sticky note editor
     if (mounted) {
       if (kDebugMode) {
-        debugPrint('🔄 [DailyContacts] Reloading sticky notes after returning');
+        debugPrint('🔄 [DailyContacts] Reloading contacts after returning');
       }
-      await _checkStickyNotes();
+      await _loadDailyContacts();
     }
   }
   
