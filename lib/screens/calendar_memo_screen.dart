@@ -254,18 +254,21 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
   }) {
     return InkWell(
       onTap: () => _onDateTap(date),
-      borderRadius: BorderRadius.circular(8),
+      borderRadius: BorderRadius.circular(12),
       child: Container(
-        decoration: BoxDecoration(
-          color: isSelected
-              ? Colors.blue.shade100
-              : (isToday ? Colors.blue.shade50 : null),
-          border: Border.all(
-            color: isToday ? Colors.blue.shade600 : Colors.grey.shade300,
-            width: isToday ? 2 : 1,
-          ),
-          borderRadius: BorderRadius.circular(8),
-        ),
+        decoration: isSelected || isToday
+            ? ModernUITheme.glassContainer(
+                opacity: isSelected ? 0.25 : 0.15,
+                borderRadius: BorderRadius.circular(12),
+              )
+            : BoxDecoration(
+                color: Colors.white.withOpacity(0.05),
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(
+                  color: Colors.grey.shade300,
+                  width: 1,
+                ),
+              ),
         child: Stack(
           children: [
             // Date number

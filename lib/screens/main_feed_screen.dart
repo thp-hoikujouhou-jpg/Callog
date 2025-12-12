@@ -1271,8 +1271,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                     Container(
                       width: 48,
                       height: 48,
-                      decoration: const BoxDecoration(
-                        color: Color(0xFF00BCD4),
+                      decoration: BoxDecoration(
+                        gradient: ModernUITheme.primaryGradient,
                         shape: BoxShape.circle,
                       ),
                       child: IconButton(
@@ -1658,9 +1658,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     vertical: 12,
                                   ),
                                   decoration: BoxDecoration(
-                                    color: isMe 
-                                        ? const Color(0xFF00BCD4)  // Modern UI cyan
-                                        : Colors.white,
+                                    gradient: isMe ? ModernUITheme.primaryGradient : null,
+                                    color: isMe ? null : Colors.white,
                                     borderRadius: BorderRadius.only(
                                       topLeft: const Radius.circular(20),
                                       topRight: const Radius.circular(20),
