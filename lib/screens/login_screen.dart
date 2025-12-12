@@ -53,21 +53,21 @@ class _LoginScreenState extends State<LoginScreen> {
           style: const TextStyle(color: Colors.white),
           decoration: InputDecoration(
             labelText: 'Email',
-            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+            labelStyle: const TextStyle(color: Colors.white, fontSize: 16),
             border: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              borderSide: const BorderSide(color: Colors.white, width: 1.5),
             ),
             enabledBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
-              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+              borderSide: const BorderSide(color: Colors.white, width: 1.5),
             ),
             focusedBorder: OutlineInputBorder(
               borderRadius: BorderRadius.circular(12),
               borderSide: const BorderSide(color: Colors.white, width: 2),
             ),
             filled: true,
-            fillColor: Colors.white.withValues(alpha: 0.1),
+            fillColor: Colors.white.withValues(alpha: 0.15),
           ),
           keyboardType: TextInputType.emailAddress,
         ),
@@ -221,7 +221,7 @@ class _LoginScreenState extends State<LoginScreen> {
               padding: const EdgeInsets.all(24),
               child: Container(
                 decoration: ModernUITheme.glassContainer(
-                  opacity: 0.2,
+                  opacity: 0.3,
                   blur: 20.0,
                 ),
                 padding: const EdgeInsets.all(32),
@@ -261,18 +261,18 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 32),
                         TextFormField(
                           controller: _emailController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Email',
-                            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-                            prefixIcon: const Icon(Icons.email, color: Colors.white70),
+                            labelStyle: const TextStyle(color: Colors.white, fontSize: 16),
+                            prefixIcon: const Icon(Icons.email, color: Colors.white),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -283,7 +283,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderSide: const BorderSide(color: Colors.red, width: 2),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.15),
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
@@ -299,17 +299,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          style: const TextStyle(color: Colors.white),
+                          style: const TextStyle(color: Colors.white, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
-                            prefixIcon: const Icon(Icons.lock, color: Colors.white70),
+                            labelStyle: const TextStyle(color: Colors.white, fontSize: 16),
+                            prefixIcon: const Icon(Icons.lock, color: Colors.white),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_off
                                     : Icons.visibility,
-                                color: Colors.white70,
+                                color: Colors.white,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -319,11 +319,11 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.3)),
+                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
@@ -334,7 +334,7 @@ class _LoginScreenState extends State<LoginScreen> {
                               borderSide: const BorderSide(color: Colors.red, width: 2),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.1),
+                            fillColor: Colors.white.withValues(alpha: 0.15),
                           ),
                           obscureText: _obscurePassword,
                           validator: (value) {
@@ -357,7 +357,7 @@ class _LoginScreenState extends State<LoginScreen> {
                             },
                             child: const Text(
                               'Forgot password?',
-                              style: TextStyle(color: Colors.white),
+                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                             ),
                           ),
                         ),
@@ -406,18 +406,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _isSignUp
                                       ? 'Already have an account? Login'
                                       : 'Sign Up',
-                                  style: const TextStyle(color: Colors.white),
+                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
                                 ),
                               ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.3))),
+                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 1)),
                                   const Padding(
                                     padding: EdgeInsets.symmetric(horizontal: 16),
-                                    child: Text('OR', style: TextStyle(color: Colors.white70)),
+                                    child: Text('OR', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
                                   ),
-                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.3))),
+                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 1)),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -436,10 +436,10 @@ class _LoginScreenState extends State<LoginScreen> {
                                   ),
                                   label: const Text(
                                     'Sign in with Google',
-                                    style: TextStyle(color: Colors.white),
+                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    side: BorderSide(color: Colors.white.withValues(alpha: 0.5)),
+                                    side: const BorderSide(color: Colors.white, width: 1.5),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
