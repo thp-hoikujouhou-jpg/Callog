@@ -661,8 +661,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     final dateFormat = DateFormat('yyyy/MM/dd HH:mm');
     final dateStr = dateFormat.format(recording.timestamp);
 
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
+      decoration: ModernUITheme.glassContainer(opacity: 0.15),
       child: ExpansionTile(
         leading: Icon(
           recording.callType == 'video' ? Icons.videocam : Icons.phone,

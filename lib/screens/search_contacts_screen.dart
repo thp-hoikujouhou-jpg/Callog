@@ -508,8 +508,9 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                       itemBuilder: (context, index) {
                         final user = _searchResults[index];
                         final isFriend = _friendIds.contains(user['uid']);
-                        return Card(
+                        return Container(
                           margin: const EdgeInsets.only(bottom: 12),
+                          decoration: ModernUITheme.glassContainer(opacity: 0.15),
                           child: ListTile(
                             leading: Builder(
                               builder: (context) {
@@ -615,8 +616,9 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
                         if (!friend.exists) return const SizedBox.shrink();
 
                         final data = friend.data() as Map<String, dynamic>;
-                        return Card(
+                        return Container(
                           margin: const EdgeInsets.only(bottom: 12),
+                          decoration: ModernUITheme.glassContainer(opacity: 0.15),
                           child: ListTile(
                             leading: Builder(
                               builder: (context) {

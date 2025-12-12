@@ -233,9 +233,10 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                             final photoUrl = friend['photoUrl'] as String?;
                             final hasPhoto = photoUrl != null && photoUrl.isNotEmpty;
 
-                            return Card(
+                            return Container(
                               key: ValueKey(friend['uid']),
                               margin: const EdgeInsets.only(bottom: 12),
+                              decoration: ModernUITheme.glassContainer(opacity: 0.15),
                               child: ListTile(
                                 leading: CircleAvatar(
                                   backgroundColor: Colors.blue.shade600,

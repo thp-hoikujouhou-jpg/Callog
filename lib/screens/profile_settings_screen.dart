@@ -630,7 +630,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
               ),
               const SizedBox(height: 32),
-              Card(
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
                 child: Column(
                   children: [
                     ListTile(

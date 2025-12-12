@@ -312,15 +312,12 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
       debugPrint('🎨 [DailyContacts] Building card for ${contact.contactName}, photoUrl: ${contact.contactPhotoUrl}, hasNote: ${_contactsWithNotes.contains(contact.contactId)}');
     }
     
-    return Card(
+    return Container(
       margin: const EdgeInsets.only(bottom: 12),
-      elevation: 2,
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(12),
-      ),
+      decoration: ModernUITheme.glassContainer(opacity: 0.15),
       child: InkWell(
         onTap: () => _onContactTap(contact),
-        borderRadius: BorderRadius.circular(12),
+        borderRadius: BorderRadius.circular(20),
         child: Padding(
           padding: const EdgeInsets.all(16),
           child: Row(
