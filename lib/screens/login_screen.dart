@@ -220,9 +220,20 @@ class _LoginScreenState extends State<LoginScreen> {
             child: SingleChildScrollView(
               padding: const EdgeInsets.all(24),
               child: Container(
-                decoration: ModernUITheme.glassContainer(
-                  opacity: 0.3,
-                  blur: 20.0,
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  borderRadius: BorderRadius.circular(20),
+                  border: Border.all(
+                    color: Colors.grey.shade300,
+                    width: 1,
+                  ),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.1),
+                      blurRadius: 10,
+                      offset: const Offset(0, 4),
+                    ),
+                  ],
                 ),
                 padding: const EdgeInsets.all(32),
                 constraints: const BoxConstraints(maxWidth: 400),
@@ -254,36 +265,36 @@ class _LoginScreenState extends State<LoginScreen> {
                         Text(
                           'Connect, Call, Chat',
                           style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            color: Colors.white.withValues(alpha: 0.8),
+                            color: Colors.grey.shade600,
                             fontSize: 16,
                           ),
                         ),
                         const SizedBox(height: 32),
                         TextFormField(
                           controller: _emailController,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: Colors.grey.shade800, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Email',
-                            labelStyle: const TextStyle(color: Colors.white, fontSize: 16),
-                            prefixIcon: const Icon(Icons.email, color: Colors.white),
+                            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                            prefixIcon: Icon(Icons.email, color: Colors.grey.shade600),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
+                              borderSide: BorderSide(color: ModernUITheme.primaryCyan, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(color: Colors.red, width: 2),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.15),
+                            fillColor: Colors.grey.shade50,
                           ),
                           keyboardType: TextInputType.emailAddress,
                           validator: (value) {
@@ -299,17 +310,17 @@ class _LoginScreenState extends State<LoginScreen> {
                         const SizedBox(height: 16),
                         TextFormField(
                           controller: _passwordController,
-                          style: const TextStyle(color: Colors.white, fontSize: 16),
+                          style: TextStyle(color: Colors.grey.shade800, fontSize: 16),
                           decoration: InputDecoration(
                             labelText: 'Password',
-                            labelStyle: const TextStyle(color: Colors.white, fontSize: 16),
-                            prefixIcon: const Icon(Icons.lock, color: Colors.white),
+                            labelStyle: TextStyle(color: Colors.grey.shade600, fontSize: 16),
+                            prefixIcon: Icon(Icons.lock, color: Colors.grey.shade600),
                             suffixIcon: IconButton(
                               icon: Icon(
                                 _obscurePassword
                                     ? Icons.visibility_off
                                     : Icons.visibility,
-                                color: Colors.white,
+                                color: Colors.grey.shade600,
                               ),
                               onPressed: () {
                                 setState(() {
@@ -319,22 +330,22 @@ class _LoginScreenState extends State<LoginScreen> {
                             ),
                             border: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                             ),
                             enabledBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 1.5),
+                              borderSide: BorderSide(color: Colors.grey.shade300, width: 1),
                             ),
                             focusedBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
-                              borderSide: const BorderSide(color: Colors.white, width: 2),
+                              borderSide: BorderSide(color: ModernUITheme.primaryCyan, width: 2),
                             ),
                             errorBorder: OutlineInputBorder(
                               borderRadius: BorderRadius.circular(12),
                               borderSide: const BorderSide(color: Colors.red, width: 2),
                             ),
                             filled: true,
-                            fillColor: Colors.white.withValues(alpha: 0.15),
+                            fillColor: Colors.grey.shade50,
                           ),
                           obscureText: _obscurePassword,
                           validator: (value) {
@@ -355,15 +366,15 @@ class _LoginScreenState extends State<LoginScreen> {
                               // Show password reset dialog
                               _showPasswordResetDialog();
                             },
-                            child: const Text(
+                            child: Text(
                               'Forgot password?',
-                              style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                              style: TextStyle(color: ModernUITheme.primaryCyan, fontSize: 14, fontWeight: FontWeight.w500),
                             ),
                           ),
                         ),
                         const SizedBox(height: 16),
                         if (_isLoading)
-                          const CircularProgressIndicator(color: Colors.white)
+                          CircularProgressIndicator(color: ModernUITheme.primaryCyan)
                         else
                           Column(
                             children: [
@@ -406,18 +417,18 @@ class _LoginScreenState extends State<LoginScreen> {
                                   _isSignUp
                                       ? 'Already have an account? Login'
                                       : 'Sign Up',
-                                  style: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+                                  style: TextStyle(color: ModernUITheme.primaryCyan, fontSize: 14, fontWeight: FontWeight.w500),
                                 ),
                               ),
                               const SizedBox(height: 16),
                               Row(
                                 children: [
-                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 1)),
-                                  const Padding(
-                                    padding: EdgeInsets.symmetric(horizontal: 16),
-                                    child: Text('OR', style: TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500)),
+                                  Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
+                                  Padding(
+                                    padding: const EdgeInsets.symmetric(horizontal: 16),
+                                    child: Text('OR', style: TextStyle(color: Colors.grey.shade600, fontSize: 14, fontWeight: FontWeight.w500)),
                                   ),
-                                  Expanded(child: Divider(color: Colors.white.withValues(alpha: 0.5), thickness: 1)),
+                                  Expanded(child: Divider(color: Colors.grey.shade300, thickness: 1)),
                                 ],
                               ),
                               const SizedBox(height: 16),
@@ -431,15 +442,15 @@ class _LoginScreenState extends State<LoginScreen> {
                                     height: 24,
                                     width: 24,
                                     errorBuilder: (context, error, stackTrace) {
-                                      return const Icon(Icons.login, size: 24, color: Colors.white);
+                                      return Icon(Icons.login, size: 24, color: Colors.grey.shade700);
                                     },
                                   ),
-                                  label: const Text(
+                                  label: Text(
                                     'Sign in with Google',
-                                    style: TextStyle(color: Colors.white, fontSize: 16, fontWeight: FontWeight.w500),
+                                    style: TextStyle(color: Colors.grey.shade700, fontSize: 16, fontWeight: FontWeight.w500),
                                   ),
                                   style: OutlinedButton.styleFrom(
-                                    side: const BorderSide(color: Colors.white, width: 1.5),
+                                    side: BorderSide(color: Colors.grey.shade300, width: 1),
                                     shape: RoundedRectangleBorder(
                                       borderRadius: BorderRadius.circular(12),
                                     ),
