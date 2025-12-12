@@ -6,7 +6,6 @@ import 'package:flutter/foundation.dart';
 import 'firebase_options.dart';
 import 'services/localization_service.dart';
 import 'services/auth_service.dart';
-import 'services/theme_service.dart' show ThemeService, ThemeOption;
 import 'services/voice_call_service.dart';
 import 'services/call_navigation_service.dart';
 import 'services/app_lifecycle_service.dart';
@@ -75,9 +74,6 @@ class CallogApp extends StatelessWidget {
         ChangeNotifierProvider<LocalizationService>(
           create: (_) => LocalizationService(),
         ),
-        ChangeNotifierProvider<ThemeService>(
-          create: (_) => ThemeService(),
-        ),
         ChangeNotifierProvider<VoiceCallService>(
           create: (_) => VoiceCallService(),
         ),
@@ -85,29 +81,14 @@ class CallogApp extends StatelessWidget {
           create: (_) => AuthService(),
         ),
       ],
-      child: Consumer<ThemeService>(
-        builder: (context, themeService, child) {
-          // Determine which theme to use based on theme option
-          ThemeData activeTheme;
-          if (themeService.themeOption == ThemeOption.light) {
-            activeTheme = ModernUITheme.lightTheme;
-          } else if (themeService.themeOption == ThemeOption.dark) {
-            activeTheme = ModernUITheme.darkTheme;
-          } else {
-            // Auto mode uses the mixed theme
-            activeTheme = ModernUITheme.autoTheme;
-          }
-          
-          return MaterialApp(
-            title: 'Callog',
-            debugShowCheckedModeBanner: false,
-            navigatorKey: CallNavigationService.navigatorKey, // Enable global navigation
-            theme: activeTheme,
-            darkTheme: activeTheme, // Use same theme for both modes
-            themeMode: ThemeMode.light, // Always use light mode since we're setting theme directly
-            home: const AuthWrapper(),
-          );
-        },
+      child: MaterialApp(
+        title: 'Callog',
+        debugShowCheckedModeBanner: false,
+        navigatorKey: CallNavigationService.navigatorKey, // Enable global navigation
+        themeMode: ThemeMode.system, // Follow system theme setting
+        theme: ModernUITheme.lightTheme, // Light mode (default)
+        darkTheme: ModernUITheme.darkTheme, // Dark mode (when system is dark)
+        home: const AuthWrapper(),
       ),
     );
   }

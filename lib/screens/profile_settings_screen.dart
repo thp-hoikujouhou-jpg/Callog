@@ -2,7 +2,6 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/auth_service.dart';
-import '../services/theme_service.dart';
 import '../models/user_profile.dart';
 import '../utils/image_proxy.dart';
 import 'package:image_picker/image_picker.dart';
@@ -742,39 +741,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   },
                 ),
               ),
-              const SizedBox(height: 8),
-              // Theme
-              Container(
-                decoration: ModernUITheme.glassContainer(opacity: 0.15),
-                child:
-                Consumer<ThemeService>(
-                  builder: (context, themeService, child) {
-                    IconData icon;
-                    switch (themeService.themeOption) {
-                      case ThemeOption.dark:
-                        icon = Icons.dark_mode;
-                        break;
-                      case ThemeOption.auto:
-                        icon = Icons.brightness_auto;
-                        break;
-                      default:
-                        icon = Icons.light_mode;
-                    }
-                    
-                    final localService = Provider.of<LocalizationService>(context, listen: false);
-                    return ListTile(
-                      leading: Icon(icon),
-                      title: Text(localService.translate('theme')),
-                      subtitle: Text(localService.translate(themeService.getThemeDisplayNameKey())),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () async {
-                        await themeService.toggleTheme();
-                      },
-                    );
-                  },
-                ),
-              ),
-              const SizedBox(height: 8),
+
               // Chat Settings
               Container(
                 decoration: ModernUITheme.glassContainer(opacity: 0.15),
