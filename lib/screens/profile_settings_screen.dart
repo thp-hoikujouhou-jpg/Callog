@@ -741,7 +741,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                   },
                 ),
               ),
-
+              const SizedBox(height: 16),
               // Chat Settings
               Container(
                 decoration: ModernUITheme.glassContainer(opacity: 0.15),
