@@ -206,8 +206,6 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
               ),
             ),
             
-            const Divider(height: 1),
-            
             // Calendar grid
             Expanded(
               child: GridView.builder(

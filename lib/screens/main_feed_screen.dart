@@ -1124,15 +1124,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 ),
               ),
             
-            Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Divider(
-                height: 1,
-                thickness: 1,
-                color: ModernUITheme.primaryCyan.withOpacity(0.1),
-              ),
-            ),
-            
             // Chat area or empty state
             Expanded(
               child: _isLoading
@@ -1220,14 +1211,6 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             
             // Message input (only show when friend is selected)
             if (_selectedFriend != null) ...[
-              Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 16),
-              child: Divider(
-                height: 1,
-                thickness: 1,
-                color: ModernUITheme.primaryCyan.withOpacity(0.1),
-              ),
-            ),
               Container(
                 padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
@@ -1423,12 +1406,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Modern UI - Video call button (cyan)
+              // Modern UI - Video call button (blue)
               Container(
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF00BCD4),
+                  color: Colors.blue,
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -1657,23 +1640,43 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     horizontal: 16,
                                     vertical: 12,
                                   ),
-                                  decoration: BoxDecoration(
-                                    gradient: isMe ? ModernUITheme.primaryGradient : null,
-                                    color: isMe ? null : Colors.white,
-                                    borderRadius: BorderRadius.only(
-                                      topLeft: const Radius.circular(20),
-                                      topRight: const Radius.circular(20),
-                                      bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
-                                      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
-                                    ),
-                                    boxShadow: [
-                                      BoxShadow(
-                                        color: Colors.black.withOpacity(0.05),
-                                        blurRadius: 5,
-                                        offset: const Offset(0, 2),
-                                      ),
-                                    ],
-                                  ),
+                                  decoration: isMe
+                                      ? BoxDecoration(
+                                          gradient: ModernUITheme.primaryGradient,
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: const Radius.circular(20),
+                                            topRight: const Radius.circular(20),
+                                            bottomLeft: const Radius.circular(20),
+                                            bottomRight: const Radius.circular(4),
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.05),
+                                              blurRadius: 5,
+                                              offset: const Offset(0, 2),
+                                            ),
+                                          ],
+                                        )
+                                      : BoxDecoration(
+                                          color: Colors.white.withOpacity(0.15),
+                                          borderRadius: BorderRadius.only(
+                                            topLeft: const Radius.circular(20),
+                                            topRight: const Radius.circular(20),
+                                            bottomLeft: const Radius.circular(4),
+                                            bottomRight: const Radius.circular(20),
+                                          ),
+                                          border: Border.all(
+                                            color: Colors.white.withOpacity(0.3),
+                                            width: 1.5,
+                                          ),
+                                          boxShadow: [
+                                            BoxShadow(
+                                              color: Colors.black.withOpacity(0.1),
+                                              blurRadius: 10,
+                                              offset: const Offset(0, 4),
+                                            ),
+                                          ],
+                                        ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
                                     mainAxisSize: MainAxisSize.min,

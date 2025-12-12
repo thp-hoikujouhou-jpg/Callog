@@ -838,7 +838,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                             ),
                           ],
                         ),
-                        const Divider(),
+                        const SizedBox(height: 8),
                         SelectableText(
                           recording.transcription!,
                           style: const TextStyle(fontSize: 14, height: 1.5),
