@@ -8,7 +8,6 @@ import '../services/localization_service.dart';
 import '../services/gemini_summary_service.dart';
 import '../models/call_recording.dart';
 import '../theme/modern_ui_theme.dart';
-import '../models/sticky_note.dart';
 import 'sticky_note_editor_screen.dart';
 
 class CallHistoryScreen extends StatefulWidget {
