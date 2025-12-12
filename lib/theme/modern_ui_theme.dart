@@ -280,7 +280,7 @@ class ModernUITheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false, // Left-aligned title (default)
         titleTextStyle: headingMedium.copyWith(color: textPrimary),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
@@ -343,11 +343,11 @@ class ModernUITheme {
     return ThemeData(
       brightness: Brightness.dark,
       primaryColor: primaryCyan,
-      scaffoldBackgroundColor: backgroundDark,
+      scaffoldBackgroundColor: const Color(0xFF0A0A0A), // Very dark background
       colorScheme: const ColorScheme.dark(
         primary: primaryCyan,
         secondary: secondaryOrange,
-        surface: surfaceDark,
+        surface: Color(0xFF1A1A1A), // Slightly lighter surface
         error: errorRed,
         onPrimary: textWhite,
         onSecondary: textWhite,
@@ -357,23 +357,27 @@ class ModernUITheme {
       appBarTheme: AppBarTheme(
         backgroundColor: Colors.transparent,
         elevation: 0,
-        centerTitle: true,
-        titleTextStyle: headingMedium.copyWith(color: Colors.white),
-        iconTheme: const IconThemeData(color: Colors.white),
+        centerTitle: false, // Left-aligned title (default)
+        titleTextStyle: headingMedium.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 24),
       ),
       cardTheme: CardThemeData(
-        elevation: 0,
+        elevation: 4,
         shape: RoundedRectangleBorder(borderRadius: radiusMedium),
-        color: surfaceDark,
+        color: const Color(0xFF1A1A1A),
+        shadowColor: Colors.black.withValues(alpha: 0.5),
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
           backgroundColor: primaryCyan,
-          foregroundColor: textWhite,
-          elevation: 0,
+          foregroundColor: Colors.white,
+          elevation: 2,
           padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
           shape: RoundedRectangleBorder(borderRadius: radiusMedium),
-          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600, color: textWhite),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600, color: Colors.white),
         ),
       ),
       textButtonTheme: TextButtonThemeData(
@@ -385,43 +389,56 @@ class ModernUITheme {
       ),
       floatingActionButtonTheme: FloatingActionButtonThemeData(
         backgroundColor: primaryCyan,
-        foregroundColor: textWhite,
-        elevation: 8,
+        foregroundColor: Colors.white,
+        elevation: 6,
         shape: RoundedRectangleBorder(borderRadius: radiusMedium),
       ),
       inputDecorationTheme: InputDecorationTheme(
         filled: true,
-        fillColor: surfaceDarkElevated,
+        fillColor: const Color(0xFF252525),
         border: OutlineInputBorder(
           borderRadius: radiusMedium,
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
         ),
         enabledBorder: OutlineInputBorder(
           borderRadius: radiusMedium,
-          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: radiusMedium,
           borderSide: const BorderSide(color: primaryCyan, width: 2),
         ),
-        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
         hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        prefixIconColor: Colors.white.withValues(alpha: 0.7),
+        suffixIconColor: Colors.white.withValues(alpha: 0.7),
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
       bottomNavigationBarTheme: BottomNavigationBarThemeData(
-        backgroundColor: surfaceDark,
+        backgroundColor: const Color(0xFF1A1A1A),
         selectedItemColor: primaryCyan,
-        unselectedItemColor: Colors.white.withValues(alpha: 0.5),
+        unselectedItemColor: Colors.white.withValues(alpha: 0.6),
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
       ),
       textTheme: TextTheme(
         headlineLarge: headingLarge.copyWith(color: Colors.white),
         headlineMedium: headingMedium.copyWith(color: Colors.white),
         headlineSmall: headingSmall.copyWith(color: Colors.white),
-        bodyLarge: bodyLarge.copyWith(color: Colors.white.withValues(alpha: 0.87)),
-        bodyMedium: bodyMedium.copyWith(color: Colors.white.withValues(alpha: 0.70)),
-        bodySmall: bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.60)),
+        bodyLarge: bodyLarge.copyWith(color: Colors.white.withValues(alpha: 0.95)),
+        bodyMedium: bodyMedium.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+        bodySmall: bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.70)),
+        labelLarge: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+      ),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withValues(alpha: 0.1),
+        thickness: 1,
+      ),
+      iconTheme: IconThemeData(
+        color: Colors.white.withValues(alpha: 0.8),
+        size: 24,
       ),
     );
   }
