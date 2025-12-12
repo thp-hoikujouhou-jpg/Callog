@@ -1251,7 +1251,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                         child: TextField(
                           controller: _messageController,
                           decoration: InputDecoration(
-                            hintText: 'Type a message...',
+                            hintText: localService.translate('type_message'),
                             hintStyle: TextStyle(
                               color: Colors.grey[500],
                               fontSize: 15,
@@ -1454,8 +1454,22 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 backgroundId = userData?['chatBackground'] ?? 'default';
               }
 
-              // Modern UI: Always use light gray background (ECF0F1)
-              final colors = [const Color(0xFFECF0F1), const Color(0xFFECF0F1)];
+              // Chat background settings - User customizable
+              final Map<String, List<Color>> backgroundColors = {
+                'default': [const Color(0xFFECF0F1), const Color(0xFFECF0F1)],  // Modern UI default
+                'blue_gradient': [const Color(0xFFBBDEFB), const Color(0xFFE3F2FD)],
+                'purple_gradient': [const Color(0xFFE1BEE7), const Color(0xFFF3E5F5)],
+                'pink_gradient': [const Color(0xFFF8BBD0), const Color(0xFFFCE4EC)],
+                'green_gradient': [const Color(0xFFC8E6C9), const Color(0xFFE8F5E9)],
+                'orange_gradient': [const Color(0xFFFFE0B2), const Color(0xFFFFF3E0)],
+                'dark_blue': [const Color(0xFF0D47A1), const Color(0xFF1565C0)],
+                'dark_purple': [const Color(0xFF4A148C), const Color(0xFF6A1B9A)],
+                'sunset': [const Color(0xFFFF9800), const Color(0xFFE91E63)],
+                'ocean': [const Color(0xFF00BCD4), const Color(0xFF2196F3)],
+              };
+
+              // Get colors from user preference, default to Modern UI
+              final colors = backgroundColors[backgroundId] ?? backgroundColors['default']!;
 
               return Container(
                 decoration: BoxDecoration(
