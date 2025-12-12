@@ -634,11 +634,11 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                         child: Column(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
-                            Icon(Icons.history, size: 64, color: Colors.grey.shade400),
+                            Icon(Icons.history, size: 64, color: ModernUITheme.textHint),
                             const SizedBox(height: 16),
                             Text(
                               localService.translate('no_call_history'),
-                              style: const TextStyle(fontSize: 16, color: Colors.grey),
+                              style: ModernUITheme.bodyLarge.copyWith(color: ModernUITheme.textSecondary),
                             ),
                           ],
                         ),
@@ -662,30 +662,53 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
     final dateStr = dateFormat.format(recording.timestamp);
 
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Colors.white.withOpacity(0.15),
-        borderRadius: BorderRadius.circular(12),
+      margin: const EdgeInsets.only(bottom: 12),
+      decoration: ModernUITheme.glassContainer(
+        opacity: 0.15,
+        borderRadius: BorderRadius.circular(20),
       ),
-      child: ExpansionTile(
-        leading: Icon(
-          recording.callType == 'video' ? Icons.videocam : Icons.phone,
-          color: Colors.blue.shade600,
+      child: Theme(
+        data: Theme.of(context).copyWith(
+          dividerColor: Colors.transparent,
+          splashColor: ModernUITheme.primaryCyan.withValues(alpha: 0.1),
+          highlightColor: ModernUITheme.primaryCyan.withValues(alpha: 0.05),
+        ),
+        child: ExpansionTile(
+        leading: Container(
+          padding: const EdgeInsets.all(10),
+          decoration: BoxDecoration(
+            gradient: recording.callType == 'video'
+                ? ModernUITheme.primaryGradient
+                : ModernUITheme.successGradient,
+            shape: BoxShape.circle,
+            boxShadow: ModernUITheme.softShadow,
+          ),
+          child: Icon(
+            recording.callType == 'video' ? Icons.videocam : Icons.phone,
+            color: Colors.white,
+            size: 20,
+          ),
         ),
         title: FutureBuilder<String>(
           future: _getDisplayName(recording.callPartner ?? ''),
           builder: (context, snapshot) {
             return Text(
               snapshot.data ?? recording.callPartner ?? localService.translate('unknown_contact'),
-              style: const TextStyle(fontWeight: FontWeight.bold),
+              style: ModernUITheme.headingSmall,
             );
           },
         ),
         subtitle: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(dateStr),
-            Text('${localService.translate('call_duration')}: ${recording.formattedDuration}'),
+            Text(
+              dateStr,
+              style: ModernUITheme.bodyMedium,
+            ),
+            Text(
+              '${localService.translate('call_duration')}: ${recording.formattedDuration}',
+              style: ModernUITheme.bodyMedium,
+            ),
             if (recording.transcriptionStatus != null)
               Row(
                 children: [
@@ -705,8 +728,8 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           : Icons.error,
                       size: 16,
                       color: recording.transcriptionStatus == 'completed'
-                          ? Colors.green
-                          : Colors.red,
+                          ? ModernUITheme.successGreen
+                          : ModernUITheme.errorRed,
                     ),
                   const SizedBox(width: 4),
                   Text(
@@ -721,10 +744,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           ? FontWeight.bold
                           : FontWeight.normal,
                       color: recording.transcriptionStatus == 'completed'
-                          ? Colors.green
+                          ? ModernUITheme.successGreen
                           : recording.transcriptionStatus == 'processing'
-                              ? Colors.orange
-                              : Colors.red,
+                              ? ModernUITheme.warningOrange
+                              : ModernUITheme.errorRed,
                     ),
                   ),
                 ],
@@ -743,9 +766,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(16),
                     decoration: BoxDecoration(
-                      color: Colors.orange.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.orange.shade200),
+                      gradient: ModernUITheme.warningGradient.scale(0.1),
+                      borderRadius: ModernUITheme.radiusMedium,
+                      border: Border.all(color: ModernUITheme.warningOrange.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       children: [
@@ -754,25 +777,21 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                           height: 32,
                           child: CircularProgressIndicator(
                             strokeWidth: 3,
-                            valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                            valueColor: AlwaysStoppedAnimation<Color>(ModernUITheme.warningOrange),
                           ),
                         ),
                         const SizedBox(height: 12),
                         Text(
                           localService.translate('processing_message'),
-                          style: const TextStyle(
+                          style: ModernUITheme.bodyLarge.copyWith(
                             fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                            color: Colors.orange,
+                            color: ModernUITheme.warningOrange,
                           ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           localService.translate('auto_display_message'),
-                          style: TextStyle(
-                            fontSize: 12,
-                            color: Colors.grey.shade600,
-                          ),
+                          style: ModernUITheme.bodySmall,
                         ),
                       ],
                     ),
@@ -782,24 +801,23 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.green.shade50,
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: Colors.green.shade200),
+                      gradient: ModernUITheme.successGradient.scale(0.1),
+                      borderRadius: ModernUITheme.radiusMedium,
+                      border: Border.all(color: ModernUITheme.successGreen.withValues(alpha: 0.3)),
                     ),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Row(
                           children: [
-                            Icon(Icons.check_circle, size: 18, color: Colors.green.shade700),
+                            Icon(Icons.check_circle, size: 18, color: ModernUITheme.successGreen),
                             const SizedBox(width: 8),
                             Expanded(
                               child: Text(
                                 localService.translate('transcription_result'),
-                                style: TextStyle(
+                                style: ModernUITheme.bodyLarge.copyWith(
                                   fontWeight: FontWeight.bold,
-                                  fontSize: 14,
-                                  color: Colors.green.shade700,
+                                  color: ModernUITheme.successGreen,
                                 ),
                               ),
                             ),
@@ -810,7 +828,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                               tooltip: localService.translate('edit'),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              color: Colors.blue.shade700,
+                              color: ModernUITheme.primaryCyan,
                             ),
                             const SizedBox(width: 8),
                             // AI Summary button
@@ -827,7 +845,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                                 tooltip: localService.translate('ai_summary'),
                                 padding: EdgeInsets.zero,
                                 constraints: const BoxConstraints(),
-                                color: Colors.purple.shade700,
+                                color: ModernUITheme.secondaryOrange,
                               ),
                             const SizedBox(width: 8),
                             // Save to Calendar button (NEW!)
@@ -837,21 +855,19 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                               tooltip: localService.translate('save_to_calendar'),
                               padding: EdgeInsets.zero,
                               constraints: const BoxConstraints(),
-                              color: Colors.green.shade700,
+                              color: ModernUITheme.successGreen,
                             ),
                           ],
                         ),
                         const SizedBox(height: 8),
                         SelectableText(
                           recording.transcription!,
-                          style: const TextStyle(fontSize: 14, height: 1.5),
+                          style: ModernUITheme.bodyLarge.copyWith(height: 1.5),
                         ),
                         const SizedBox(height: 8),
                         Text(
                           localService.translate('copy_instruction'),
-                          style: TextStyle(
-                            fontSize: 11,
-                            color: Colors.grey.shade600,
+                          style: ModernUITheme.caption.copyWith(
                             fontStyle: FontStyle.italic,
                           ),
                         ),
@@ -863,12 +879,13 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     width: double.infinity,
                     padding: const EdgeInsets.all(12),
                     decoration: BoxDecoration(
-                      color: Colors.grey.shade100,
-                      borderRadius: BorderRadius.circular(8),
+                      color: ModernUITheme.backgroundLight,
+                      borderRadius: ModernUITheme.radiusMedium,
+                      border: Border.all(color: ModernUITheme.textHint.withValues(alpha: 0.3)),
                     ),
                     child: Text(
                       localService.translate('no_transcription_data'),
-                      style: const TextStyle(color: Colors.grey),
+                      style: ModernUITheme.bodyMedium,
                     ),
                   ),
                 
@@ -902,6 +919,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
             ),
           ),
         ],
+      ),
       ),
     );
   }

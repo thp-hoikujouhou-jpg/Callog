@@ -85,9 +85,8 @@ class CallogApp extends StatelessWidget {
         title: 'Callog',
         debugShowCheckedModeBanner: false,
         navigatorKey: CallNavigationService.navigatorKey, // Enable global navigation
-        themeMode: ThemeMode.system, // Follow system theme setting
-        theme: ModernUITheme.lightTheme, // Light mode (default)
-        darkTheme: ModernUITheme.darkTheme, // Dark mode (when system is dark)
+        themeMode: ThemeMode.light, // ✅ LIGHT MODE ONLY (Dark mode completely removed)
+        theme: ModernUITheme.lightTheme, // Modern UI Light Theme
         home: const AuthWrapper(),
       ),
     );
