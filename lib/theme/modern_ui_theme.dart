@@ -14,10 +14,16 @@ class ModernUITheme {
   static const Color secondaryOrangeLight = Color(0xFFFF9E6E);
   static const Color secondaryOrangeDark = Color(0xFFC53D13);
   
-  // Neutral Colors
+  // Neutral Colors - Light Mode
   static const Color surfaceWhite = Color(0xFFFFFFFF);
   static const Color backgroundLight = Color(0xFFFAFAFA);
   static const Color backgroundGray = Color(0xFFF5F5F5);
+  
+  // Neutral Colors - Dark Mode
+  static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color backgroundDarkGray = Color(0xFF2A2A2A);
+  static const Color surfaceDarkElevated = Color(0xFF2C2C2C);
   
   // Status Colors
   static const Color successGreen = Color(0xFF00E676);
@@ -63,9 +69,22 @@ class ModernUITheme {
     end: Alignment.bottomRight,
   );
   
+  // Dark Mode Gradients
+  static const LinearGradient backgroundGradientDark = LinearGradient(
+    colors: [Color(0xFF1A1A1A), Color(0xFF2A2A2A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+  
+  static const LinearGradient cardGradientDark = LinearGradient(
+    colors: [Color(0xFF2C2C2C), Color(0xFF1E1E1E)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
   // ==================== GLASSMORPHISM ====================
   
-  /// Glassmorphism container decoration
+  /// Glassmorphism container decoration (Light Mode)
   static BoxDecoration glassContainer({
     double blur = 10.0,
     double opacity = 0.15,
@@ -73,15 +92,39 @@ class ModernUITheme {
     BorderRadius? borderRadius,
   }) {
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withValues(alpha: opacity),
       borderRadius: borderRadius ?? BorderRadius.circular(20),
       border: Border.all(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha: 0.3),
         width: 1.5,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: blur,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+  
+  /// Glassmorphism container decoration (Dark Mode)
+  static BoxDecoration glassContainerDark({
+    double blur = 10.0,
+    double opacity = 0.2,
+    Color color = const Color(0xFF2A2A2A),
+    BorderRadius? borderRadius,
+  }) {
+    return BoxDecoration(
+      color: color.withValues(alpha: opacity),
+      borderRadius: borderRadius ?? BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.1),
+        width: 1.5,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
           blurRadius: blur,
           offset: const Offset(0, 4),
         ),
@@ -227,24 +270,24 @@ class ModernUITheme {
   static ThemeData get lightTheme {
     return ThemeData(
       primaryColor: primaryCyan,
-      scaffoldBackgroundColor: backgroundLight,
+      scaffoldBackgroundColor: Colors.white, // Pure white background
       colorScheme: const ColorScheme.light(
         primary: primaryCyan,
         secondary: secondaryOrange,
-        surface: surfaceWhite,
+        surface: Colors.white, // Pure white surface
         error: errorRed,
       ),
       appBarTheme: AppBarTheme(
-        backgroundColor: Colors.transparent,
+        backgroundColor: Colors.white, // White AppBar
         elevation: 0,
-        centerTitle: true,
+        centerTitle: false,
         titleTextStyle: headingMedium.copyWith(color: textPrimary),
         iconTheme: const IconThemeData(color: textPrimary),
       ),
       cardTheme: CardThemeData(
         elevation: 0,
         shape: RoundedRectangleBorder(borderRadius: radiusMedium),
-        color: surfaceWhite,
+        color: Colors.white, // Pure white cards
       ),
       elevatedButtonTheme: ElevatedButtonThemeData(
         style: ElevatedButton.styleFrom(
@@ -287,6 +330,184 @@ class ModernUITheme {
         contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
       ),
       bottomNavigationBarTheme: const BottomNavigationBarThemeData(
+        backgroundColor: surfaceWhite,
+        selectedItemColor: primaryCyan,
+        unselectedItemColor: textHint,
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+    );
+  }
+  
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: primaryCyan,
+      scaffoldBackgroundColor: Colors.black, // Pure black background
+      colorScheme: const ColorScheme.dark(
+        primary: primaryCyan,
+        secondary: secondaryOrange,
+        surface: Colors.black, // Pure black surface
+        error: errorRed,
+        onPrimary: textWhite,
+        onSecondary: textWhite,
+        onSurface: Colors.white,
+        onError: textWhite,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.black, // Black AppBar
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: headingMedium.copyWith(
+          color: Colors.white,
+          fontWeight: FontWeight.w600,
+        ),
+        iconTheme: const IconThemeData(color: Colors.white, size: 24),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 4,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+        color: const Color(0xFF0A0A0A), // Near black for cards
+        shadowColor: Colors.white.withValues(alpha: 0.1),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryCyan,
+          foregroundColor: Colors.white,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600, color: Colors.white),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryCyan,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryCyan,
+        foregroundColor: Colors.white,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: const Color(0xFF252525),
+        border: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.2)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: const BorderSide(color: primaryCyan, width: 2),
+        ),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.8)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        prefixIconColor: Colors.white.withValues(alpha: 0.7),
+        suffixIconColor: Colors.white.withValues(alpha: 0.7),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: const Color(0xFF1A1A1A),
+        selectedItemColor: primaryCyan,
+        unselectedItemColor: Colors.white.withValues(alpha: 0.6),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+        selectedLabelStyle: const TextStyle(fontWeight: FontWeight.w600),
+      ),
+      textTheme: TextTheme(
+        headlineLarge: headingLarge.copyWith(color: Colors.white),
+        headlineMedium: headingMedium.copyWith(color: Colors.white),
+        headlineSmall: headingSmall.copyWith(color: Colors.white),
+        bodyLarge: bodyLarge.copyWith(color: Colors.white.withValues(alpha: 0.95)),
+        bodyMedium: bodyMedium.copyWith(color: Colors.white.withValues(alpha: 0.85)),
+        bodySmall: bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.70)),
+        labelLarge: const TextStyle(color: Colors.white, fontSize: 14, fontWeight: FontWeight.w500),
+        labelMedium: TextStyle(color: Colors.white.withValues(alpha: 0.8), fontSize: 12),
+      ),
+      dividerTheme: DividerThemeData(
+        color: Colors.white.withValues(alpha: 0.1),
+        thickness: 1,
+      ),
+      iconTheme: IconThemeData(
+        color: Colors.white.withValues(alpha: 0.8),
+        size: 24,
+      ),
+    );
+  }
+  
+  static ThemeData get autoTheme {
+    return ThemeData(
+      brightness: Brightness.light,
+      primaryColor: primaryCyan,
+      scaffoldBackgroundColor: backgroundLight, // Soft gray background (mixed)
+      colorScheme: const ColorScheme.light(
+        primary: primaryCyan,
+        secondary: secondaryOrange,
+        surface: surfaceWhite, // White surface
+        error: errorRed,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: backgroundLight, // Soft gray AppBar
+        elevation: 0,
+        centerTitle: false,
+        titleTextStyle: headingMedium.copyWith(color: textPrimary),
+        iconTheme: const IconThemeData(color: textPrimary),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 2,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+        color: surfaceWhite, // White cards
+        shadowColor: Colors.black.withValues(alpha: 0.08),
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryCyan,
+          foregroundColor: textWhite,
+          elevation: 2,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryCyan,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryCyan,
+        foregroundColor: textWhite,
+        elevation: 6,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceWhite,
+        border: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.grey.shade300),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: const BorderSide(color: primaryCyan, width: 2),
+        ),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
         backgroundColor: surfaceWhite,
         selectedItemColor: primaryCyan,
         unselectedItemColor: textHint,
