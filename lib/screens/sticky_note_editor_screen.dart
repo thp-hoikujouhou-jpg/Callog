@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/call_recording.dart';
 import '../models/sticky_note.dart';
+import '../theme/modern_ui_theme.dart';
 import 'sticky_notes_list_screen.dart';
 
 class StickyNoteEditorScreen extends StatefulWidget {
@@ -238,11 +239,16 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(widget.existingNote != null 
-          ? localService.translate('edit_memo') 
-          : localService.translate('create_new_memo')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          widget.existingNote != null 
+            ? localService.translate('edit_memo') 
+            : localService.translate('create_new_memo'),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
         actions: [
           if (_isSaving)
             const Center(
@@ -266,7 +272,9 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
             ),
         ],
       ),
-      body: SingleChildScrollView(
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -312,6 +320,7 @@ class _StickyNoteEditorScreenState extends State<StickyNoteEditorScreen> {
           ],
         ),
       ),
+        ),
     );
   }
   

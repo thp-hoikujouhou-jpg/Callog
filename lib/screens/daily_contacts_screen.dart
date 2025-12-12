@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/call_recording.dart';
 import '../models/sticky_note.dart';
+import '../theme/modern_ui_theme.dart';
 import 'contact_sticky_notes_screen.dart';
 
 class DailyContactsScreen extends StatefulWidget {
@@ -248,15 +249,23 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(_formatDate(localService)),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          _formatDate(localService),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _contacts.isEmpty
-              ? _buildEmptyState(localService)
-              : _buildContactList(),
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _contacts.isEmpty
+                ? _buildEmptyState(localService)
+                : _buildContactList(),
+      ),
     );
   }
   

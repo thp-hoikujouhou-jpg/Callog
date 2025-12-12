@@ -6,6 +6,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/sticky_note.dart';
 import '../models/call_recording.dart';
+import '../theme/modern_ui_theme.dart';
 import 'sticky_note_editor_screen.dart';
 
 /// Screen to display all sticky notes for a specific contact on a specific date
@@ -248,18 +249,24 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
               child: Text(
                 widget.contactName,
                 overflow: TextOverflow.ellipsis,
+                style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
               ),
             ),
           ],
         ),
-        backgroundColor: Colors.blue.shade600,
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
-              ? _buildEmptyState(localService)
-              : _buildNotesList(),
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _notes.isEmpty
+                ? _buildEmptyState(localService)
+                : _buildNotesList(),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _createNewNote,
         backgroundColor: Colors.blue.shade600,

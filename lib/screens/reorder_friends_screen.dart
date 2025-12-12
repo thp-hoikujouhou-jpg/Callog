@@ -5,6 +5,7 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/foundation.dart' show kDebugMode;
 import '../services/localization_service.dart';
 import '../utils/image_proxy.dart';
+import '../theme/modern_ui_theme.dart';
 
 class ReorderFriendsScreen extends StatefulWidget {
   const ReorderFriendsScreen({super.key});
@@ -150,9 +151,14 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
       },
       child: Scaffold(
         appBar: AppBar(
-          title: Text(localService.translate('reorder_friends')),
-          backgroundColor: Colors.blue.shade600,
+          title: Text(
+            localService.translate('reorder_friends'),
+            style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+          ),
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+          elevation: 0,
           actions: [
             if (_hasChanges)
               IconButton(
@@ -162,8 +168,10 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
               ),
           ],
         ),
-        body: _isLoading
-            ? const Center(child: CircularProgressIndicator())
+        body: Container(
+          decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+          child: _isLoading
+              ? const Center(child: CircularProgressIndicator())
             : _friends.isEmpty
                 ? Center(
                     child: Column(
@@ -272,6 +280,7 @@ class _ReorderFriendsScreenState extends State<ReorderFriendsScreen> {
                         ),
                     ],
                   ),
+        ),
       ),
     );
   }

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../utils/image_proxy.dart';
+import '../theme/modern_ui_theme.dart';
 import 'reorder_friends_screen.dart';
 
 class SearchContactsScreen extends StatefulWidget {
@@ -390,9 +391,20 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
       },
       child: Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('add_friend')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('add_friend'),
+          style: ModernUITheme.headingMedium.copyWith(
+            color: ModernUITheme.textWhite,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: ModernUITheme.primaryGradient,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.swap_vert),
@@ -412,8 +424,12 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: ModernUITheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: Column(
           children: [
             Padding(
               padding: const EdgeInsets.all(16),
@@ -447,6 +463,7 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
             ),
           ],
         ),
+      ),
       ),
       ),
     );

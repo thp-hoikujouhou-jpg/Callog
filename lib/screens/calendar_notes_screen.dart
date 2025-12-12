@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:intl/intl.dart';
 import '../services/localization_service.dart';
+import '../theme/modern_ui_theme.dart';
 import 'call_history_screen.dart';
 
 class CalendarNotesScreen extends StatefulWidget {
@@ -80,9 +81,14 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('calendar')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('calendar'),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.history),
@@ -96,7 +102,9 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
           ),
         ],
       ),
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: SafeArea(
         child: Column(
           children: [
             Container(
@@ -169,6 +177,7 @@ class _CalendarNotesScreenState extends State<CalendarNotesScreen> {
           ],
         ),
       ),
+        ),
       floatingActionButton: FloatingActionButton(
         onPressed: () {
           ScaffoldMessenger.of(context).showSnackBar(

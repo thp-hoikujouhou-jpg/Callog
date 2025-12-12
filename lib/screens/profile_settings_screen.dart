@@ -528,7 +528,12 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           foregroundColor: Colors.white,
           elevation: 0,
         ),
-        body: const Center(child: CircularProgressIndicator()),
+        body: Container(
+          decoration: const BoxDecoration(
+            gradient: ModernUITheme.backgroundGradient,
+          ),
+          child: const Center(child: CircularProgressIndicator()),
+        ),
       );
     }
 
@@ -549,10 +554,14 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
         foregroundColor: Colors.white,
         elevation: 0,
       ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
+      body: Container(
+        decoration: const BoxDecoration(
+          gradient: ModernUITheme.backgroundGradient,
+        ),
+        child: SafeArea(
+          child: SingleChildScrollView(
+            padding: const EdgeInsets.all(24),
+            child: Column(
             children: [
               Stack(
                 children: [
@@ -789,6 +798,7 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
             ],
           ),
         ),
+      ),
       ),
     );
   }

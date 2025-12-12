@@ -3,6 +3,7 @@ import 'package:provider/provider.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
+import '../theme/modern_ui_theme.dart';
 
 class ChatSettingsScreen extends StatefulWidget {
   const ChatSettingsScreen({super.key});
@@ -176,25 +177,38 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(localService.translate('chat_settings')),
-          backgroundColor: Colors.blue.shade600,
+          title: Text(
+            localService.translate('chat_settings'),
+            style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+          ),
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
           elevation: 0,
         ),
-        body: const Center(
-          child: CircularProgressIndicator(),
+        body: Container(
+          decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+          child: const Center(
+            child: CircularProgressIndicator(),
+          ),
         ),
       );
     }
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('chat_settings')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('chat_settings'),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
         elevation: 0,
       ),
-      body: SafeArea(
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: SafeArea(
         child: Column(
           children: [
             // Header section with description
@@ -353,6 +367,7 @@ class _ChatSettingsScreenState extends State<ChatSettingsScreen> {
           ],
         ),
       ),
+        ),
     );
   }
 }

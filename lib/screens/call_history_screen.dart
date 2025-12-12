@@ -7,6 +7,7 @@ import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
 import '../services/gemini_summary_service.dart';
 import '../models/call_recording.dart';
+import '../theme/modern_ui_theme.dart';
 import '../models/sticky_note.dart';
 import 'sticky_note_editor_screen.dart';
 
@@ -591,9 +592,14 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('call_history')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('call_history'),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
         actions: [
           IconButton(
             icon: const Icon(Icons.refresh),
@@ -602,8 +608,10 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           ),
         ],
       ),
-      body: SafeArea(
-        child: _isLoading
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: SafeArea(
+          child: _isLoading
             ? const Center(child: CircularProgressIndicator())
             : _error != null
                 ? Center(
@@ -644,6 +652,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                         },
                       ),
       ),
+        ),
     );
   }
 

@@ -5,6 +5,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import '../services/localization_service.dart';
 import '../models/sticky_note.dart';
+import '../theme/modern_ui_theme.dart';
 import 'sticky_note_editor_screen.dart';
 import 'daily_contacts_screen.dart';
 
@@ -161,15 +162,23 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
     
     return Scaffold(
       appBar: AppBar(
-        title: Text(_formatDate(localService)),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          _formatDate(localService),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
       ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _notes.isEmpty
-              ? _buildEmptyState()
-              : _buildStickyNotesGrid(),
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: _isLoading
+            ? const Center(child: CircularProgressIndicator())
+            : _notes.isEmpty
+                ? _buildEmptyState()
+                : _buildStickyNotesGrid(),
+      ),
       floatingActionButton: FloatingActionButton(
         onPressed: _showContactSelectionDialog,
         backgroundColor: Colors.blue.shade600,

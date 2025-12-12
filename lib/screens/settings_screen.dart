@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import '../services/localization_service.dart';
+import '../theme/modern_ui_theme.dart';
 import 'modern_chat_preview_screen.dart';
 
 class SettingsScreen extends StatelessWidget {
@@ -12,11 +13,18 @@ class SettingsScreen extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('settings')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('settings'),
+          style: ModernUITheme.headingMedium.copyWith(color: ModernUITheme.textWhite),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
+        elevation: 0,
       ),
-      body: Center(
+      body: Container(
+        decoration: BoxDecoration(gradient: ModernUITheme.backgroundGradient),
+        child: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
@@ -110,6 +118,7 @@ class SettingsScreen extends StatelessWidget {
           ],
         ),
       ),
+        ),
     );
   }
 }
