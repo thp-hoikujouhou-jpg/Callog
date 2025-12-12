@@ -59,7 +59,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.edit, color: Colors.blue),
+            Icon(Icons.edit, color: ModernUITheme.primaryCyan),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -237,7 +237,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       builder: (context) => AlertDialog(
         title: Row(
           children: [
-            const Icon(Icons.auto_awesome, color: Colors.purple),
+            Icon(Icons.auto_awesome, color: ModernUITheme.secondaryOrange),
             const SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -268,7 +268,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                   ),
                   child: Row(
                     children: [
-                      const Icon(Icons.info_outline, size: 20, color: Colors.blue),
+                      Icon(Icons.info_outline, size: 20, color: ModernUITheme.primaryCyan),
                       const SizedBox(width: 8),
                       Expanded(
                         child: Text(
@@ -293,7 +293,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
               Navigator.pop(context);
               await _replaceTranscriptionWithSummary(recording, summary);
             },
-            icon: const Icon(Icons.swap_horiz),
+            icon: Icon(Icons.swap_horiz, color: ModernUITheme.primaryCyan),
             label: Text(localService.translate('replace_with_summary')),
             style: ElevatedButton.styleFrom(
               backgroundColor: Colors.purple,
@@ -343,7 +343,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
       builder: (context) => AlertDialog(
         title: const Row(
           children: [
-            Icon(Icons.info_outline, color: Colors.orange),
+            Icon(Icons.info_outline, color: ModernUITheme.warningOrange),
             SizedBox(width: 8),
             Expanded(
               child: Text(
@@ -617,7 +617,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                     child: Column(
                       mainAxisAlignment: MainAxisAlignment.center,
                       children: [
-                        const Icon(Icons.error, size: 48, color: Colors.red),
+                        Icon(Icons.error, size: 48, color: ModernUITheme.errorRed),
                         const SizedBox(height: 16),
                         Text(_error!, textAlign: TextAlign.center),
                         const SizedBox(height: 16),
@@ -671,8 +671,15 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
           dividerColor: Colors.transparent,
           splashColor: ModernUITheme.primaryCyan.withValues(alpha: 0.1),
           highlightColor: ModernUITheme.primaryCyan.withValues(alpha: 0.05),
+          iconTheme: const IconThemeData(color: ModernUITheme.primaryCyan),
+          textTheme: Theme.of(context).textTheme.copyWith(
+            titleMedium: ModernUITheme.headingSmall,
+            bodyMedium: ModernUITheme.bodyMedium,
+          ),
         ),
         child: ExpansionTile(
+          iconColor: ModernUITheme.primaryCyan,
+          collapsedIconColor: ModernUITheme.primaryCyan,
         leading: Container(
           padding: const EdgeInsets.all(10),
           decoration: BoxDecoration(
@@ -717,7 +724,7 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
                       height: 16,
                       child: CircularProgressIndicator(
                         strokeWidth: 2,
-                        valueColor: AlwaysStoppedAnimation<Color>(Colors.orange),
+                        valueColor: AlwaysStoppedAnimation<Color>(ModernUITheme.warningOrange),
                       ),
                     )
                   else
