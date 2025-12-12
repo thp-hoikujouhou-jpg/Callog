@@ -1229,13 +1229,13 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
               ),
             ),
               Container(
-                padding: const EdgeInsets.all(16),
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
                 decoration: BoxDecoration(
-                  color: ModernUITheme.surfaceWhite,
+                  color: Colors.white,
                   boxShadow: [
                     BoxShadow(
                       color: Colors.black.withOpacity(0.05),
-                      blurRadius: 8,
+                      blurRadius: 10,
                       offset: const Offset(0, -2),
                     ),
                   ],
@@ -1244,41 +1244,40 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   children: [
                     Expanded(
                       child: Container(
-                        decoration: ModernUITheme.glassContainer(opacity: 0.05),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFFF5F5F5),
+                          borderRadius: BorderRadius.circular(24),
+                        ),
                         child: TextField(
                           controller: _messageController,
                           decoration: InputDecoration(
-                            hintText: localService.translate('type_message'),
-                            hintStyle: ModernUITheme.bodyMedium.copyWith(
-                              color: ModernUITheme.textHint,
+                            hintText: 'Type a message...',
+                            hintStyle: TextStyle(
+                              color: Colors.grey[500],
+                              fontSize: 15,
                             ),
                             border: InputBorder.none,
                             contentPadding: const EdgeInsets.symmetric(
-                              horizontal: 16,
+                              horizontal: 20,
                               vertical: 12,
                             ),
-                            prefixIcon: Icon(
-                              Icons.message,
-                              color: ModernUITheme.primaryCyan,
-                            ),
                           ),
-                          style: ModernUITheme.bodyMedium,
+                          textInputAction: TextInputAction.send,
                           onSubmitted: (_) => _sendMessage(),
                         ),
                       ),
                     ),
-                    const SizedBox(width: 12),
+                    const SizedBox(width: 8),
                     Container(
                       width: 48,
                       height: 48,
-                      decoration: BoxDecoration(
-                        gradient: ModernUITheme.primaryGradient,
-                        borderRadius: BorderRadius.circular(12),
-                        boxShadow: ModernUITheme.softShadow,
+                      decoration: const BoxDecoration(
+                        color: Color(0xFF00BCD4),
+                        shape: BoxShape.circle,
                       ),
                       child: IconButton(
                         onPressed: _sendMessage,
-                        icon: const Icon(Icons.send),
+                        icon: const Icon(Icons.send, size: 20),
                         color: Colors.white,
                         padding: EdgeInsets.zero,
                       ),
@@ -1337,7 +1336,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
 
     return Column(
       children: [
-        // Selected friend header - Image style (exact match)
+        // Modern UI - Chat header
         Container(
           padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
           decoration: BoxDecoration(
@@ -1345,7 +1344,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withOpacity(0.05),
-                blurRadius: 4,
+                blurRadius: 10,
                 offset: const Offset(0, 2),
               ),
             ],
@@ -1359,7 +1358,7 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                   
                   return CircleAvatar(
                     radius: 24,
-                    backgroundColor: ModernUITheme.primaryCyan,
+                    backgroundColor: const Color(0xFF00BCD4),
                     backgroundImage: hasPhoto
                         ? ImageProxy.getImageProvider(photoUrl)
                         : null,
@@ -1373,7 +1372,10 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                     child: !hasPhoto
                         ? Text(
                             (_selectedFriend?['username'] ?? '?')[0].toUpperCase(),
-                            style: const TextStyle(color: Colors.white),
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontWeight: FontWeight.bold,
+                            ),
                           )
                         : null,
                   );
@@ -1389,22 +1391,23 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                       _selectedFriend?['username'] ?? 'Unknown',
                       style: const TextStyle(
                         fontWeight: FontWeight.w600,
-                        fontSize: 16,
-                        color: Color(0xFF1A1A1A),
+                        fontSize: 18,
+                        color: Colors.black87,
                       ),
                     ),
                     const SizedBox(height: 2),
                     Text(
                       'Online',
                       style: TextStyle(
-                        fontSize: 13,
-                        color: Colors.grey.shade500,
+                        fontSize: 12,
+                        color: Colors.green[600],
+                        fontWeight: FontWeight.w400,
                       ),
                     ),
                   ],
                 ),
               ),
-              // Voice call button - Image style
+              // Modern UI - Voice call button (green)
               Container(
                 width: 40,
                 height: 40,
@@ -1420,12 +1423,12 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 ),
               ),
               const SizedBox(width: 8),
-              // Video call button - Image style
+              // Modern UI - Video call button (cyan)
               Container(
                 width: 40,
                 height: 40,
                 decoration: const BoxDecoration(
-                  color: Color(0xFF2196F3),
+                  color: Color(0xFF00BCD4),
                   shape: BoxShape.circle,
                 ),
                 child: IconButton(
@@ -1451,22 +1454,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 backgroundId = userData?['chatBackground'] ?? 'default';
               }
 
-              // Define all background gradients
-              final Map<String, List<Color>> backgroundColors = {
-                'default': [Colors.white, Colors.white],  // Pure white background for clarity
-                'blue_gradient': [const Color(0xFFE3F2FD), const Color(0xFFFFFFFF)],
-                'purple_gradient': [const Color(0xFFF3E5F5), const Color(0xFFFFFFFF)],
-                'pink_gradient': [const Color(0xFFFCE4EC), const Color(0xFFFFFFFF)],
-                'green_gradient': [const Color(0xFFE8F5E9), const Color(0xFFFFFFFF)],
-                'orange_gradient': [const Color(0xFFFFE0B2), const Color(0xFFFFF3E0)],  // Light orange gradient
-                'dark_blue': [const Color(0xFF0D47A1), const Color(0xFF1565C0)],
-                'dark_purple': [const Color(0xFF4A148C), const Color(0xFF6A1B9A)],
-                'sunset': [const Color(0xFFFF9800), const Color(0xFFE91E63)],
-                'ocean': [const Color(0xFF00BCD4), const Color(0xFF2196F3)],
-              };
-
-              // Respect user's background preference (don't force white)
-              final colors = backgroundColors[backgroundId] ?? backgroundColors['default']!;
+              // Modern UI: Always use light gray background (ECF0F1)
+              final colors = [const Color(0xFFECF0F1), const Color(0xFFECF0F1)];
 
               return Container(
                 decoration: BoxDecoration(
@@ -1639,12 +1628,15 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                     ],
                                   ),
                                 )
-                              // Regular text message UI - Image style (exact match)
+                              // Modern UI - Text message bubble
                               else if (messageType == 'text' && (message['text'] ?? '').isNotEmpty)
                                 Container(
+                                  constraints: BoxConstraints(
+                                    maxWidth: MediaQuery.of(context).size.width * 0.7,
+                                  ),
                                   margin: EdgeInsets.only(
-                                    left: isMe ? 60 : 16,
-                                    right: isMe ? 16 : 60,
+                                    left: isMe ? 60 : 0,
+                                    right: isMe ? 0 : 60,
                                     bottom: 8,
                                   ),
                                   padding: const EdgeInsets.symmetric(
@@ -1653,41 +1645,58 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                   ),
                                   decoration: BoxDecoration(
                                     color: isMe 
-                                        ? const Color(0xFF00D4FF)  // Light cyan (like image)
+                                        ? const Color(0xFF00BCD4)  // Modern UI cyan
                                         : Colors.white,
                                     borderRadius: BorderRadius.only(
-                                      topLeft: const Radius.circular(18),
-                                      topRight: const Radius.circular(18),
-                                      bottomLeft: isMe ? const Radius.circular(18) : const Radius.circular(4),
-                                      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(18),
+                                      topLeft: const Radius.circular(20),
+                                      topRight: const Radius.circular(20),
+                                      bottomLeft: isMe ? const Radius.circular(20) : const Radius.circular(4),
+                                      bottomRight: isMe ? const Radius.circular(4) : const Radius.circular(20),
                                     ),
                                     boxShadow: [
                                       BoxShadow(
-                                        color: Colors.black.withOpacity(0.08),
-                                        blurRadius: 4,
+                                        color: Colors.black.withOpacity(0.05),
+                                        blurRadius: 5,
                                         offset: const Offset(0, 2),
                                       ),
                                     ],
                                   ),
                                   child: Column(
                                     crossAxisAlignment: CrossAxisAlignment.start,
+                                    mainAxisSize: MainAxisSize.min,
                                     children: [
                                       Text(
                                         message['text'] ?? '',
                                         style: TextStyle(
                                           color: isMe ? Colors.white : const Color(0xFF1A1A1A),
                                           fontSize: 15,
+                                          height: 1.4,
                                         ),
                                       ),
                                       const SizedBox(height: 4),
-                                      Text(
-                                        _formatTimestamp(message['timestamp']),
-                                        style: TextStyle(
-                                          color: isMe 
-                                              ? Colors.white.withOpacity(0.7) 
-                                              : Colors.grey.shade500,
-                                          fontSize: 11,
-                                        ),
+                                      Row(
+                                        mainAxisSize: MainAxisSize.min,
+                                        children: [
+                                          Text(
+                                            _formatTimestamp(message['timestamp']),
+                                            style: TextStyle(
+                                              color: isMe 
+                                                  ? Colors.white.withOpacity(0.8) 
+                                                  : Colors.grey.shade600,
+                                              fontSize: 11,
+                                            ),
+                                          ),
+                                          if (isMe) ...[
+                                            const SizedBox(width: 4),
+                                            Icon(
+                                              Icons.done_all,
+                                              size: 14,
+                                              color: isRead 
+                                                  ? Colors.white 
+                                                  : Colors.white.withOpacity(0.6),
+                                            ),
+                                          ],
+                                        ],
                                       ),
                                     ],
                                   ),
