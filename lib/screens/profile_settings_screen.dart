@@ -630,140 +630,173 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
                     ),
               ),
               const SizedBox(height: 32),
+              // Display Name
               Container(
                 decoration: ModernUITheme.glassContainer(opacity: 0.15),
-                child: Column(
-                  children: [
-                    ListTile(
-                      leading: const Icon(Icons.badge, color: Colors.blue),
-                      title: Row(
-                        children: [
-                          Text(localService.translate('display_name')),
-                          const SizedBox(width: 8),
-                          const Icon(Icons.star, size: 16, color: Colors.amber),
-                        ],
+                child: ListTile(
+                  leading: const Icon(Icons.badge, color: Colors.blue),
+                  title: Row(
+                    children: [
+                      Text(localService.translate('display_name')),
+                      const SizedBox(width: 8),
+                      const Icon(Icons.star, size: 16, color: Colors.amber),
+                    ],
+                  ),
+                  subtitle: Text(_userProfile?.displayName ?? 'Not set'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () => _editDisplayName(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Username
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.person),
+                  title: Text(localService.translate('username')),
+                  subtitle: Text(_userProfile?.username ?? 'Not set'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () => _editUsername(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Password
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.lock),
+                  title: Text(localService.translate('password')),
+                  subtitle: const Text('••••••••'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () => _changePassword(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Email
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.email),
+                  title: Text(localService.translate('email')),
+                  subtitle: Text(_userProfile?.email ?? 'Not set'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () => _editEmail(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Location
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.location_on),
+                  title: Text(localService.translate('location')),
+                  subtitle: Text(_userProfile?.location ?? 'Not set'),
+                  trailing: const Icon(Icons.edit),
+                  onTap: () => _editLocation(),
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Language
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.language),
+                  title: Text(localService.translate('language')),
+                  subtitle: Text(
+                    LocalizationService.supportedLanguages[
+                            localService.currentLanguage] ??
+                        'English',
+                  ),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    showDialog(
+                      context: context,
+                      builder: (context) => AlertDialog(
+                        title: Text(localService.translate('language')),
+                        content: Column(
+                          mainAxisSize: MainAxisSize.min,
+                          children: LocalizationService.supportedLanguages.entries
+                              .map((entry) => ListTile(
+                                    leading: Text(
+                                      LocalizationService.languageFlags[entry.key] ?? '',
+                                      style: const TextStyle(fontSize: 24),
+                                    ),
+                                    title: Text(entry.value),
+                                    onTap: () async {
+                                      await localService.setLanguage(entry.key);
+                                      if (mounted) {
+                                        Navigator.pop(context);
+                                        setState(() {});
+                                      }
+                                    },
+                                  ))
+                              .toList(),
+                        ),
                       ),
-                      subtitle: Text(_userProfile?.displayName ?? 'Not set'),
-                      trailing: const Icon(Icons.edit),
-                      onTap: () => _editDisplayName(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.person),
-                      title: Text(localService.translate('username')),
-                      subtitle: Text(_userProfile?.username ?? 'Not set'),
-                      trailing: const Icon(Icons.edit),
-                      onTap: () => _editUsername(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.lock),
-                      title: Text(localService.translate('password')),
-                      subtitle: const Text('••••••••'),
-                      trailing: const Icon(Icons.edit),
-                      onTap: () => _changePassword(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.email),
-                      title: Text(localService.translate('email')),
-                      subtitle: Text(_userProfile?.email ?? 'Not set'),
-                      trailing: const Icon(Icons.edit),
-                      onTap: () => _editEmail(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.location_on),
-                      title: Text(localService.translate('location')),
-                      subtitle: Text(_userProfile?.location ?? 'Not set'),
-                      trailing: const Icon(Icons.edit),
-                      onTap: () => _editLocation(),
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.language),
-                      title: Text(localService.translate('language')),
-                      subtitle: Text(
-                        LocalizationService.supportedLanguages[
-                                localService.currentLanguage] ??
-                            'English',
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Theme
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                Consumer<ThemeService>(
+                  builder: (context, themeService, child) {
+                    IconData icon;
+                    switch (themeService.themeOption) {
+                      case ThemeOption.dark:
+                        icon = Icons.dark_mode;
+                        break;
+                      case ThemeOption.auto:
+                        icon = Icons.brightness_auto;
+                        break;
+                      default:
+                        icon = Icons.light_mode;
+                    }
+                    
+                    final localService = Provider.of<LocalizationService>(context, listen: false);
+                    return ListTile(
+                      leading: Icon(icon),
+                      title: Text(localService.translate('theme')),
+                      subtitle: Text(localService.translate(themeService.getThemeDisplayNameKey())),
+                      trailing: const Icon(Icons.chevron_right),
+                      onTap: () async {
+                        await themeService.toggleTheme();
+                      },
+                    );
+                  },
+                ),
+              ),
+              const SizedBox(height: 8),
+              // Chat Settings
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
+                child:
+                ListTile(
+                  leading: const Icon(Icons.chat),
+                  title: Text(localService.translate('chat_settings')),
+                  subtitle: Text(localService.translate('chat_background')),
+                  trailing: const Icon(Icons.chevron_right),
+                  onTap: () {
+                    Navigator.push(
+                      context,
+                      MaterialPageRoute(
+                        builder: (_) => const ChatSettingsScreen(),
                       ),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        showDialog(
-                          context: context,
-                          builder: (context) => AlertDialog(
-                            title: Text(localService.translate('language')),
-                            content: Column(
-                              mainAxisSize: MainAxisSize.min,
-                              children: LocalizationService.supportedLanguages.entries
-                                  .map((entry) => ListTile(
-                                        leading: Text(
-                                          LocalizationService.languageFlags[entry.key] ?? '',
-                                          style: const TextStyle(fontSize: 24),
-                                        ),
-                                        title: Text(entry.value),
-                                        onTap: () async {
-                                          await localService.setLanguage(entry.key);
-                                          if (mounted) {
-                                            Navigator.pop(context);
-                                            setState(() {});
-                                          }
-                                        },
-                                      ))
-                                  .toList(),
-                            ),
-                          ),
-                        );
-                      },
-                    ),
-                    const Divider(height: 1),
-                    Consumer<ThemeService>(
-                      builder: (context, themeService, child) {
-                        IconData icon;
-                        switch (themeService.themeOption) {
-                          case ThemeOption.dark:
-                            icon = Icons.dark_mode;
-                            break;
-                          case ThemeOption.auto:
-                            icon = Icons.brightness_auto;
-                            break;
-                          default:
-                            icon = Icons.light_mode;
-                        }
-                        
-                        final localService = Provider.of<LocalizationService>(context, listen: false);
-                        return ListTile(
-                          leading: Icon(icon),
-                          title: Text(localService.translate('theme')),
-                          subtitle: Text(localService.translate(themeService.getThemeDisplayNameKey())),
-                          trailing: const Icon(Icons.chevron_right),
-                          onTap: () async {
-                            await themeService.toggleTheme();
-                          },
-                        );
-                      },
-                    ),
-                    const Divider(height: 1),
-                    ListTile(
-                      leading: const Icon(Icons.chat),
-                      title: Text(localService.translate('chat_settings')),
-                      subtitle: Text(localService.translate('chat_background')),
-                      trailing: const Icon(Icons.chevron_right),
-                      onTap: () {
-                        Navigator.push(
-                          context,
-                          MaterialPageRoute(
-                            builder: (_) => const ChatSettingsScreen(),
-                          ),
-                        );
-                      },
-                    ),
-                  ],
+                    );
+                  },
                 ),
               ),
               const SizedBox(height: 16),
-              Card(
+              Container(
+                decoration: ModernUITheme.glassContainer(opacity: 0.15),
                 child: ListTile(
                   leading: const Icon(Icons.settings),
                   title: Text(localService.translate('settings')),
