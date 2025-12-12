@@ -10,6 +10,7 @@ import 'dart:io';
 import 'package:flutter/foundation.dart' show kIsWeb, kDebugMode;
 import 'chat_settings_screen.dart';
 import 'settings_screen.dart';
+import '../theme/modern_ui_theme.dart';
 
 class ProfileSettingsScreen extends StatefulWidget {
   const ProfileSettingsScreen({super.key});
@@ -512,9 +513,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
     if (_isLoading) {
       return Scaffold(
         appBar: AppBar(
-          title: Text(localService.translate('profile_settings')),
-          backgroundColor: Colors.blue.shade600,
+          title: Text(
+            localService.translate('profile_settings'),
+            style: ModernUITheme.headingMedium.copyWith(
+              color: ModernUITheme.textWhite,
+            ),
+          ),
+          flexibleSpace: Container(
+            decoration: const BoxDecoration(
+              gradient: ModernUITheme.primaryGradient,
+            ),
+          ),
+          backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          elevation: 0,
         ),
         body: const Center(child: CircularProgressIndicator()),
       );
@@ -522,9 +534,20 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(localService.translate('profile_settings')),
-        backgroundColor: Colors.blue.shade600,
+        title: Text(
+          localService.translate('profile_settings'),
+          style: ModernUITheme.headingMedium.copyWith(
+            color: ModernUITheme.textWhite,
+          ),
+        ),
+        flexibleSpace: Container(
+          decoration: const BoxDecoration(
+            gradient: ModernUITheme.primaryGradient,
+          ),
+        ),
+        backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
       body: SafeArea(
         child: SingleChildScrollView(
