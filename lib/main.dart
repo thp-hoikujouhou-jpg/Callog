@@ -12,6 +12,7 @@ import 'services/call_navigation_service.dart';
 import 'services/app_lifecycle_service.dart';
 import 'screens/login_screen.dart';
 import 'screens/main_feed_screen.dart';
+import 'theme/modern_ui_theme.dart';
 
 void main() async {
   // Catch and log any errors during initialization
@@ -91,20 +92,8 @@ class CallogApp extends StatelessWidget {
             debugShowCheckedModeBanner: false,
             navigatorKey: CallNavigationService.navigatorKey, // Enable global navigation
             themeMode: themeService.themeMode,
-            theme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.light,
-              ),
-              useMaterial3: true,
-            ),
-            darkTheme: ThemeData(
-              colorScheme: ColorScheme.fromSeed(
-                seedColor: Colors.blue,
-                brightness: Brightness.dark,
-              ),
-              useMaterial3: true,
-            ),
+            theme: ModernUITheme.lightTheme,
+            darkTheme: ModernUITheme.darkTheme,
             home: const AuthWrapper(),
           );
         },

@@ -14,10 +14,16 @@ class ModernUITheme {
   static const Color secondaryOrangeLight = Color(0xFFFF9E6E);
   static const Color secondaryOrangeDark = Color(0xFFC53D13);
   
-  // Neutral Colors
+  // Neutral Colors - Light Mode
   static const Color surfaceWhite = Color(0xFFFFFFFF);
   static const Color backgroundLight = Color(0xFFFAFAFA);
   static const Color backgroundGray = Color(0xFFF5F5F5);
+  
+  // Neutral Colors - Dark Mode
+  static const Color surfaceDark = Color(0xFF1E1E1E);
+  static const Color backgroundDark = Color(0xFF121212);
+  static const Color backgroundDarkGray = Color(0xFF2A2A2A);
+  static const Color surfaceDarkElevated = Color(0xFF2C2C2C);
   
   // Status Colors
   static const Color successGreen = Color(0xFF00E676);
@@ -63,9 +69,22 @@ class ModernUITheme {
     end: Alignment.bottomRight,
   );
   
+  // Dark Mode Gradients
+  static const LinearGradient backgroundGradientDark = LinearGradient(
+    colors: [Color(0xFF1A1A1A), Color(0xFF2A2A2A)],
+    begin: Alignment.topCenter,
+    end: Alignment.bottomCenter,
+  );
+  
+  static const LinearGradient cardGradientDark = LinearGradient(
+    colors: [Color(0xFF2C2C2C), Color(0xFF1E1E1E)],
+    begin: Alignment.topLeft,
+    end: Alignment.bottomRight,
+  );
+  
   // ==================== GLASSMORPHISM ====================
   
-  /// Glassmorphism container decoration
+  /// Glassmorphism container decoration (Light Mode)
   static BoxDecoration glassContainer({
     double blur = 10.0,
     double opacity = 0.15,
@@ -73,15 +92,39 @@ class ModernUITheme {
     BorderRadius? borderRadius,
   }) {
     return BoxDecoration(
-      color: color.withOpacity(opacity),
+      color: color.withValues(alpha: opacity),
       borderRadius: borderRadius ?? BorderRadius.circular(20),
       border: Border.all(
-        color: Colors.white.withOpacity(0.3),
+        color: Colors.white.withValues(alpha: 0.3),
         width: 1.5,
       ),
       boxShadow: [
         BoxShadow(
-          color: Colors.black.withOpacity(0.1),
+          color: Colors.black.withValues(alpha: 0.1),
+          blurRadius: blur,
+          offset: const Offset(0, 4),
+        ),
+      ],
+    );
+  }
+  
+  /// Glassmorphism container decoration (Dark Mode)
+  static BoxDecoration glassContainerDark({
+    double blur = 10.0,
+    double opacity = 0.2,
+    Color color = const Color(0xFF2A2A2A),
+    BorderRadius? borderRadius,
+  }) {
+    return BoxDecoration(
+      color: color.withValues(alpha: opacity),
+      borderRadius: borderRadius ?? BorderRadius.circular(20),
+      border: Border.all(
+        color: Colors.white.withValues(alpha: 0.1),
+        width: 1.5,
+      ),
+      boxShadow: [
+        BoxShadow(
+          color: Colors.black.withValues(alpha: 0.3),
           blurRadius: blur,
           offset: const Offset(0, 4),
         ),
@@ -292,6 +335,93 @@ class ModernUITheme {
         unselectedItemColor: textHint,
         type: BottomNavigationBarType.fixed,
         elevation: 8,
+      ),
+    );
+  }
+  
+  static ThemeData get darkTheme {
+    return ThemeData(
+      brightness: Brightness.dark,
+      primaryColor: primaryCyan,
+      scaffoldBackgroundColor: backgroundDark,
+      colorScheme: const ColorScheme.dark(
+        primary: primaryCyan,
+        secondary: secondaryOrange,
+        surface: surfaceDark,
+        error: errorRed,
+        onPrimary: textWhite,
+        onSecondary: textWhite,
+        onSurface: Colors.white,
+        onError: textWhite,
+      ),
+      appBarTheme: AppBarTheme(
+        backgroundColor: Colors.transparent,
+        elevation: 0,
+        centerTitle: true,
+        titleTextStyle: headingMedium.copyWith(color: Colors.white),
+        iconTheme: const IconThemeData(color: Colors.white),
+      ),
+      cardTheme: CardThemeData(
+        elevation: 0,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+        color: surfaceDark,
+      ),
+      elevatedButtonTheme: ElevatedButtonThemeData(
+        style: ElevatedButton.styleFrom(
+          backgroundColor: primaryCyan,
+          foregroundColor: textWhite,
+          elevation: 0,
+          padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 16),
+          shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600, color: textWhite),
+        ),
+      ),
+      textButtonTheme: TextButtonThemeData(
+        style: TextButton.styleFrom(
+          foregroundColor: primaryCyan,
+          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
+          textStyle: bodyLarge.copyWith(fontWeight: FontWeight.w600),
+        ),
+      ),
+      floatingActionButtonTheme: FloatingActionButtonThemeData(
+        backgroundColor: primaryCyan,
+        foregroundColor: textWhite,
+        elevation: 8,
+        shape: RoundedRectangleBorder(borderRadius: radiusMedium),
+      ),
+      inputDecorationTheme: InputDecorationTheme(
+        filled: true,
+        fillColor: surfaceDarkElevated,
+        border: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        enabledBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: BorderSide(color: Colors.white.withValues(alpha: 0.1)),
+        ),
+        focusedBorder: OutlineInputBorder(
+          borderRadius: radiusMedium,
+          borderSide: const BorderSide(color: primaryCyan, width: 2),
+        ),
+        labelStyle: TextStyle(color: Colors.white.withValues(alpha: 0.7)),
+        hintStyle: TextStyle(color: Colors.white.withValues(alpha: 0.5)),
+        contentPadding: const EdgeInsets.symmetric(horizontal: 20, vertical: 16),
+      ),
+      bottomNavigationBarTheme: BottomNavigationBarThemeData(
+        backgroundColor: surfaceDark,
+        selectedItemColor: primaryCyan,
+        unselectedItemColor: Colors.white.withValues(alpha: 0.5),
+        type: BottomNavigationBarType.fixed,
+        elevation: 8,
+      ),
+      textTheme: TextTheme(
+        headlineLarge: headingLarge.copyWith(color: Colors.white),
+        headlineMedium: headingMedium.copyWith(color: Colors.white),
+        headlineSmall: headingSmall.copyWith(color: Colors.white),
+        bodyLarge: bodyLarge.copyWith(color: Colors.white.withValues(alpha: 0.87)),
+        bodyMedium: bodyMedium.copyWith(color: Colors.white.withValues(alpha: 0.70)),
+        bodySmall: bodySmall.copyWith(color: Colors.white.withValues(alpha: 0.60)),
       ),
     );
   }
