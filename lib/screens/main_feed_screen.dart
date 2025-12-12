@@ -964,6 +964,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
         ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
           // Only show call history button on larger screens (PC/tablet)

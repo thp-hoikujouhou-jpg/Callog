@@ -404,6 +404,8 @@ class _SearchContactsScreenState extends State<SearchContactsScreen> {
         ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
         elevation: 0,
         actions: [
           IconButton(

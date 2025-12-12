@@ -525,6 +525,8 @@ class _ProfileSettingsScreenState extends State<ProfileSettingsScreen> {
           ),
           backgroundColor: Colors.transparent,
           foregroundColor: Colors.white,
+          iconTheme: const IconThemeData(color: Colors.white),
+          actionsIconTheme: const IconThemeData(color: Colors.white),
           elevation: 0,
         ),
         body: Container(

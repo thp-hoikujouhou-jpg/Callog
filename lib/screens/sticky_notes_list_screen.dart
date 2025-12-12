@@ -168,6 +168,8 @@ class _StickyNotesListScreenState extends State<StickyNotesListScreen> {
         ),
         backgroundColor: Colors.transparent,
         foregroundColor: Colors.white,
+        iconTheme: const IconThemeData(color: Colors.white),
+        actionsIconTheme: const IconThemeData(color: Colors.white),
         flexibleSpace: Container(decoration: BoxDecoration(gradient: ModernUITheme.primaryGradient)),
         elevation: 0,
       ),
