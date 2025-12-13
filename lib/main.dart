@@ -103,6 +103,7 @@ class AuthWrapper extends StatefulWidget {
 class _AuthWrapperState extends State<AuthWrapper> {
   Future<void> _loadLanguageSettings(BuildContext context) async {
     try {
+      if (!mounted) return;
       final localService = Provider.of<LocalizationService>(context, listen: false);
       final user = FirebaseAuth.instance.currentUser;
       
@@ -130,7 +131,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
   
   @override
   Widget build(BuildContext context) {
-    final authService = Provider.of<AuthService>(context);
+    final authService = Provider.of<AuthService>(context, listen: false);
     
     return StreamBuilder<User?>(
       stream: authService.authStateChanges,
@@ -176,6 +177,7 @@ class _AuthWrapperState extends State<AuthWrapper> {
         
         // User signed out - reset language cache and show login screen
         try {
+          if (!mounted) return const LoginScreen();
           final localService = Provider.of<LocalizationService>(context, listen: false);
           localService.resetCache();
         } catch (e) {

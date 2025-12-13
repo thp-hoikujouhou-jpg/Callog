@@ -329,7 +329,7 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
     };
     
     final lang = localService.currentLanguage;
-    final months = monthNames[lang] ?? monthNames['en'] ?? monthNames['ja']!;
+    final months = monthNames[lang] ?? monthNames['en'] ?? monthNames['ja'] ?? ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
     
     // Year suffix for each language
     final yearSuffix = {

@@ -152,7 +152,7 @@ class StickyNoteColors {
     final index = colors.indexOf(hex);
     if (index == -1) return 'Unknown';
 
-    final names = colorNames[languageCode] ?? colorNames['en'] ?? colorNames['ja']!;
+    final names = colorNames[languageCode] ?? colorNames['en'] ?? colorNames['ja'] ?? ['Red', 'Orange', 'Yellow', 'Green', 'Blue', 'Purple', 'Pink', 'Gray'];
     return names[index];
   }
 }
