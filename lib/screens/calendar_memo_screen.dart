@@ -184,11 +184,18 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
                     onPressed: _previousMonth,
                     icon: const Icon(Icons.chevron_left, size: 32),
                   ),
-                  Text(
-                    _getMonthYearText(localService),
-                    style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
+                  Container(
+                    padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 8),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(8),
+                    ),
+                    child: Text(
+                      _getMonthYearText(localService),
+                      style: const TextStyle(
+                        fontSize: 20,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                   IconButton(
@@ -350,22 +357,37 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
       'fr': ['Dim', 'Lun', 'Mar', 'Mer', 'Jeu', 'Ven', 'Sam'],
     };
     
+    // 曜日ごとの背景色（日曜日～土曜日）
+    final weekdayColors = [
+      Colors.red.shade100,      // 日曜日 - 赤
+      Colors.orange.shade100,   // 月曜日 - オレンジ
+      Colors.yellow.shade100,   // 火曜日 - 黄色
+      Colors.green.shade100,    // 水曜日 - 緑
+      Colors.blue.shade100,     // 木曜日 - 青
+      Colors.indigo.shade100,   // 金曜日 - 藍色
+      Colors.purple.shade100,   // 土曜日 - 紫
+    ];
+    
     final lang = localService.currentLanguage;
     final days = weekdays[lang] ?? weekdays['en']!;
     
-    return days.map((day) {
+    return List.generate(days.length, (index) {
       return Expanded(
-        child: Text(
-          day,
-          textAlign: TextAlign.center,
-          style: const TextStyle(
-            fontWeight: FontWeight.bold,
-            color: Colors.grey,
-            fontSize: 12,
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 4),
+          color: weekdayColors[index],
+          child: Text(
+            days[index],
+            textAlign: TextAlign.center,
+            style: const TextStyle(
+              fontWeight: FontWeight.bold,
+              color: Colors.black87,
+              fontSize: 12,
+            ),
           ),
         ),
       );
-    }).toList();
+    });
   }
   
   /// Check if date is today
