@@ -119,7 +119,7 @@ class _DailyContactsScreenState extends State<DailyContactsScreen> {
         
         print('   📝 Processing note: contactId=$contactId, name=$contactName, photoUrl=$contactPhotoUrl');
         
-        if (contactMap.containsKey(contactId)) {
+        if (contactMap.containsKey(contactId) && contactMap[contactId] != null) {
           // Contact already exists, increment sticky note count
           contactMap[contactId]!.noteCount++;
           print('      → Existing contact, count now: ${contactMap[contactId]!.noteCount}');

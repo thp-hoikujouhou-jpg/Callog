@@ -481,7 +481,7 @@ class _ContactStickyNotesScreenState extends State<ContactStickyNotesScreen> {
       'fr': ['janvier', 'février', 'mars', 'avril', 'mai', 'juin', 'juillet', 'août', 'septembre', 'octobre', 'novembre', 'décembre'],
     };
     
-    final months = monthNames[languageCode] ?? monthNames['en']!;
+    final months = monthNames[languageCode] ?? monthNames['en'] ?? monthNames['ja']!;
     final monthName = months[date.month - 1];
     
     if (languageCode == 'ja') {

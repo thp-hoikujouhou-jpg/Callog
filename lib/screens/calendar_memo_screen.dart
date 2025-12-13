@@ -329,7 +329,7 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
     };
     
     final lang = localService.currentLanguage;
-    final months = monthNames[lang] ?? monthNames['en']!;
+    final months = monthNames[lang] ?? monthNames['en'] ?? monthNames['ja']!;
     
     // Year suffix for each language
     final yearSuffix = {
@@ -369,7 +369,7 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
     ];
     
     final lang = localService.currentLanguage;
-    final days = weekdays[lang] ?? weekdays['en']!;
+    final days = weekdays[lang] ?? weekdays['en'] ?? ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
     
     return List.generate(days.length, (index) {
       return Expanded(

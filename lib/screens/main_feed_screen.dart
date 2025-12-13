@@ -1453,8 +1453,8 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                 'ocean': [const Color(0xFF00BCD4), const Color(0xFF2196F3)],
               };
 
-              // Get colors from user preference, default to Modern UI
-              final colors = backgroundColors[backgroundId] ?? backgroundColors['default']!;
+              // Get colors from user preference, default to Modern UI (safe null handling)
+              final colors = backgroundColors[backgroundId] ?? backgroundColors['default'] ?? [const Color(0xFFECF0F1), const Color(0xFFECF0F1)];
 
               return Container(
                 decoration: BoxDecoration(
