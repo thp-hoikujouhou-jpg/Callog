@@ -71,7 +71,7 @@ class _CalendarNoteDialogState extends State<CalendarNoteDialog> {
   }
 
   Future<void> _saveNote() async {
-    if (!_formKey.currentState!.validate()) return;
+    if (_formKey.currentState?.validate() != true) return;
 
     final localService = Provider.of<LocalizationService>(context, listen: false);
 

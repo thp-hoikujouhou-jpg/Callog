@@ -403,8 +403,9 @@ class _CallHistoryScreenState extends State<CallHistoryScreen> {
   /// Get display name for a user ID
   Future<String> _getDisplayName(String userId) async {
     // Check cache first (safe null handling)
-    if (_userDisplayNames.containsKey(userId) && _userDisplayNames[userId] != null) {
-      return _userDisplayNames[userId]!;
+    final cachedName = _userDisplayNames[userId];
+    if (cachedName != null) {
+      return cachedName;
     }
     
     try {
