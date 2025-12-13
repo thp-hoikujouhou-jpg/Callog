@@ -176,7 +176,7 @@ class _CalendarMemoScreenState extends State<CalendarMemoScreen> {
             // Month navigation header
             Container(
               padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 8),
-              color: Colors.blue.shade50,
+              color: Colors.white,
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
