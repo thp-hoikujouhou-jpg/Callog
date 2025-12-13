@@ -1615,12 +1615,34 @@ class _MainFeedScreenState extends State<MainFeedScreen> {
                                             ),
                                           ),
                                           if (message['duration'] != null)
-                                            Text(
-                                              _formatDuration(message['duration']),
-                                              style: TextStyle(
-                                                fontSize: 12,
-                                                color: Colors.grey.shade600,
-                                              ),
+                                            Row(
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  _formatDuration(message['duration']),
+                                                  style: TextStyle(
+                                                    fontSize: 12,
+                                                    color: Colors.grey.shade600,
+                                                  ),
+                                                ),
+                                                // Add read receipt indicator for calls
+                                                if (isMe) ...[
+                                                  const SizedBox(width: 4),
+                                                  Icon(
+                                                    Icons.done_all,
+                                                    size: 12,
+                                                    color: isRead 
+                                                        ? (isMissedCall 
+                                                            ? Colors.red.shade600 
+                                                            : isDeclinedCall
+                                                                ? Colors.orange.shade600
+                                                                : isFailedCall
+                                                                    ? Colors.grey.shade600
+                                                                    : Colors.green.shade600)
+                                                        : Colors.grey.shade400,
+                                                  ),
+                                                ],
+                                              ],
                                             ),
                                         ],
                                       ),
